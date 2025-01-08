@@ -1,0 +1,61 @@
+/* Sidenav Styles */
+.sidenav {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between ;
+    z-index: 1;
+}
+
+.sidenav__logo {
+    width: 150px;
+    margin: 30px 0 25px 25px;
+    color: black;
+    font-family: 'Rochester', cursive;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    
+}
+
+.sidenav__logo span {
+    font-size: 1.5rem;
+    color: black;
+    
+}
+.sidenav__buttons{
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+}
+.sidenav__button{
+    
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    color: black;
+    background-color: white;
+    background: 0;
+    border: 0;
+    margin: 5px 10px 5px 10px;
+    padding: 10px 15px 10px 15px;
+    border-radius: 15px;
+    width: 100%;
+    text-decoration: none;
+}
+
+.sidenav__button:hover{
+    cursor: pointer;
+    background-color: rgba(107, 100, 100, 0.128);
+}
+.sidenav__button > span{
+    font-size: 15px;
+    font-family: 'Roboto';
+    margin-left: 10px;
+}
+.sidenav__more{
+    position: fixed;
+    bottom: 3px;
+}
