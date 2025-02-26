@@ -2,8 +2,8 @@
 .timeline{
     display: flex;
     flex-direction: row;
-    padding-left: 50px;
-    padding-right: 50px;
+    padding-left: 45px;
+    padding-right: 45px;
 }
 .timeline__left{
     flex: 0.65;
@@ -11,6 +11,8 @@
     align-items: center;
 }
 .timeline__right{
+    position: sticky;
+    top: 5px;
     flex: 0.35;
 }
 .timeline__left__left{

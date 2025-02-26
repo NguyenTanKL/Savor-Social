@@ -7,7 +7,7 @@ function Sugesstions() {
             <div className="account__username">
                 <div className="account__left">
                     <span className="avatar__profile">
-                        <Avatar style={{ width: "60px", height: "60px" }}>R</Avatar>
+                        <Avatar style={{ width: "50px", height: "50px" }}>R</Avatar>
                     </span>
                     <div className="username__info">
                         <span className="username__profile">_rin211</span>

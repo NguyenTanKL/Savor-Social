@@ -1,0 +1,20 @@
+input {
+    border-radius: 10px;
+    height: 25px;
+}
+
+.inputImg {
+    border-radius: 0px;
+}
+
+textarea {
+    border-radius: 10px;
+}
+
+.target_aud, .no_of_ads, .release_day, .expiration_day {
+    width: 308px;
+    height: 25px;
+}
+.content {
+    height: 150px;
+}

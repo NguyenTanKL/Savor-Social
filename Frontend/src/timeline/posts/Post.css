@@ -74,3 +74,10 @@
     outline: none;
     font-size: 16px;
 }
+
+/* src/index.css or App.css */
+@import url('https://fonts.googleapis.com/css2?family=Rochester&display=swap');
+
+.rochester {
+    text-shadow: #FC0 1px 0 10px;
+}
