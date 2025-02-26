@@ -4,9 +4,11 @@ import "./ProfilePage.css";
 import { Box } from "@mui/material";
 import axios from "axios";
 import Grid2 from "@mui/material/Grid2";
+import Button from "@mui/material/Button";
 import HeaderProfile from "../components/HeaderProfile";
 const userData = {
     name: 'Thái Tăng Huy',
+    account_name: '_huythai',
     job: 'Food reviewer',
     followers: 1234,
     following: 567,
@@ -15,10 +17,11 @@ const userData = {
         { platform: 'Facebook', url: 'https://facebook.com/username' },
         { platform: 'Twitter', url: 'https://twitter.com/username' },
         { platform: 'LinkedIn', url: 'https://linkedin.com/in/username' }
-    ]
+    ],
+    is_res: false
 };
 const tabs  =  [
-    { label: "Photos", value: "photos" },
+    { label: "Post", value: "photos" },
     { label: "Map", value: "map" },
   ];
 function ProfilePage() {
@@ -43,8 +46,9 @@ function ProfilePage() {
             <HeaderProfile user= {userData}/>
             <div style={{ marginBottom: "20px" }}>
                 {tabs.map((tab) => (
-                <button
+                <Button
                     key={tab.value}
+                    size="small"
                     style={{
                     marginRight: "10px",
                     padding: "10px 20px",
@@ -56,7 +60,7 @@ function ProfilePage() {
                     onClick={() => setType(tab.value)}
                 >
                     {tab.label}
-                </button>
+                </Button>
                 ))}
             </div>
             <div>

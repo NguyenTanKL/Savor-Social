@@ -14,7 +14,7 @@
 }
 .map_background > img{
     display: block;
-    width: 100%;
+    width: 90%;
     height: auto;
     border-radius: 6px;
     border: 0.6px solid rgba(128, 128, 128, 0.516);
