@@ -1,15 +1,17 @@
 import './App.css';
 import Homepage from './Homepage';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Grid from '@mui/material/Grid';
 import Sidenav from './navigation/Sidenav';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import FavouriteMapPage from './pages/FavouriteMapPage';
 import SavedPostsPage from './pages/SavedPostsPage';
-import VouchersPage from './pages/VouchersPage';
+import VouchersPage from './pages/restaurantVoucher/VouchersPage';
 import MessagesPage from './pages/MessagesPage';
 import NotificationsPage from './pages/NotificationsPage';
-import CreatePage from './pages/CreatePage';
+import CreatePage from './pages/createPost/CreatePage';
+import RestaurantProfilePage from './pages/RestaurantProfilePage'
 
 function App() {
   return (
@@ -28,6 +30,7 @@ function App() {
             <Route path="/NotificationsPage" element= {<NotificationsPage/>} />
             <Route path="/CreatePage" element= {<CreatePage/>} />
             <Route path="/ProfilePage" element= {<ProfilePage/>} />
+            <Route path="/RestaurantProfilePage" element= {<RestaurantProfilePage/>} />
           </Routes>
         </div>
       </div>
