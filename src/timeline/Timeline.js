@@ -40,14 +40,16 @@ function Timeline() {
                     </div>
                     <div className="timeline__posts">
                         {posts.map((post,index) => (
-                            <Post 
-                            key={index}
-                            user= {post.user}
-                            postImage={post.postImage} 
-                            likes={post.likes} 
-                            caption={post.caption}
-                            address={post.address}
-                            timestamp={post.timestamp}/>
+                            <div key={index}>
+                                <Post 
+                                    user= {post.user}
+                                    postImage={post.postImage} 
+                                    likes={post.likes} 
+                                    caption={post.caption}
+                                    address={post.address}
+                                    timestamp={post.timestamp}/>
+                                <hr className="post-divider"/>
+                            </div>
                         ))}
                     </div>
                 </div>

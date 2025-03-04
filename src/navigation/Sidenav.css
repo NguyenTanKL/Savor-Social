@@ -1,9 +1,7 @@
-/* Sidenav Styles */
 .sidenav {
     position: fixed;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
     justify-content: space-between ;
     z-index: 1;
 }

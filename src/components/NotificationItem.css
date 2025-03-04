@@ -1,0 +1,13 @@
+.notification-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+
+  }
+  
+  .follow-btn {
+    font-size: 0.8rem;
+    text-transform: none;
+    margin-left: 10px;
+  }
+  
