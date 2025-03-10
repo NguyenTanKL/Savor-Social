@@ -4,10 +4,15 @@ const { Server } = require('socket.io');
 const nodemon = require('nodemon');
 const cors = require('cors');
 const route = require('./routes/user/index')
+const authRoutes = require("./routes/authRoutes");
 require('./models/UserModel'); 
 require('./models/chatModel');
+const cookieParser = require("cookie-parser");
+
 
 const app = express();
+
+app.use(cookieParser());
 
 require("dotenv").config();
 
@@ -48,6 +53,7 @@ io.on("connection", (socket) => {
 
 
 route(app);
+app.use("/api/auth", authRoutes);
 
 server.listen(5000, () => {
     console.log('Server running on port 5000');
