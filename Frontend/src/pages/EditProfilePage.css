@@ -1,0 +1,63 @@
+.edit-profile-page {
+    max-width: 600px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  textarea {
+    resize: none;
+  }
+  
+  .change-photo-btn,
+  .submit-btn,
+  .deactivate-btn {
+    background-color: #0095f6;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .change-photo-btn {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+  
+  .deactivate-btn {
+    background-color: #d9534f;
+  }
+  
+  .change-photo-btn:hover,
+  .submit-btn:hover,
+  .deactivate-btn:hover {
+    opacity: 0.8;
+  }
+  

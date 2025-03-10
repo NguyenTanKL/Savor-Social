@@ -35,3 +35,6 @@
     font-size: 3.0rem;
     color: black;
 }
+.post-divider{
+    width: calc(100% - 80px);
+}
