@@ -6,28 +6,11 @@
 .sugesstions__title{
     color: grey;
     font-weight: bold;
+    padding: 4px 16px;
     margin-top: 20px;
     margin-bottom: 20px;
 }
-.username__left{
-    display: flex;
-    align-items: center;
 
-}
-.username__info{
-    display: flex;
-    flex-direction: column;
-}
-.relation{
-    color: grey;
-    font-size: 12px;
-}
-.sugesstion__username{
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    margin-top: 15px;
-}
 .follow__button{
     color: #0095f6;
     font-weight: bold;
@@ -38,19 +21,13 @@
     color: #1d3c78;
     cursor: pointer;
 }
-.username {
-    font-weight: 600;
-    font-size: 14px;
-}
-.avatar{
-    margin-right: 10px;
-    
-}
+
 .account__username{
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     margin-top: 15px;
+    padding: 0 16px;
 }
 .account__left{
     display: flex;
