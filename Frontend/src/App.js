@@ -7,10 +7,10 @@ import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import FavouriteMapPage from './pages/FavouriteMapPage';
 import SavedPostsPage from './pages/SavedPostsPage';
-import VouchersPage from './pages/restaurantVoucher/VouchersPage';
-import MessagesPage from './pages/MessagesPage';
+// import VouchersPage from './pages/restaurantVoucher/VouchersPage';
+// import MessagesPage from './pages/MessagesPage';
 import NotificationsPage from './pages/NotificationsPage';
-import CreatePage from './pages/CreatePage';
+// import CreatePage from './pages/CreatePage';
 import EditProfilePage from './pages/EditProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
@@ -52,10 +52,10 @@ function App() {
                 <Route path="home" element={<HomePage />} />
                 <Route path="/favouriteMap" element={<FavouriteMapPage />} />
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
-                <Route path="/vouchers" element={<VouchersPage />} />
-                <Route path="/messages" element={<MessagesPage />} />
+                {/* <Route path="/vouchers" element={<VouchersPage />} />
+                <Route path="/messages" element={<MessagesPage />} /> */}
                 <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/create" element={<CreatePage />} />
+                {/* <Route path="/create" element={<CreatePage />} /> */}
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/editProfile" element={<EditProfilePage />} />
                 <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
