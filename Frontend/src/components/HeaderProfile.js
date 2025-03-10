@@ -1,7 +1,13 @@
 import "./HeaderProfile.css";
 import React from "react";
-import {Avatar, Link} from "@mui/material"
+import {Avatar, Link} from "@mui/material";
+import { useNavigate } from 'react-router-dom';
 function HeaderProfile({user}){
+    const navigate = useNavigate();
+
+    const handleEditProfile = () => {
+      navigate('/EditProfilePage');
+    };
     return(
         <div className="header__profile">
             <div className="header__left">
@@ -14,7 +20,7 @@ function HeaderProfile({user}){
             <div className="header__right">
                 <div className="header__1">
                     <span>{user.name}</span>
-                    <button>
+                    <button onClick={handleEditProfile}>
                         <span>Edit Profile</span>
                     </button>
                 </div>
