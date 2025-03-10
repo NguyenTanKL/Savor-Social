@@ -29,8 +29,13 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: false
     },
+    my_vouchers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'vouchers',
+        default: []
+    }]
 });
 
-const UserModel = new mongoose.model('users',UserSchema);
+const UserModel = mongoose.model('users',UserSchema);
 
 module.exports = UserModel;

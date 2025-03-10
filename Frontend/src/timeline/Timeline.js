@@ -5,6 +5,7 @@ import "./posts/Post";
 import Post from "./posts/Post";
 import MapUser from "./map/MapUser";
 import Grid from "@mui/material/Grid"
+import Box from "@mui/material/Box"
 function Timeline() {
     const [posts, setPosts] = useState([
         {
@@ -59,40 +60,35 @@ function Timeline() {
         },
     ]);
     return(
-        <Grid container spacing={2}>
-            <Grid item xs={8}>
-                <div className="timeline">
-                    <div className="timeline__left">
-                        <div className="timeline__left__left">
-                            <div className="timeline__title">
-                                <span> What is here?</span>
-                            </div>
-                            <div className="timeline__posts">
-                                {posts.map((post,index) => (
-                                    <Post 
-                                    key={index}
-                                    user= {post.user}
-                                    postImage={post.postImage} 
-                                    likes={post.likes} 
-                                    caption={post.caption}
-                                    address={post.address}
-                                    timestamp={post.timestamp}
-                                    is_voucher={post.is_voucher}
-                                    is_ad={post.is_ad}/>
-                                ))}
-                            </div>
+            <Grid container spacing={2}>
+                <Grid item xs={6} md={8}>
+                        <div className="timeline__left">
+                                <div className="timeline__title">
+                                    <span> What is here?</span>
+                                </div>
+                                <div className="timeline__posts">
+                                    {posts.map((post,index) => (
+                                        <Post 
+                                        key={index}
+                                        user= {post.user}
+                                        postImage={post.postImage} 
+                                        likes={post.likes} 
+                                        caption={post.caption}
+                                        address={post.address}
+                                        timestamp={post.timestamp}
+                                        is_voucher={post.is_voucher}
+                                        is_ad={post.is_ad}/>
+                                    ))}
+                                </div>
                         </div>
-                        
+                </Grid>
+                <Grid item xs={6} md={4}>
+                    <div className="timeline__right">
+                        <Sugesstions/>
+                        <MapUser/>
                     </div>
-                </div>
-            </Grid>
-            <Grid item xs={4}>
-                <div className="timeline__right">
-                    <Sugesstions/>
-                    <MapUser/>
-                </div>
-            </Grid>
-        </Grid>
+                </Grid>
+            </Grid>                    
     )
 }
 export default Timeline
