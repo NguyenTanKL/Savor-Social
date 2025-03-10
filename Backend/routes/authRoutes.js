@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../Models/UserModel");
+const User = require("../models/UserModel");
 
 const router = express.Router();
 
@@ -24,9 +24,7 @@ router.post("/register", async (req, res) => {
     // Hash mật khẩu trước khi lưu
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    console.log("Mật khẩu sau khi hash:", hashedPassword);
     // Tạo user mới
-    console.log("loai user:", usertype)
     const newUser = new User({
       email,
   username,
@@ -34,7 +32,6 @@ router.post("/register", async (req, res) => {
   usertype,
     });
     const savedUser = await newUser.save();
-    console.log("User đã lưu:", savedUser);
     // (Tùy chọn) Tạo JWT Token để tự động đăng nhập sau khi đăng ký thành công
     const token = jwt.sign({ id: newUser._id }, "my_secret_key", { expiresIn: "1h" });
     
@@ -48,7 +45,6 @@ router.post("/register", async (req, res) => {
 // API đăng nhập
 router.post("/login", async (req, res) => {
   try {
-    console.log("Dữ liệu đăng nhập nhận từ client:", req.body);
     const { email, password } = req.body;
 
     // Tìm user theo email
