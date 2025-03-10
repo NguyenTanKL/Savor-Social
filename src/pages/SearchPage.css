@@ -1,0 +1,96 @@
+.search__tab{
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0.15;
+    width:397px;
+    height: 100%;
+    border: 2px solid #ccc; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    z-index: 1000;
+    background-color: white;
+}
+.search__tab > .tab__header{
+    margin: 8px 0;
+    padding: 12px 36px 24px 14px;
+}
+.tab__header > div > span{
+    font-size: 24px;
+    font-weight: 600;
+}
+.input__search1{
+    margin: 0 16px;
+    position: relative;
+  display: flex;
+  align-items: center;
+
+}
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 10px; 
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: rgb(115, 115, 115);
+    pointer-events: none;
+   
+  
+  }
+.cancel-icon{
+    color: rgb(115, 115, 115);
+    font-size: 20px;
+    position: absolute;
+    right: 20px;
+    cursor: pointer;
+    display: none;
+}
+.input__search0{
+    margin-bottom: 24px;
+}
+input{
+    background-color: rgb(239, 239, 239);
+    width: 100%;
+    border: none;
+    border-radius: 8px  ;
+    height: 40px;
+    line-height: 18px;
+    color: rgb(115, 115, 115);
+    font-size: 16px;
+    padding: 0 40px;
+}
+hr {
+    border-color: rgb(218, 221, 225);  /* Hoặc sử dụng background-color */
+    size: 1px;
+}
+.history__search{
+    display: flex;
+    flex-direction: column;
+}
+.history__title{
+    display: flex;
+    flex-direction: row;
+    margin: 6px 24px 8px 24px;
+    align-items: center;
+    justify-content: space-between;
+}
+.history__title > .clear__history{
+    border: none;
+    background-color: white;
+    color: rgb(0, 149, 246);
+    font-size: 14px;
+    font-weight: 600;
+    height: 18px;
+    line-height: 18px;
+    outline: none;
+    z-index: 0;
+    cursor: pointer;
+}
+.history__title > span {
+    color-scheme: light;
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
+}

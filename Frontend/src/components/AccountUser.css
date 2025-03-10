@@ -1,0 +1,40 @@
+.sugesstion__username{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px 16px;
+}
+.username__left{
+    display: flex;
+    align-items: center;
+
+}
+.button__follow{
+    color: #0095f6;
+    font-weight: bold;
+    background: 0;
+    border: 0;
+}
+.button__follow:hover{
+    color: #1d3c78;
+    cursor: pointer;
+}
+.clear-icon{
+    cursor: pointer;
+}
+.avatar{
+    margin-right: 10px;
+    
+}
+.username__info{
+    display: flex;
+    flex-direction: column;
+}
+.username {
+    font-weight: 600;
+    font-size: 14px;
+}
+.nickname{
+    color: grey;
+    font-size: 12px;
+}
