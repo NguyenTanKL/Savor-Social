@@ -12,7 +12,7 @@ import {
 import InstagramIcon from "@mui/icons-material/Instagram";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { login } from "../../redux/Reducer/userSlice"; // Action từ Redux
+import { login } from "../../redux/Reducer/userSlice"; // Action từ Redux 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -52,7 +52,7 @@ const RegisterPage = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify({ email: registerData.email, id: userId }));
       dispatch(login({ email: registerData.email, id: userId }));
-      navigate("/HomePage");
+      navigate("/setup");
 
       // Hoặc chuyển về LoginPage
       // alert("Đăng ký thành công! Hãy đăng nhập.");

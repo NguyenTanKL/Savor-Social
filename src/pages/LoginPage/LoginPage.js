@@ -19,7 +19,7 @@ function LoginPage () {
 
   // Chỉ chuyển hướng ngay khi component mount nếu đã đăng nhập
   if (isAuthenticated) {
-    navigate("/HomePage");
+    navigate("/home");
     return null; // Không render gì nếu đã đăng nhập
   }
 
@@ -36,7 +36,7 @@ function LoginPage () {
       dispatch(login(response.data.user)); // Dispatch trước
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
-      navigate("/HomePage");
+      navigate("/home");
     } catch (error) {
       setErrorMessage(error.response?.data?.message || "Đăng nhập thất bại.");
     }

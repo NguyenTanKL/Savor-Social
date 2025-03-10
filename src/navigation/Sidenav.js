@@ -37,7 +37,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
       // Xóa toàn bộ localStorage
       localStorage.clear(); // Thay vì chỉ xóa token
       dispatch(logout());
-      navigate("/LoginPage");
+      navigate("/login");
     } catch (error) {
       console.error("Lỗi khi đăng xuất:", error);
       alert("Lỗi khi đăng xuất!");
@@ -50,7 +50,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
         <span>Savor Social</span>
       </div>
       <div className="sidenav__buttons">
-        <NavLink to="/HomePage" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/home" className="sidenav__button" onClick={onCloseSearch}>
           <HomeOutlined />
           <span>Home</span>
         </NavLink>
@@ -58,31 +58,31 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
           <Search />
           <span>Search</span>
         </div>
-        <NavLink to="/FavouriteMapPage" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/favouriteMap" className="sidenav__button" onClick={onCloseSearch}>
           <FmdGoodOutlined />
           <span>Favourite Map</span>
         </NavLink>
-        <NavLink to="/SavedPostsPage" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/savedPosts" className="sidenav__button" onClick={onCloseSearch}>
           <BookmarkBorderOutlined />
           <span>Saved Posts</span>
         </NavLink>
-        <NavLink to="/VouchersPage" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/vouchers" className="sidenav__button" onClick={onCloseSearch}>
           <LoyaltyOutlined />
           <span>Vouchers</span>
         </NavLink>
-        <NavLink to="/MessagesPage" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/messages" className="sidenav__button" onClick={onCloseSearch}>
           <ChatBubbleOutlineOutlined />
           <span>Messages</span>
         </NavLink>
-        <NavLink to="/NotificationsPage" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/notifications" className="sidenav__button" onClick={onCloseSearch}>
           <NotificationsNoneOutlined />
           <span>Notifications</span>
         </NavLink>
-        <NavLink to="/CreatePage" className="sidenav__button">
+        <NavLink to="/create" className="sidenav__button">
           <AddBoxOutlined />
           <span>Create</span>
         </NavLink>
-        <NavLink to="/ProfilePage" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/profile" className="sidenav__button" onClick={onCloseSearch}>
           <Avatar />
           <span>Profile</span>
         </NavLink>

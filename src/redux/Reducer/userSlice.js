@@ -30,10 +30,13 @@ const userSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
     },
+    updateUser: (state, action) => {
+      state.user = { ...state.user, ...action.payload };
+    },
   },
 });
 
-export const { login, logout } = userSlice.actions;
+export const { login, logout, updateUser } = userSlice.actions;
 export default userSlice.reducer;
 
 // Async action để login

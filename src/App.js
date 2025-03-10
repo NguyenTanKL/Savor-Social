@@ -15,7 +15,8 @@ import EditProfilePage from './pages/EditProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import { useState } from 'react';
-
+import SetupPage from './pages/SetupPage/SetupPage';
+import RecommendationsPage from './pages/RecommendationsPage/RecommendationsPage';
 function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const token = localStorage.getItem("token"); // Kiểm tra token
@@ -39,26 +40,28 @@ function App() {
         <div className="app__content">
           <Routes>
             {/* Public routes */}
-            <Route path="/LoginPage" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
             {/* Protected routes */}
             {isLoggedIn ? (
               <>
-                <Route path="/" element={<Navigate to="/HomePage" />} /> {/* Điều hướng mặc định */}
-                <Route path="/HomePage" element={<HomePage />} />
-                <Route path="/FavouriteMapPage" element={<FavouriteMapPage />} />
-                <Route path="/SavedPostsPage" element={<SavedPostsPage />} />
-                <Route path="/VouchersPage" element={<VouchersPage />} />
-                <Route path="/MessagesPage" element={<MessagesPage />} />
-                <Route path="/NotificationsPage" element={<NotificationsPage />} />
-                <Route path="/CreatePage" element={<CreatePage />} />
-                <Route path="/ProfilePage" element={<ProfilePage />} />
-                <Route path="/EditProfilePage" element={<EditProfilePage />} />
-                <Route path="/SearchPage" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
+                <Route path="/setup" element={<SetupPage />} />
+                <Route path="/recommendations" element={<RecommendationsPage />} />
+                <Route path="/" element={<Navigate to="/setup" />} /> {/* Điều hướng mặc định */}
+                <Route path="home" element={<HomePage />} />
+                <Route path="/favouriteMap" element={<FavouriteMapPage />} />
+                <Route path="/savedPosts" element={<SavedPostsPage />} />
+                <Route path="/vouchers" element={<VouchersPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/create" element={<CreatePage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/editProfile" element={<EditProfilePage />} />
+                <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
               </>
             ) : (
-              <Route path="*" element={<Navigate to="/LoginPage" />} />
+              <Route path="*" element={<Navigate to="/login" />} />
             )}
           </Routes>
 
