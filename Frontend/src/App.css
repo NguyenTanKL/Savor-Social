@@ -2,7 +2,7 @@ html {
   background-color: white;
   color: black;
 }
-.app {
+/* .app {
   display: flex;
   flex-direction: row;
 }
@@ -13,4 +13,9 @@ html {
 }
 .app__content{
   flex: 0.8;
+} */
+
+.app__sidebar{
+  border: none;
+  border-right: 2px solid #ebedf0;
 }
