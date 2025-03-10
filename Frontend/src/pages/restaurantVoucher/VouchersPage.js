@@ -73,6 +73,50 @@ function VouchersPage() {
     
     const [selectedImage, setSelectedImage] = useState(null);
 
+    const [voucherData, setVoucherData] = useState({
+        name: "",
+        quantity: "",
+        release_day: "",
+        expire_day: "",
+        type: "",
+        description: "",
+    });
+    
+    const handleChange = (e) => {
+        setVoucherData({ ...voucherData, [e.target.name]: e.target.value });
+    };
+    
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch("http://localhost:5000/api/vouchers/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(voucherData),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert("Voucher created successfully!");
+                setVoucherData({
+                    name: "",
+                    quantity: "",
+                    release_day: "",
+                    expire_day: "",
+                    description: "",
+                });
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error("Error creating voucher:", error);
+            alert("Failed to create voucher");
+        }
+    };
+
     return (
         <div className="voucherpage">
             <HeaderProfile user= {userData}/>
@@ -192,19 +236,33 @@ function VouchersPage() {
                 </Button>
             </div>
             <div style={{marginRight: "50px"}}>
-                <form>
-                    <TextField style={{width: "300px", marginBottom: "15px"}} required id="outlined-required" label="Name of voucher"/>
-                    <br></br>
-                    <TextField style={{width: "300px", marginBottom: "15px"}} required id="outlined-required" label="Number of voucher" type="number" slotProps={{input: {min: 0}}}/>
-                    <br></br>
-                    <TextField style={{width: "300px", marginBottom: "15px"}} required id="outlined-required" label="Release day" type="date" InputLabelProps={{ shrink: true }}/>
-                    <br></br>
-                    <TextField style={{width: "300px", marginBottom: "15px"}} required id="outlined-required" label="Expiration day" type="date" InputLabelProps={{ shrink: true }}/>
-                    <br></br>
-                    <TextField style={{width: "300px", marginBottom: "15px"}} required id="outlined-multiline-required" label="Description" multiline maxRows={10}/>
-                    <br></br>
-                    <Button type="submit" variant="contained">Post vouchers</Button>
-                </form>
+            <form onSubmit={handleSubmit}>
+                <TextField style={{width: "300px", marginBottom: "15px"}} required id="name" label="Name of voucher" name="name" value={voucherData.name} onChange={handleChange} />
+                <br></br>
+                <TextField 
+                    style={{width: "300px", marginBottom: "15px"}} 
+                    required id="quantity" 
+                    label="Number of vouchers" 
+                    name="quantity" type="number" 
+                    value={voucherData.quantity} 
+                    onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (value >= 0 || e.target.value === "") {
+                            setVoucherData({ ...voucherData, quantity: e.target.value });
+                        }
+                    }}
+                    onBlur={() => setVoucherData({ ...voucherData, quantity: Math.max(0, voucherData.quantity || 0) })}
+                    inputProps={{ min: 0 }}
+                />
+                <br></br>
+                <TextField style={{width: "300px", marginBottom: "15px"}} required id="release_day" label="Release day" name="release_day" type="date" InputLabelProps={{ shrink: true }} value={voucherData.release_day} onChange={handleChange} />
+                <br></br>
+                <TextField style={{width: "300px", marginBottom: "15px"}} required id="expire_day" label="Expiration day" name="expire_day" type="date" InputLabelProps={{ shrink: true }} value={voucherData.expire_day} onChange={handleChange} />
+                <br></br>
+                <TextField style={{width: "300px", marginBottom: "15px"}} required id="description" label="Description" name="description" multiline maxRows={10} value={voucherData.description} onChange={handleChange} />
+                <br></br>
+                <Button type="submit" variant="contained">Post Voucher</Button>
+            </form>
             </div>
         </div>
         )}
