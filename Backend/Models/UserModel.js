@@ -11,7 +11,9 @@ const UserSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: [true, "Password is Required!"],
+        minlength: [6, "Password length should be greater than 6 character"],
+        select: true,
     },
     phone: {
         type: String,
@@ -19,11 +21,13 @@ const UserSchema = new mongoose.Schema({
     },
     darkmode: {
         type: Boolean,
-        required: true
+        required: true,
+        default:false
     },
     usertype: {
         type: String,
-        required: true
+        required: true,
+        enum:["normal","restaurant"]
     },
     avatar: {
         type: String,
@@ -33,7 +37,15 @@ const UserSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'vouchers',
         default: []
-    }]
+    }],
+    address: {
+        type: String,
+        required: false
+    },
+    preferences: {
+        type: [String],
+        default: []
+    }
 });
 
 const UserModel = mongoose.model('users',UserSchema);
