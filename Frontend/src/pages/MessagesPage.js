@@ -32,6 +32,8 @@ import GifIcon from '@mui/icons-material/Gif';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import axios from "axios";
 import moment from "moment";
+import io from "socket.io-client";
+const socket = io("http://localhost:5000");
 
 const API_URL = "http://localhost:5000/api/chats";
 
@@ -159,11 +161,30 @@ const handleMenuClick = (event) => {
         fetchMessages();
     }, [sender, receiver]); // Re-fetch when sender/receiver changes
 
+    useEffect(() => {
+        socket.on("receiveMessage", (message) => {
+            console.log("Received new message:", message);
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+        };
+    }, []);
+
     // Handle sending message
     const handleSendMessage = async () => {
         if (!newMessage.trim()) return;
 
         try {
+            const messageData = {
+                sender: sender,
+                receiver: receiver,
+                message: newMessage,
+            };
+
+            // Emit message to server using Socket.io
+            socket.emit("sendMessage", messageData);
+
             const response = await axios.post(`${API_URL}/send`, {
                 sender,
                 receiver,
@@ -171,7 +192,6 @@ const handleMenuClick = (event) => {
             });
 
             if (response.data.success) {
-                // setMessages([...messages, { sender: sender, message: newMessage, createdAt: new Date() }]);
                 const newMsg = {
                     sender: { _id: sender },  // Set sender correctly
                     message: newMessage,
@@ -186,6 +206,24 @@ const handleMenuClick = (event) => {
         }
     };
 
+    // const handleFileSelect = async (event) => {
+    //     const file = event.target.files[0];
+    //     if (!file) return;
+
+    //     const formData = new FormData();
+    //     formData.append("file", file);
+
+    //     try {
+    //         const { data } = await axios.post(`http://localhost:5000/api/upload/file`, formData, {
+    //             headers: { "Content-Type": "multipart/form-data" },
+    //         });
+    //         handleSendMessage({ type: "file", content: data.fileUrl });
+    //     } catch (error) {
+    //         console.error("File upload failed", error);
+    //     }
+    //     handleMenuClose();
+    // };  
+
     const [showPicker, setShowPicker] = useState(false);
 
     const addEmoji = (emoji) => {
@@ -197,7 +235,7 @@ const handleMenuClick = (event) => {
   }, [messages]);
 
   return (
-    <Box style={{width: "100%", height: "100%"}}>
+    <Box style={{width: "100%", height: "100%", border: "none", borderLeft: "2px solid #ebedf0"}}>
         <Grid container >
             {/* list of account */}
             <Grid item xs={6} md={3.5}>
@@ -312,7 +350,7 @@ const handleMenuClick = (event) => {
                                     <ListItemText
                                         secondary={
                                             <Typography variant="caption" color="textSecondary">
-                                                {moment(message.createdAt).format("dddd, HH:mm")}           
+                                                {moment(message.createdAt).format("dddd DD/MM, HH:mm")}           
                                             </Typography>
                                         }
                                     />
@@ -330,13 +368,36 @@ const handleMenuClick = (event) => {
                                         maxWidth: "350px"
                                     }}
                                     >
-                                        <ListItemText
-                                            primary={
-                                                <Typography sx={{ whiteSpace: "pre-line" }}>
-                                                    {message.message}
-                                                </Typography>
-                                            }
-                                        />
+                                        {message.message && (
+                                            <ListItemText
+                                                primary={
+                                                    <Typography sx={{ whiteSpace: "pre-line" }}>
+                                                        {message.message}
+                                                    </Typography>
+                                                }
+                                            />
+                                        )}
+                                        {message.fileUrl && (
+                                            <>
+                                                {message.fileType.startsWith("image/") ? (
+                                                    <img
+                                                        src={message.fileUrl}
+                                                        alt="Uploaded file"
+                                                        style={{ maxWidth: "100%", borderRadius: "10px", marginTop: "5px" }}
+                                                    />
+                                                ) : message.fileType.startsWith("video/") ? (
+                                                    <video
+                                                        controls
+                                                        src={message.fileUrl}
+                                                        style={{ maxWidth: "100%", borderRadius: "10px", marginTop: "5px" }}
+                                                    />
+                                                ) : (
+                                                    <a href={message.fileUrl} download style={{ textDecoration: "none", color: "blue" }}>
+                                                        📄 Download File
+                                                    </a>
+                                                )}
+                                            </>
+                                        )}
                                     </Paper>
                                 </Stack>
                             </ListItem>
@@ -368,7 +429,17 @@ const handleMenuClick = (event) => {
                                 onClose={handleMenuClose}
                             >
                                 {Actions.map((ele) => (
-                                    <MenuItem onClick={handleMenuClose}>{ele.icon}{ele.title}</MenuItem>
+                                    // <MenuItem onClick={() => document.getElementById("file-upload").click()}>
+                                    <MenuItem>
+                                        {ele.icon}{ele.title}
+                                        {/* <input
+                                            id="file-upload"
+                                            type="file"
+                                            accept="image/*,video/*"
+                                            style={{ display: "none" }}
+                                            onChange={handleFileSelect}
+                                        /> */}
+                                    </MenuItem>
                                 ))}
                             </Menu>
                             <StyleInput
