@@ -13,6 +13,10 @@ const VoucherSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    img: {
+        type: String,
+        required: false
+    },
     release_day: {
         type: Date,
         required: true,
@@ -30,6 +34,21 @@ const VoucherSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true
+    },
+    status: {
+        type: String,
+        default: 'available'
+    },
+    code: {
+        type: String,
+        unique: true
+    },
+    collector: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'users'
+    },
+    by: {
+        type: String
     }
 });
 

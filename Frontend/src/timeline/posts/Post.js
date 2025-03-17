@@ -1,5 +1,6 @@
 import React from "react";
 import {Avatar, Button} from "@mui/material";
+import { useState, useEffect } from "react";
 import "./Post.css";
 import Typography from "@mui/material/Typography";
 import Card from '@mui/material/Card';
@@ -12,8 +13,11 @@ import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import SentimentSatisfiedOutlinedIcon from '@mui/icons-material/SentimentSatisfiedOutlined';
 import Grid from "@mui/material/Grid";
+import Modal from "../../components/Modal";
 
 function Post( {user, postImage, likes, caption, address, timestamp, is_voucher, is_ad}) {
+    const [open, setOpen] = React.useState(false);
+
     if (is_voucher && is_ad) {
         return(
             <div className="post">
@@ -106,7 +110,17 @@ function Post( {user, postImage, likes, caption, address, timestamp, is_voucher,
                     <span>{user} </span> {caption}
                 </div>
                 <div className="post__comment">
-                    <span>View all 13,384 comments</span>
+                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                    {open && <Modal 
+                        open={open} 
+                        onClose={() => setOpen(false)}
+                        user= {user}
+                        postImage={postImage} 
+                        likes={likes} 
+                        caption={caption}
+                        address={address}
+                        timestamp={timestamp}
+                    />}
                     <div className="comment">
                         <input placeholder="Add a comment…"  />
                         <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
@@ -210,7 +224,17 @@ function Post( {user, postImage, likes, caption, address, timestamp, is_voucher,
                     <span>{user} </span> {caption}
                 </div>
                 <div className="post__comment">
-                    <span>View all 13,384 comments</span>
+                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                    {open && <Modal 
+                        open={open} 
+                        onClose={() => setOpen(false)}
+                        user= {user}
+                        postImage={postImage} 
+                        likes={likes} 
+                        caption={caption}
+                        address={address}
+                        timestamp={timestamp}
+                    />}
                     <div className="comment">
                         <input placeholder="Add a comment…"  />
                         <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
@@ -257,7 +281,17 @@ function Post( {user, postImage, likes, caption, address, timestamp, is_voucher,
                     <span>{user} </span> {caption}
                 </div>
                 <div className="post__comment">
-                    <span>View all 13,384 comments</span>
+                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                    {open && <Modal 
+                        open={open} 
+                        onClose={() => setOpen(false)}
+                        user= {user}
+                        postImage={postImage} 
+                        likes={likes} 
+                        caption={caption}
+                        address={address}
+                        timestamp={timestamp}
+                    />}
                     <div className="comment">
                         <input placeholder="Add a comment…"  />
                         <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
@@ -303,7 +337,17 @@ function Post( {user, postImage, likes, caption, address, timestamp, is_voucher,
                     <span>{user} </span> {caption}
                 </div>
                 <div className="post__comment">
-                    <span>View all 13,384 comments</span>
+                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                    {open && <Modal 
+                        open={open} 
+                        onClose={() => setOpen(false)}
+                        user= {user}
+                        postImage={postImage} 
+                        likes={likes} 
+                        caption={caption}
+                        address={address}
+                        timestamp={timestamp}
+                    />}
                     <div className="comment">
                         <input placeholder="Add a comment…"  />
                         <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
