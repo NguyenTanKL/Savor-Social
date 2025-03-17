@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState , useEffect} from "react";
 import {Avatar} from "@mui/material";
 import "./Post.css";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -6,10 +6,36 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
 import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import SentimentSatisfiedOutlinedIcon from '@mui/icons-material/SentimentSatisfiedOutlined';
-function Post( {user, postImage, likes, caption, address, timestamp }) {
+import axios from "axios";
+function Post( {user,postId, postImage, likes, caption, address, timestamp }) {
+    const [isSaved, setIsSaved] = useState(false);
+
+    useEffect(() => {
+        // Kiểm tra xem bài post đã được lưu chưa
+        axios.get(`http://localhost:5000/api/user/${currentUser}/savedPosts`)
+            .then(res => {
+                if (res.data.savedPosts.includes(postId)) {
+                    setIsSaved(true);
+                }
+            })
+            .catch(err => console.error(err));
+    }, [currentUser, postId]);
+
+    const handleSavePost = async () => {
+        try {
+            const response = await axios.post("http://localhost:5000/api/user/savePost", {
+                userId: currentUser,
+                postId: postId,
+            });
+            setIsSaved(response.data.saved);
+        } catch (error) {
+            console.error("Lỗi khi lưu bài viết", error);
+        }
+    };
     return(
         <div className="post">
             <div className="post__header">
@@ -36,7 +62,13 @@ function Post( {user, postImage, likes, caption, address, timestamp }) {
                     <div className="post_iconSave">
                         <MapOutlinedIcon className="postIcon" />    
                         <FmdGoodOutlinedIcon className="postIcon" />
-                        <BookmarkBorderIcon className="postIcon" />
+                        <div onClick={handleSavePost}>
+                            {isSaved ? (
+                                <BookmarkIcon className="postIcon" color="primary" />
+                            ) : (
+                                <BookmarkBorderIcon className="postIcon" />
+                            )}
+                        </div>
                     </div>
                 </div>
             <span className="post_likes">{likes} likes</span> 

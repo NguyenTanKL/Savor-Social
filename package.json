@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@goongmaps/goong-geocoder": "^1.1.1",
+    "@goongmaps/goong-js": "^1.0.9",
+    "@goongmaps/goong-map-react": "^1.1.2",
+    "@mapbox/polyline": "^1.2.1",
+    "react-select": "^5.10.1"
+  }
+}

@@ -1,9 +1,12 @@
 import React from "react";
 import "./SavedPostsPage.css";
+import Timelinepostsaved from '../timeline/Timelinepostsaved';
 function SavedPostsPage() {
     return(
         <div>
-            SavedPostsPage
+            <div>
+                <Timelinepostsaved />
+            </div>
         </div>
     )
 }
