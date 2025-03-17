@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const nodemon = require('nodemon');
 const cors = require('cors');
 const route = require('./routes/user/index')
+const path = require("path");
 const authRoutes = require("./routes/authRoutes");
 require('./models/UserModel'); 
 require('./models/chatModel');
@@ -13,6 +14,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 
 app.use(cookieParser());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 require("dotenv").config();
 
