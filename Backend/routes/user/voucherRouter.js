@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const upload = require('../../controllers/helper/UploadVoucher')
 
 const voucherController = require('../../controllers/user/VoucherController');
 
-router.post('/create', voucherController.createVoucher)
+router.post('/create', upload.single("image"), voucherController.createVoucher)
 
 router.post('/collect/:voucherId', voucherController.collectVoucher)
 
