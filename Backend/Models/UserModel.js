@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: false
+        required: true
     },
     password: {
         type: String,
@@ -40,7 +40,13 @@ const UserSchema = new mongoose.Schema({
     preferences: {
         type: [String],
         default: []
-    }
+    },
+    foodTypes: {
+        type: [String],
+        default: []
+    },
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }], // Danh sách user mà người này follow
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }], // Danh sách user follow người này
 });
 
 const UserModel = new mongoose.model('users',UserSchema);
