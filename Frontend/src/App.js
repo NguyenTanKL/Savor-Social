@@ -14,6 +14,7 @@ import CreatePage from './pages/createPost/CreatePage';
 import EditProfilePage from './pages/EditProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
+import RestaurantProfilePage from './pages/RestaurantProfilePage';
 import { useState } from 'react';
 import Grid from '@mui/material/Grid';
 import SetupPage from './pages/SetupPage/SetupPage';
@@ -32,9 +33,9 @@ function App() {
   return (
     <Router>
       <Grid container>
-        <Grid item xs={6} md={2} className="app__sidebar">
+        <Grid item xs={6} md={2}>
           {isLoggedIn && (
-            <div>
+            <div className="app__sidebar">
               <Sidenav onSearchClick={toggleSearch} onCloseSearch={handleCloseSearch} />
             </div>
           )}
@@ -50,7 +51,7 @@ function App() {
               <>
                 <Route path="/setup" element={<SetupPage />} />
                 <Route path="/recommendations" element={<RecommendationsPage />} />
-                <Route path="/" element={<Navigate to="/setup" />} /> {/* Điều hướng mặc định */}
+                <Route path="/" element={<Navigate to="/home" />} /> {/* Điều hướng mặc định */}
                 <Route path="home" element={<HomePage />} />
                 <Route path="/favouriteMap" element={<FavouriteMapPage />} />
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
@@ -59,6 +60,7 @@ function App() {
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/create" element={<CreatePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />
                 <Route path="/editProfile" element={<EditProfilePage />} />
                 <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
               </>
