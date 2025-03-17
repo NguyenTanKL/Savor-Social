@@ -1,5 +1,6 @@
 const Voucher = require('../../Models/voucherModel');
 const User = require('../../models/UserModel');
+const upload = require('../helper/UploadController')
 
 class VoucherController{
 
@@ -89,13 +90,15 @@ class VoucherController{
             if (!name || !quantity || !release_day || !expire_day || !description) {
                 return res.status(400).json({ message: "All fields are required" });
             }
+
+            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
     
             const vouchers = Array.from({ length: quantity }, (_, index) => ({
                 name,
                 description,
                 release_day,
                 expire_day,
-                img,
+                img: imagePath,
                 status: "available",
                 quantity: 1,
                 code: `${name.replace(/\s+/g, "").toUpperCase()}-${index + 1}`, // Unique code

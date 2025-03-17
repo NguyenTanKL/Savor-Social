@@ -75,29 +75,71 @@ function VouchersPage() {
             fetchVouchers();
         }, [type]);
     
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+
+    //     try {
+    //         const response = await fetch(`${API_URL}/create`, {
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //             },
+    //             body: JSON.stringify(voucherData),
+    //         });
+
+    //         const data = await response.json();
+    //         if (response.ok) {
+    //             alert("Voucher created successfully!");
+    //             setVoucherData({
+    //                 name: "",
+    //                 quantity: "",
+    //                 img: "",
+    //                 release_day: "",
+    //                 expire_day: "",
+    //                 description: "",
+    //             });
+    //         } else {
+    //             alert(`Error: ${data.message}`);
+    //         }
+    //     } catch (error) {
+    //         console.error("Error creating voucher:", error);
+    //         alert("Failed to create voucher");
+    //     }
+    // };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
+        // Use FormData to send both text fields and image
+        const formData = new FormData();
+        formData.append("name", voucherData.name);
+        formData.append("quantity", voucherData.quantity);
+        formData.append("release_day", voucherData.release_day);
+        formData.append("expire_day", voucherData.expire_day);
+        formData.append("description", voucherData.description);
+    
+        // Append the image file if selected
+        if (selectedImage) {
+            formData.append("image", selectedImage);
+        }
+    
         try {
             const response = await fetch(`${API_URL}/create`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(voucherData),
+                body: formData, // Do NOT set Content-Type manually, FormData handles it
             });
-
+    
             const data = await response.json();
             if (response.ok) {
                 alert("Voucher created successfully!");
                 setVoucherData({
                     name: "",
                     quantity: "",
-                    img: "",
                     release_day: "",
                     expire_day: "",
                     description: "",
                 });
+                setSelectedImage(null); // Clear the selected image
             } else {
                 alert(`Error: ${data.message}`);
             }
@@ -105,7 +147,7 @@ function VouchersPage() {
             console.error("Error creating voucher:", error);
             alert("Failed to create voucher");
         }
-    };
+    };    
 
     return (
         <div className="voucherpage">
@@ -177,7 +219,7 @@ function VouchersPage() {
                                     <CardMedia
                                         component="img"
                                         sx={{ width: "170px", height: "200px", objectFit: "cover", right: "0" }}
-                                        image={voucher.image}
+                                        image={`http://localhost:5000${voucher.image}`}
                                         alt={voucher._id}
                                     />
                                 </Card>
@@ -217,9 +259,14 @@ function VouchersPage() {
                     Upload image
                     <VisuallyHiddenInput
                         type="file"
+                        // onChange={(event) => {
+                        //     console.log(event.target.files);
+                        //     setSelectedImage(event.target.files[0]);
+                        // }}
                         onChange={(event) => {
-                            console.log(event.target.files);
-                            setSelectedImage(event.target.files[0]);
+                            if (event.target.files.length > 0) {
+                                setSelectedImage(event.target.files[0]);
+                            }
                         }}
                         multiple
                     />
