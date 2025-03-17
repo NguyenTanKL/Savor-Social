@@ -43,24 +43,26 @@ const RegisterPage = () => {
       usertype: registerData.usertype,
       username: registerData.username,
     };
-
+    
     try {
       const response = await axios.post("http://localhost:5000/api/auth/register", dataToSend);
-      const { token, userId } = response.data;
-
-      // Tự động đăng nhập với Redux
+      const { token, user } = response.data; // Nhận user đầy đủ từ API
+    
+      // Lưu vào localStorage
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify({ email: registerData.email, id: userId }));
-      dispatch(login({ email: registerData.email, id: userId }));
+      localStorage.setItem("user", JSON.stringify(user));
+    
+      // Cập nhật Redux
+      dispatch(login(user));
+    
+      // Chuyển đến trang setup
       navigate("/setup");
-
-      // Hoặc chuyển về LoginPage
-      // alert("Đăng ký thành công! Hãy đăng nhập.");
-      // navigate("/LoginPage");
+    
     } catch (error) {
       console.error("Đăng ký thất bại:", error.response?.data || error.message);
       alert(error.response?.data?.message || "Đăng ký thất bại!");
     }
+    
   };
 
   return (

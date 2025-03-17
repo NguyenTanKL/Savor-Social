@@ -27,7 +27,7 @@ function App() {
 
   // Sử dụng isAuthenticated từ Redux thay vì chỉ dựa vào token
   const isLoggedIn = token && isAuthenticated;
-
+ 
   return (
     <Router>
       <div className="app">
@@ -46,10 +46,11 @@ function App() {
             {/* Protected routes */}
             {isLoggedIn ? (
               <>
+                <Route path="home" element={<HomePage />} />
                 <Route path="/setup" element={<SetupPage />} />
                 <Route path="/recommendations" element={<RecommendationsPage />} />
-                <Route path="/" element={<Navigate to="/setup" />} /> {/* Điều hướng mặc định */}
-                <Route path="home" element={<HomePage />} />
+                <Route path="/" element={<Navigate to="/home" />} /> {/* Điều hướng mặc định */}
+                
                 <Route path="/favouriteMap" element={<FavouriteMapPage />} />
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
                 {/* <Route path="/vouchers" element={<VouchersPage />} />
