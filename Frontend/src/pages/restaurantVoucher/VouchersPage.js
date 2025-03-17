@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField'
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -14,38 +14,11 @@ import HeaderProfile from "../../components/HeaderProfile";
 import { styled } from '@mui/material/styles';
 import "./VouchersPage.css";
 import VouchersPageDetail from "./VouchersPageDetail";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000/api/vouchers";
 
 function VouchersPage() {
-
-    const [voucher, setVoucher] = useState([
-        {
-            id: 1,
-            type: "voucherTet",
-            name: "Voucher Tet",
-            date_start: "20/01/2025",
-            date_end: "09/02/2025",
-            count: 100,
-            img: "https://i.pinimg.com/736x/e6/1c/4c/e61c4c1c4ac1f7261e35fd0cb95bac93.jpg",
-        },
-        {
-            id: 2,
-            type: "voucherVal",
-            name: "Voucher Valentine",
-            date_start: "12/02/2025",
-            date_end: "16/02/2025",
-            count: 50,
-            img: "https://i.pinimg.com/736x/75/93/ca/7593cadd986fb6fb79da6272efb4a3dd.jpg",
-        },
-        {
-            id: 3,
-            type: "voucherChrist",
-            name: "Voucher Christmas",
-            date_start: "20/12/2024",
-            date_end: "26/12/2024",
-            count: 80,
-            img: "https://i.pinimg.com/474x/9a/e0/05/9ae005c10cab8052783d0b41b1840bb8.jpg",
-        }
-    ]);
 
     const [selectedVoucherType, setSelectedVoucherType] = useState(null);
     
@@ -85,12 +58,28 @@ function VouchersPage() {
     const handleChange = (e) => {
         setVoucherData({ ...voucherData, [e.target.name]: e.target.value });
     };
+
+    const [voucher, setVoucher] = useState([]);
+
+    useEffect(() => {
+            const fetchVouchers = async () => {
+                try {
+                    const response = await axios.get(`${API_URL}/summary`);
+    
+                    setVoucher(response.data);
+                } catch (error) {
+                    console.error("Error fetching messages:", error);
+                }
+            };
+            
+            fetchVouchers();
+        }, [type]);
     
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:5000/api/vouchers/create", {
+            const response = await fetch(`${API_URL}/create`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -104,6 +93,7 @@ function VouchersPage() {
                 setVoucherData({
                     name: "",
                     quantity: "",
+                    img: "",
                     release_day: "",
                     expire_day: "",
                     description: "",
@@ -143,7 +133,7 @@ function VouchersPage() {
         <div>
         {type === "lst_voucher" ? (
             <div>
-                {! selectedVoucherType ? (
+                {!selectedVoucherType ? (
                     <div style={{marginLeft: "20px"}}>
                         <Grid2 container spacing={ 1 } columns={ 12 }>
                             {voucher.map((voucher) => (
@@ -152,43 +142,43 @@ function VouchersPage() {
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                         <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
                                             <Typography component="div" variant="h6">
-                                                {voucher.name}
+                                                {voucher._id}
                                             </Typography>
                                             <Typography
                                                 variant="subtitle1"
                                                 component="div"
                                                 sx={{ color: 'text.secondary' }}
                                             >
-                                                Number of vouchers: {voucher.count}
+                                                Number of vouchers: {voucher.total}
                                             </Typography>
                                             <Typography
                                                 variant="subtitle1"
                                                 component="div"
                                                 sx={{ color: 'text.secondary' }}
                                             >
-                                                Date start: {voucher.date_start}
+                                                Date start: {voucher.formattedDateStart}
                                             </Typography>
                                             <Typography
                                                 variant="subtitle1"
                                                 component="div"
                                                 sx={{ color: 'text.secondary' }}
                                             >
-                                                Date end: {voucher.date_end}
+                                                Date end: {voucher.formattedDateEnd}
                                             </Typography>
                                             <Button 
                                                 variant="outlined" 
                                                 color="dark" 
                                                 style={{width: "70px", marginTop: "10px"}}
-                                                onClick={() => setSelectedVoucherType(voucher.type)}>
+                                                onClick={() => setSelectedVoucherType(voucher._id)}>
                                                     Details
                                             </Button>
                                         </CardContent>
                                     </Box>
                                     <CardMedia
                                         component="img"
-                                        sx={{ width: 160    , height: 200, objectFit: "cover", right: "0" }}
-                                        image={voucher.img}
-                                        alt={voucher.name}
+                                        sx={{ width: "170px", height: "200px", objectFit: "cover", right: "0" }}
+                                        image={voucher.image}
+                                        alt={voucher._id}
                                     />
                                 </Card>
                             </Grid2>
@@ -237,7 +227,7 @@ function VouchersPage() {
             </div>
             <div style={{marginRight: "50px"}}>
             <form onSubmit={handleSubmit}>
-                <TextField style={{width: "300px", marginBottom: "15px"}} required id="name" label="Name of voucher" name="name" value={voucherData.name} onChange={handleChange} />
+                <TextField style={{width: "300px", marginBottom: "15px"}} required id="name" label="Name of voucher (unique)" name="name" value={voucherData.name} onChange={handleChange} />
                 <br></br>
                 <TextField 
                     style={{width: "300px", marginBottom: "15px"}} 
