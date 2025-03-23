@@ -1,16 +1,26 @@
 html {
   background-color: white;
   color: black;
+  height: 100%;
 }
-.app {
+body, #root{
+  height: 100%;
+}
+/* .app {
   display: flex;
   flex-direction: row;
+  height: 100%;
 }
 .app__sidebar{
-  flex: 0.2;
+  flex: 0.15;
   border: none;
   border-right: 2px solid #ebedf0;
 }
 .app__content{
   flex: 0.8;
+} */
+
+.app__sidebar{
+  border: none;
+  border-right: 2px solid #ebedf0;
 }

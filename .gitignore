@@ -1,3 +1,31 @@
+<<<<<<< HEAD
 version https://git-lfs.github.com/spec/v1
 oid sha256:1f6ed8378e22eeec325e622ce4f9caeac7d49bc3bdce51030069b7cfe413d9c1
 size 354
+=======
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+Backend/node_modules/
+Frontend/node_modules/
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+>>>>>>> main

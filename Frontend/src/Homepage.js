@@ -2,13 +2,13 @@ import React from 'react';
 import './Homepage.css'
 // import Sidenav from './navigation/Sidenav';
 import Timeline from './timeline/Timeline';
-function Homepage() {
+function HomePage() {
     return (
         <div className='homepage'>
             <div className='homepage__timeline'>
-                <Timeline />
+                <Timeline/>
             </div>
         </div>
     )
 }
-export default Homepage
+export default HomePage
