@@ -1,3 +1,4 @@
 version https://git-lfs.github.com/spec/v1
 oid sha256:cdc4b139f62ca27f88c68ffe283c501683df20e7f8249e97d8ca05001db5e51c
 size 83
+Frontend/node_modules/.cache/default-development/*.pack filter=lfs diff=lfs merge=lfs -text
