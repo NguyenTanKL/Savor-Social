@@ -21,8 +21,12 @@
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.28.0",
+<<<<<<< HEAD
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.8.1",
+=======
+    "react-scripts": "^5.0.1",
+>>>>>>> 06f2bfb243cb9bd6ee2c4d886209437127e47cf6
     "web-vitals": "^2.1.4"
   },
   "scripts": {
