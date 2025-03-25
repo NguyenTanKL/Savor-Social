@@ -2,6 +2,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+Frontend/node_modules/.cache/
 /node_modules
 /.pnp
 .pnp.js
@@ -25,3 +26,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+F r o n t e n d / n o d e _ m o d u l e s / . c a c h e / 
+ 
+ 
