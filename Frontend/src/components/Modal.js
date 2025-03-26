@@ -53,7 +53,7 @@ function ModalPost( {open, onClose, user, postImage, likes, caption, address, ti
       const handleMenuClose = () => {
         setAnchorEl(null);
     };
-    
+    console.log("User data2:", user);
     return(
         <div>
             <Modal
@@ -84,7 +84,8 @@ function ModalPost( {open, onClose, user, postImage, likes, caption, address, ti
                     <Grid2 size={5}>
                         <div className="post__header">
                             <div className="post__headerAuthor">
-                                <Avatar>{user.charAt(1).toUpperCase()}</Avatar>
+                           
+                            <Avatar>{user?.Avatar || "?"}</Avatar>
                                 {user} <span> • {timestamp}</span>
                             </div>
                             <MoreHorizIcon onClick={handleMenuClick}/>
@@ -118,7 +119,7 @@ function ModalPost( {open, onClose, user, postImage, likes, caption, address, ti
                                     <BookmarkBorderIcon className="postIcon" />
                                 </div>
                             </div>
-                            <span className="post_likes">{likes} likes</span>
+                            <span className="post_likes">{likes.count} likes</span>
                             <br/>
                             <Rating
                                 precision={0.5}

@@ -1,0 +1,32 @@
+    
+.timeline{
+    display: flex;
+    flex-direction: row;
+    padding-left: 50px;
+    padding-right: 50px;
+}
+.timeline__left{
+    flex: 0.65;
+    display: flex;
+    align-items: center;
+}
+.timeline__right{
+    flex: 0.35;
+}
+.timeline__left__left{
+    display: flex;
+    flex-direction: column;
+}
+.timeline__title{
+    width:100%;
+    margin: 30px 0 25px 25px;
+    color: black;
+    font-family: 'Rochester', cursive;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+}
+.timeline__title > span{
+    font-size: 3.0rem;
+    color: black;
+}

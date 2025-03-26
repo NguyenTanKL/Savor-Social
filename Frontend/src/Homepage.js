@@ -1,6 +1,6 @@
-import React from'react';
-import './HomePage.css'
-import Sidenav from './navigation/Sidenav';
+import React from 'react';
+import './Homepage.css'
+// import Sidenav from './navigation/Sidenav';
 import Timeline from './timeline/Timeline';
 function HomePage() {
     return (

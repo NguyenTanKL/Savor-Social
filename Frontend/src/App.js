@@ -2,7 +2,7 @@ import './App.css';
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux"; // Thêm để dùng Redux state
 import Sidenav from './navigation/Sidenav';
-import HomePage from './HomePage';
+import HomePage from './Homepage';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import FavouriteMapPage from './pages/FavouriteMapPage';
