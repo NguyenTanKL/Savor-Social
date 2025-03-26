@@ -1,4 +1,8 @@
+require("dotenv").config();
 const express = require("express");
+const mongoose = require("mongoose");
+const postRoutes = require('./routes/postRoutes');
+const userRoutes = require('./routes/userRoutes');
 const http = require('http');
 const { Server } = require('socket.io');
 const nodemon = require('nodemon');
@@ -12,14 +16,24 @@ const cookieParser = require("cookie-parser");
 
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
+
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use('/api', postRoutes);
+app.use('/api/userRoutes', userRoutes);
 
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 require("dotenv").config();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
 
 const db  = require('./config/db');
 
@@ -61,3 +75,4 @@ app.use("/api/auth", authRoutes);
 server.listen(5000, () => {
     console.log('Server running on port 5000');
 });
+
