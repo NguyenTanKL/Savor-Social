@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./AccountUser.css";
 import { Avatar } from "@mui/material";
-
+import { Link } from 'react-router-dom'
 function AccountUser({ username, nickname, onFollow, isFollowed }) {
     const [isFollowing, setIsFollowing] = useState(isFollowed);
 
@@ -17,7 +17,7 @@ function AccountUser({ username, nickname, onFollow, isFollowed }) {
     };
 
     return (
-        <div className="sugesstion__username">
+        <Link className="sugesstion__username">
             <div className="username__left">
                 <span className="avatar">
                     <Avatar>{username?.charAt(0).toUpperCase()}</Avatar>
@@ -34,7 +34,7 @@ function AccountUser({ username, nickname, onFollow, isFollowed }) {
             >
                 {isFollowing ? "Unfollow" : "Follow"}
             </button>
-        </div>
+        </Link>
     );
 }
 

@@ -35,12 +35,10 @@ const userSlice = createSlice({
       
     },
     updateUser: (state, action) => {
-      const storedUser = localStorage.getItem("user");
-      let userUpdated = storedUser ? JSON.parse(storedUser) : {};
-  
-      userUpdated = { ...userUpdated, ...action.payload };
-      localStorage.setItem("user", JSON.stringify(userUpdated)); 
-      state.user = userUpdated; 
+      if (state.user) {
+          state.user = { ...state.user, ...action.payload }; 
+          localStorage.setItem("user", JSON.stringify(state.user)); 
+      }
   },
   },
 });

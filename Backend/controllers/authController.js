@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/UserModel");
 const dotenv = require("dotenv");
+const { followUser } = require("./userController");
 dotenv.config();
 
 const registerUser = async (req, res) => {
@@ -33,6 +34,8 @@ const registerUser = async (req, res) => {
       darkmode: false, // Mặc định là false
       preferences: [], // Danh sách sở thích rỗng
       foodTypes: [], // Danh sách loại đồ ăn rỗng
+      following: [],
+      followers:[],
     });
 
     const savedUser = await newUser.save();

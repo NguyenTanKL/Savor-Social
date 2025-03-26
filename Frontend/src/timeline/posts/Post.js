@@ -18,18 +18,6 @@ import Button from "@mui/material/Button";
 function Post({ user, postImage, likes, caption, address, timestamp, is_voucher, is_ad }) {
   const [open, setOpen] = useState(false);
 
-  // Mock data for following users (replace with real data from your app or Redux)
-  const followingUsers = [
-    { id: "1", username: "NN", avatar: "https://via.placeholder.com/40" },
-    { id: "2", username: "iza_**_e9", avatar: "https://via.placeholder.com/40" },
-    { id: "3", username: "Uyen Phuong", avatar: "https://via.placeholder.com/40" },
-    { id: "4", username: "Hieu Lam", avatar: "https://via.placeholder.com/40" },
-    { id: "5", username: "User 5", avatar: "https://via.placeholder.com/40" },
-    { id: "6", username: "User 6", avatar: "https://via.placeholder.com/40" },
-    { id: "7", username: "User 7", avatar: "https://via.placeholder.com/40" },
-    { id: "8", username: "User 8", avatar: "https://via.placeholder.com/40" },
-  ];
-
   const renderPostIcons = () => (
     <div className="post_footerIcons">
       <div className="post__iconsMain">
@@ -144,7 +132,7 @@ function Post({ user, postImage, likes, caption, address, timestamp, is_voucher,
         </div>
         {renderVoucherCard()}
         {renderPostFooter()}
-        <ShareModal open={open} onClose={() => setOpen(false)} followingUsers={followingUsers} />
+        <ShareModal open={open} onClose={() => setOpen(false)} />
       </div>
     );
   } else if (is_voucher && !is_ad) {
@@ -166,7 +154,7 @@ function Post({ user, postImage, likes, caption, address, timestamp, is_voucher,
         </div>
         {renderVoucherCard()}
         {renderPostFooter()}
-        <ShareModal open={open} onClose={() => setOpen(false)} followingUsers={followingUsers} />
+        <ShareModal open={open} onClose={() => setOpen(false)} />
       </div>
     );
   } else if (!is_voucher && is_ad) {
@@ -188,7 +176,7 @@ function Post({ user, postImage, likes, caption, address, timestamp, is_voucher,
           <img src={postImage} alt="" />
         </div>
         {renderPostFooter()}
-        <ShareModal open={open} onClose={() => setOpen(false)} followingUsers={followingUsers} />
+        <ShareModal open={open} onClose={() => setOpen(false)} />
       </div>
     );
   } else {
@@ -209,7 +197,7 @@ function Post({ user, postImage, likes, caption, address, timestamp, is_voucher,
           <img src={postImage} alt="" />
         </div>
         {renderPostFooter()}
-        <ShareModal open={open} onClose={() => setOpen(false)} followingUsers={followingUsers} />
+        <ShareModal open={open} onClose={() => setOpen(false)} />
       </div>
     );
   }

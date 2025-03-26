@@ -1,36 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Box,
   Typography,
   IconButton,
   InputBase,
-  Avatar
+  Avatar,
 } from "@mui/material";
-import {
-  Close,
-} from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import "./ShareModal.css";
 
-const ShareModal = ({ open, onClose, followingUsers }) => {
+const ShareModal = ({ open, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [followingUsers, setFollowingUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Mock data for following users (replace with real data from your app)
-  const mockFollowingUsers = [
-    { id: "1", username: "NN", avatar: "https://via.placeholder.com/40" },
-    { id: "2", username: "iza_**_e9", avatar: "https://via.placeholder.com/40" },
-    { id: "3", username: "Uyen Phuong", avatar: "https://via.placeholder.com/40" },
-    { id: "4", username: "Hieu Lam", avatar: "https://via.placeholder.com/40" },
-    { id: "5", username: "User 5", avatar: "https://via.placeholder.com/40" },
-    { id: "6", username: "User 6", avatar: "https://via.placeholder.com/40" },
-    { id: "7", username: "User 7", avatar: "https://via.placeholder.com/40" },
-    { id: "8", username: "User 8", avatar: "https://via.placeholder.com/40" },
-  ];
+  // Gọi API để lấy danh sách người dùng đang follow khi modal mở
+  useEffect(() => {
+    if (open) {
+      const fetchFollowingUsers = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const token = localStorage.getItem("token"); // Giả định token được lưu trong localStorage
+          if (!token) {
+            throw new Error("Token không tồn tại");
+          }
 
-  const users = followingUsers || mockFollowingUsers;
+          const response = await fetch("http://localhost:5000/api/user/following", {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-  // Filter users based on search term
-  const filteredUsers = users.filter((user) =>
+          if (!response.ok) {
+            throw new Error("Lỗi khi lấy danh sách following");
+          }
+
+          const data = await response.json();
+          setFollowingUsers(data); // Dữ liệu từ API (mảng các user với _id, username, avatar)
+        } catch (error) {
+          console.error("Lỗi khi gọi API:", error);
+          setError(error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchFollowingUsers();
+    }
+  }, [open]);
+
+  // Lọc danh sách người dùng theo tìm kiếm
+  const filteredUsers = followingUsers.filter((user) =>
     user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -54,16 +79,20 @@ const ShareModal = ({ open, onClose, followingUsers }) => {
         />
 
         <Box className="share-modal-users">
-          {filteredUsers.map((user, index) => (
-            <Box key={user.id} className="share-modal-user">
-              <Avatar src={user.avatar} className="share-modal-avatar" />
-              <Typography variant="caption">{user.username}</Typography>
-            </Box>
-          ))}
+          {loading && <Typography variant="body2">Đang tải...</Typography>}
+          {error && <Typography variant="body2" color="error">{error}</Typography>}
+          {!loading && !error && filteredUsers.length === 0 && (
+            <Typography variant="body2">Không có người dùng nào.</Typography>
+          )}
+          {!loading &&
+            !error &&
+            filteredUsers.map((user) => (
+              <Box key={user._id} className="share-modal-user">
+                <Avatar src={user.avatar} className="share-modal-avatar" />
+                <Typography variant="caption">{user.username}</Typography>
+              </Box>
+            ))}
         </Box>
-
-      
-       
       </Box>
     </Modal>
   );

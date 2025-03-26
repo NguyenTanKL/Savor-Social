@@ -1,10 +1,12 @@
 import "./HeaderProfile.css";
-import React from "react";
+import React, { useState } from "react";
 import {Avatar, Link} from "@mui/material";
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux'
+
 function HeaderProfile({user}){
     const navigate = useNavigate();
-
+    const userStorage = useSelector((state) => state.user.user) || {};
     const handleEditProfile = () => {
       navigate('/EditProfilePage');
     };
@@ -19,7 +21,7 @@ function HeaderProfile({user}){
             </div>
             <div className="header__right">
                 <div className="header__1">
-                    <span>{user.name}</span>
+                    <span>{ user.username}</span>
                     <button onClick={handleEditProfile}>
                         <span>Edit Profile</span>
                     </button>
@@ -29,10 +31,10 @@ function HeaderProfile({user}){
                         <span>9 </span> posts
                     </div>
                     <div className="header2__content">
-                       <span>13.6K</span> followers
+                       <span>{user.followerCount}</span> followers
                     </div>
                     <div className="header2__content">
-                        <span>1256 </span>following
+                        <span>{ user.followingCount} </span>following
                     </div>
                 </div>
                 <div className="header__3">

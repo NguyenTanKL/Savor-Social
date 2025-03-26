@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import {  useNavigate,useParams } from "react-router-dom";
 import "./ProfilePage.css";
+import { useDispatch, useSelector } from 'react-redux'
 import axios from "axios";
 import { Box, CircularProgress } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
@@ -22,10 +24,13 @@ const userData = {
   ],
 };
 function ProfilePage() {
+  const userStorage = useSelector(state => state.user.user);
   const [type, setType] = useState("posts");
   const [data, setData] = useState([]);
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false); // Thêm state loading
-
+  const { id } =- useParams();
+  const dispatch = useDispatch();
   useEffect(() => {
     console.log(type);
     if (type === "posts") {
@@ -59,7 +64,7 @@ function ProfilePage() {
 
   return (
     <div className="profilepage">
-      <HeaderProfile user={userData} />
+      <HeaderProfile user={userStorage} />
       <ProfileTabs type={type} setType={setType} />
 
       {type === "posts" ? (

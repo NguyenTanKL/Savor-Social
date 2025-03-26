@@ -47,6 +47,8 @@ const UserSchema = new mongoose.Schema({
     },
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }], // Danh sách user mà người này follow
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }], // Danh sách user follow người này
+    followerCount: { type: Number, default: 0 }, // Thêm trường followerCount
+    followingCount: { type: Number, default: 0 }, // Thêm trường followingCount
 });
 
 const UserModel = new mongoose.model('users',UserSchema);
