@@ -1,6 +1,5 @@
 import React, { useState , useEffect} from "react";
 import {Avatar, Button} from "@mui/material";
-import { useState, useEffect } from "react";
 import "./Post.css";
 import Typography from "@mui/material/Typography";
 import Card from '@mui/material/Card';
