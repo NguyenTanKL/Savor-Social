@@ -1,6 +1,8 @@
 const Voucher = require('../../Models/voucherModel');
 const User = require('../../models/UserModel');
-const upload = require('../helper/UploadController')
+const { bucket } = require("../../config/cloudinary/cloudinaryConfig");
+const multer = require("multer");
+
 
 class VoucherController{
 
@@ -84,21 +86,21 @@ class VoucherController{
     // POST /create
     async createVoucher(req, res){
         try {
-            const { name, quantity, release_day, expire_day, description, img } = req.body;
+            const { name, quantity, release_day, expire_day, description } = req.body;
     
             // Validate required fields
             if (!name || !quantity || !release_day || !expire_day || !description) {
                 return res.status(400).json({ message: "All fields are required" });
             }
 
-            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-    
+            const imageUrl = req.file ? req.file.path : null;
+            
             const vouchers = Array.from({ length: quantity }, (_, index) => ({
                 name,
                 description,
                 release_day,
                 expire_day,
-                img: imagePath,
+                img: imageUrl,
                 status: "available",
                 quantity: 1,
                 code: `${name.replace(/\s+/g, "").toUpperCase()}-${index + 1}`, // Unique code
