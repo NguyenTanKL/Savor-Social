@@ -1,5 +1,5 @@
 import React from 'react';
-import './Homepage.css'
+import './HomePage.css'
 // import Sidenav from './navigation/Sidenav';
 import Timeline from './timeline/Timeline';
 function HomePage() {

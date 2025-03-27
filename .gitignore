@@ -6,6 +6,8 @@
 node_modules
 /.pnp
 .pnp.js
+Backend/node_modules/
+Frontend/node_modules/
 
 
 # testing

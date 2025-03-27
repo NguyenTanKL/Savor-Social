@@ -62,50 +62,18 @@ function VouchersPage() {
     const [voucher, setVoucher] = useState([]);
 
     useEffect(() => {
-            const fetchVouchers = async () => {
-                try {
-                    const response = await axios.get(`${API_URL}/summary`);
-    
-                    setVoucher(response.data);
-                } catch (error) {
-                    console.error("Error fetching messages:", error);
-                }
-            };
-            
-            fetchVouchers();
-        }, [type]);
-    
-    // const handleSubmit = async (e) => {
-    //     e.preventDefault();
+        const fetchVouchers = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/summary`);
 
-    //     try {
-    //         const response = await fetch(`${API_URL}/create`, {
-    //             method: "POST",
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //             },
-    //             body: JSON.stringify(voucherData),
-    //         });
-
-    //         const data = await response.json();
-    //         if (response.ok) {
-    //             alert("Voucher created successfully!");
-    //             setVoucherData({
-    //                 name: "",
-    //                 quantity: "",
-    //                 img: "",
-    //                 release_day: "",
-    //                 expire_day: "",
-    //                 description: "",
-    //             });
-    //         } else {
-    //             alert(`Error: ${data.message}`);
-    //         }
-    //     } catch (error) {
-    //         console.error("Error creating voucher:", error);
-    //         alert("Failed to create voucher");
-    //     }
-    // };
+                setVoucher(response.data);
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+            }
+        };
+        
+        fetchVouchers();
+    }, [type]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -219,7 +187,7 @@ function VouchersPage() {
                                     <CardMedia
                                         component="img"
                                         sx={{ width: "170px", height: "200px", objectFit: "cover", right: "0" }}
-                                        image={`http://localhost:5000${voucher.image}`}
+                                        src={voucher.image}
                                         alt={voucher._id}
                                     />
                                 </Card>
