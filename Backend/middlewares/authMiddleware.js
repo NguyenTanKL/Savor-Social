@@ -22,6 +22,7 @@ const userAuth = (req, res, next) => {
     console.log("Loaded SECRET_KEY:", process.env.SECRET_KEY);
     console.log("Decoded token:", decoded);
     req.user = { id: decoded.userId }; // Gán thông tin user vào req.user
+    console.log("User from token:", req.user); // Debug
     next();
   } catch (error) {
     console.error("JWT Verification Error:", error);

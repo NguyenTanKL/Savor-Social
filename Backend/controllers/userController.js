@@ -59,6 +59,10 @@ const followUser = async (req, res) => {
       return res.status(400).json({ message: "Thiếu ID của người dùng cần follow" });
     }
 
+    if (userId === followId) {
+      return res.status(400).json({ message: "Không thể follow chính mình" });
+    }
+
     const user = await User.findById(userId);
     const followUser = await User.findById(followId);
 
@@ -68,18 +72,20 @@ const followUser = async (req, res) => {
 
     if (!user.following.includes(followId)) {
       user.following.push(followId);
-      user.followingCount = user.following.length; // Cập nhật followingCount
+      user.followingCount = user.following.length;
       await user.save();
     }
 
     if (!followUser.followers.includes(userId)) {
       followUser.followers.push(userId);
-      followUser.followerCount = followUser.followers.length; // Cập nhật followerCount
+      followUser.followerCount = followUser.followers.length;
       await followUser.save();
     }
 
-    res.json({ message: "Follow thành công",
-      currentUser: {
+    res.json({
+      message: "Follow thành công",
+      isFollowing: true, // Trả về trạng thái follow
+      user: {
         _id: user._id,
         following: user.following,
         followingCount: user.followingCount,
@@ -89,7 +95,7 @@ const followUser = async (req, res) => {
         followers: followUser.followers,
         followerCount: followUser.followerCount,
       },
-     });
+    });
   } catch (error) {
     console.error("Lỗi khi follow:", error);
     res.status(500).json({ message: "Lỗi server nội bộ" });
@@ -126,20 +132,20 @@ const unfollowUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    // Xóa user khỏi danh sách following
     user.following = user.following.filter((id) => id.toString() !== unfollowId);
-    user.followingCount = user.following.length; // Cập nhật followingCount
+    user.followingCount = user.following.length;
     await user.save();
 
-    // Xóa user khỏi danh sách followers
     unfollowUser.followers = unfollowUser.followers.filter(
       (id) => id.toString() !== userId
     );
-    unfollowUser.followerCount = unfollowUser.followers.length; // Cập nhật followerCount
+    unfollowUser.followerCount = unfollowUser.followers.length;
     await unfollowUser.save();
 
-    res.json({ message: "Unfollow thành công",
-      currentUser: {
+    res.json({
+      message: "Unfollow thành công",
+      isFollowing: false, // Trả về trạng thái follow
+      user: {
         _id: user._id,
         following: user.following,
         followingCount: user.followingCount,
@@ -149,17 +155,20 @@ const unfollowUser = async (req, res) => {
         followers: unfollowUser.followers,
         followerCount: unfollowUser.followerCount,
       },
-     });
+    });
   } catch (error) {
     console.error("Lỗi khi unfollow:", error);
     res.status(500).json({ message: "Lỗi server nội bộ" });
   }
 };
+
 const getFollowing = async (req, res) => {
   try {
-    const userId = req.user.id; // Lấy ID người dùng từ token
-    const user = await User.findById(userId).populate("following", "username avatar");
+    const { userId } = req.params; // Lấy userId từ URL params
 
+    console.log("Lấy danh sách following của user:", userId);
+
+    const user = await User.findById(userId).populate("following", "username avatar");
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
@@ -170,6 +179,24 @@ const getFollowing = async (req, res) => {
     res.status(500).json({ message: "Lỗi server nội bộ" });
   }
 };
+const getFollowers = async (req, res) => {
+  try {
+    const { userId } = req.params; // Lấy userId từ URL params
+
+    console.log("Lấy danh sách follower của user:", userId);
+
+    const user = await User.findById(userId).populate("followers", "username avatar");
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+    console.log("follower:", user.followers);
+    res.json(user.followers);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách follower:", error);
+    res.status(500).json({ message: "Lỗi server nội bộ" });
+  }
+};
+
 const searchUser = async (req,res) => {
   try {
     let { keyword } = req.body; 
@@ -196,19 +223,42 @@ const searchUser = async (req,res) => {
 };
 const getUserById = async(req,res) => {
   try{
-    const user= await User.findById(req.params.id)
+    const user= await User.findById(req.params.userId)
     .select("-password")
     .populate("followers", "username avatar ")
     .populate("following", "username avatar")
-    console.log("User:", user);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
     res.status(200).json(user);
 
   }
   catch (err){
     res.status(500).json(err);
+  }
+};
+const checkFollowStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id: targetUserId } = req.params;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: "Thiếu ID của người dùng cần kiểm tra" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    const isFollowing = user.following.includes(targetUserId);
+
+    res.json({ isFollowing });
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra follow:", error);
+    res.status(500).json({ message: "Lỗi server nội bộ" });
   }
 };
 module.exports = {
@@ -222,4 +272,5 @@ module.exports = {
   getFollowing,
   searchUser,
   getUserById,
+  getFollowers,
 };

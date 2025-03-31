@@ -57,8 +57,8 @@ function App() {
                 <Route path="/messages" element={<MessagesPage />} /> */}
                 <Route path="/notifications" element={<NotificationsPage />} />
                 {/* <Route path="/create" element={<CreatePage />} /> */}
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/:id" element={<ProfilePage />} />
+               
+                <Route path="/profile/:userId" element={<ProfilePage />} />
                 <Route path="/editProfile" element={<EditProfilePage />} />
                 <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
               </>
