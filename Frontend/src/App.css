@@ -6,7 +6,7 @@ html {
 body, #root{
   height: 100%;
 }
-.app {
+/* .app {
   display: flex;
   flex-direction: row;
   height: 100%;
@@ -17,6 +17,10 @@ body, #root{
   border-right: 2px solid #ebedf0;
 }
 .app__content{
-  flex: 0.85;
-  height: 100%;
+  flex: 0.8;
+} */
+
+.app__sidebar{
+  border: none;
+  border-right: 2px solid #ebedf0;
 }
