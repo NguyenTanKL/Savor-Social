@@ -35,10 +35,13 @@ const userSlice = createSlice({
       
     },
     updateUser: (state, action) => {
-      if (state.user) {
-          state.user = { ...state.user, ...action.payload }; 
-          localStorage.setItem("user", JSON.stringify(state.user)); 
-      }
+      const storedUser = localStorage.getItem("user");
+      let userUpdated = storedUser ? JSON.parse(storedUser) : {}; // Kiểm tra nếu null thì gán object rỗng
+  
+      userUpdated = { ...userUpdated, ...action.payload }; // Cập nhật thông tin user
+      localStorage.setItem("user", JSON.stringify(userUpdated)); // Lưu vào localStorage
+  
+      state.user = userUpdated; // Cập nhật Redux state
   },
   },
 });

@@ -46,7 +46,7 @@ function SearchPage() {
   };
 
   const handleUserClick = (userId) => {
-    navigate(`/${userId}`);
+    navigate(`/profile/${userId}`);
     setSearchTerm("");
   };
 

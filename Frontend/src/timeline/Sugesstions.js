@@ -67,41 +67,34 @@ function Sugesstions() {
   const toggleFollow = async (accountId) => {
     const isFollowing = followedAccounts.has(accountId.toString());
     const url = `http://localhost:5000/api/user/${isFollowing ? "unfollow" : "follow"}/${accountId}`;
-
+  
     try {
       const response = await axios({
         method: isFollowing ? "DELETE" : "POST",
         url,
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-
-      if (response.status === 200) {
+  
+      console.log("response.data:", response.data);
+  
+      if (response.status === 200 && response.data.user) {
+        // ✅ Cập nhật danh sách followedAccounts
         setFollowedAccounts((prev) => {
           const updatedSet = new Set(prev);
           isFollowing ? updatedSet.delete(accountId.toString()) : updatedSet.add(accountId.toString());
           return updatedSet;
         });
-
-        // Cập nhật Redux Store để UI phản hồi
-        const updatedCurrentUser = {
-          ...currentUser,
-          following: response.data.currentUser.following,
-          followingCount: response.data.currentUser.followingCount,
-        };
-
-        // Nếu user bị follow/unfollow là user hiện tại, cập nhật followerCount
-        if (accountId.toString() === currentUser._id.toString()) {
-          updatedCurrentUser.followerCount = isFollowing
-            ? currentUser.followerCount - 1
-            : currentUser.followerCount + 1;
-        }
-
-        dispatch(updateUser(updatedCurrentUser));
+  
+        // ✅ Cập nhật toàn bộ user từ API
+        dispatch(updateUser(response.data.user));
+      } else {
+        console.error("API không trả về user hoặc bị lỗi:", response.data);
       }
     } catch (error) {
       console.error(`${isFollowing ? "Unfollow" : "Follow"} thất bại:`, error);
     }
   };
+  
 
   return (
     <div className="sugesstions">
