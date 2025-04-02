@@ -10,6 +10,8 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import Grid2 from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Item from "@mui/material/ListItem";
 import HeaderProfile from "../../components/HeaderProfile";
 import { styled } from '@mui/material/styles';
 import "./VouchersPage.css";
@@ -90,7 +92,7 @@ function VouchersPage() {
         if (selectedImage) {
             formData.append("image", selectedImage);
         }
-    
+
         try {
             const response = await fetch(`${API_URL}/create`, {
                 method: "POST",
@@ -114,6 +116,22 @@ function VouchersPage() {
         } catch (error) {
             console.error("Error creating voucher:", error);
             alert("Failed to create voucher");
+        }
+    };    
+
+    const handleDeleteVoucher = async (name) => {
+        if (!window.confirm("Are you sure you want to delete this voucher?")) return;
+    
+        try {
+            const encodedName = encodeURIComponent(name);
+            const response = await axios.delete(`${API_URL}/delete/${encodedName}`);
+            if (response.status === 200) {
+                alert("Voucher deleted successfully!");
+                setVoucher(voucher.filter(v => v.name !== name)); // Remove from UI
+            }
+        } catch (error) {
+            console.error("Error deleting voucher:", error);
+            alert("Failed to delete voucher");
         }
     };    
 
@@ -175,13 +193,26 @@ function VouchersPage() {
                                             >
                                                 Date end: {voucher.formattedDateEnd}
                                             </Typography>
-                                            <Button 
-                                                variant="outlined" 
-                                                color="dark" 
-                                                style={{width: "70px", marginTop: "10px"}}
-                                                onClick={() => setSelectedVoucherType(voucher._id)}>
-                                                    Details
-                                            </Button>
+                                            <Stack direction="row" spacing={0}>
+                                                <Item>
+                                                    <Button 
+                                                        variant="outlined" 
+                                                        color="dark" 
+                                                        style={{width: "50px", marginTop: "10px"}}
+                                                        onClick={() => setSelectedVoucherType(voucher._id)}>
+                                                            Details
+                                                    </Button>
+                                                </Item>
+                                                <Item>
+                                                    <Button 
+                                                        variant="outlined" 
+                                                        color="error" 
+                                                        style={{width: "40px", marginTop: "10px"}}
+                                                        onClick={() => handleDeleteVoucher(voucher._id)}>
+                                                            Delete
+                                                    </Button> 
+                                                </Item>
+                                            </Stack>
                                         </CardContent>
                                     </Box>
                                     <CardMedia

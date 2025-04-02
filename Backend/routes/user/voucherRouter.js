@@ -6,6 +6,8 @@ const voucherController = require('../../controllers/user/VoucherController');
 
 router.post('/create', upload.single("image"), voucherController.createVoucher)
 
+router.delete('/delete/:name', voucherController.deleteVoucher)
+
 router.post('/collect/:voucherId', voucherController.collectVoucher)
 
 router.get('/summary', voucherController.getGroupOfVouchers)

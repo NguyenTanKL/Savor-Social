@@ -16,9 +16,6 @@ const cookieParser = require("cookie-parser");
 
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
-
 
 // Middleware
 app.use(cors());
@@ -38,6 +35,8 @@ require("dotenv").config();
 const db  = require('./config/db');
 
 db.connect();
+
+route(app);
 
 // Create a middleware to allow CORS to create voucher
 app.use(cors({
@@ -69,7 +68,7 @@ io.on("connection", (socket) => {
 });
 
 
-route(app);
+
 app.use("/api/auth", authRoutes);
 
 server.listen(5000, () => {

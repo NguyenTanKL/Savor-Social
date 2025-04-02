@@ -2,6 +2,7 @@ const Voucher = require('../../Models/voucherModel');
 const User = require('../../models/UserModel');
 const { bucket } = require("../../config/cloudinary/cloudinaryConfig");
 const multer = require("multer");
+const cloudinary = require("../../config/cloudinary/cloudinaryConfig").cloudinary;
 
 
 class VoucherController{
@@ -113,6 +114,34 @@ class VoucherController{
             res.status(500).json({ message: "Server error", error: error.message });
         }
     }
+
+    // POST /delete/:name
+    async deleteVoucher(req, res) {
+        try {
+            const { name } = req.params;
+    
+            // Find vouchers by name
+            const vouchers = await Voucher.find({ name });
+            if (!vouchers.length) {
+                return res.status(404).json({ message: "Voucher not found" });
+            }
+    
+            // Delete images from Cloudinary
+            for (const voucher of vouchers) {
+                if (voucher.img) {
+                    const publicId = voucher.img.split('/').pop().split('.')[0]; // Extract public_id
+                    await cloudinary.uploader.destroy(`vouchers/${publicId}`);
+                }
+            }
+    
+            // Delete vouchers from the database
+            await Voucher.deleteMany({ name });
+    
+            res.status(200).json({ message: "Vouchers deleted successfully" });
+        } catch (error) {
+            res.status(500).json({ message: "Server error", error: error.message });
+        }
+    }      
 
     // POST /collect/:voucherId
     async collectVoucher(req, res) {
