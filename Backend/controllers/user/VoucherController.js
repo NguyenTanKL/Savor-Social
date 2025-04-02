@@ -1,4 +1,4 @@
-const Voucher = require('../../Models/voucherModel');
+const Voucher = require('../../models/voucherModel');
 const User = require('../../models/UserModel');
 const { bucket } = require("../../config/cloudinary/cloudinaryConfig");
 const multer = require("multer");

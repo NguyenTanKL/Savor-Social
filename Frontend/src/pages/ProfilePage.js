@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import {  useNavigate,useParams } from "react-router-dom";
 import "./ProfilePage.css";
+import { useDispatch, useSelector } from 'react-redux'
 import axios from "axios";
 import { Box, CircularProgress } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
@@ -8,26 +10,38 @@ import HeaderProfile from "../components/HeaderProfile";
 import ProfileTabs from "../components/ProfileTabs";
 import FavouriteMap from "../components/FavouriteMap";
 import ProfilePost from "../components/ProfilePost";
-const userData = {
 
-  name: "Thái Tăng Huy",
-  job: "Food reviewer",
-  followers: 1234,
-  following: 567,
-  posts: 9,
-  socialLinks: [
-    { platform: "Facebook", url: "https://facebook.com/username" },
-    { platform: "Twitter", url: "https://twitter.com/username" },
-    { platform: "LinkedIn", url: "https://linkedin.com/in/username" },
-  ],
-};
 function ProfilePage() {
+  const userStorage = useSelector(state => state.user.user);
   const [type, setType] = useState("posts");
+  const [isFollowing, setIsFollowing] = useState(false);
   const [data, setData] = useState([]);
+  const [user, setUser] = useState({});
   const [isLoading, setIsLoading] = useState(false); // Thêm state loading
-
+  const { userId } = useParams();
+  const dispatch = useDispatch();
+  console.log("id:",userId )
   useEffect(() => {
-    console.log(type);
+    console.log("id:",userId )
+    if (userId  !== userStorage._id) {
+      // Nếu id khác userStorage._id => Lấy thông tin user khác
+      axios.get(`http://localhost:5000/api/user/get-by-id/${userId}`)
+        .then((response) => {
+          setUser(response.data);
+          console.log("user id:",userId);
+          console.log("user api", response.data);
+          setIsFollowing(response.data.isFollowing); // Kiểm tra trạng thái follow
+        })
+        .catch((error) => console.error("Error fetching user:", error));
+    } else {
+      console.log("userStore", userStorage)
+      setUser(userStorage); // Nếu là chính user đang đăng nhập, lấy từ redux
+      console.log("User:",user);
+    }
+
+  }, [userId , userStorage]);
+  useEffect(() => {
+    
     if (type === "posts") {
       setIsLoading(true); // Bắt đầu loading
       axios
@@ -58,29 +72,24 @@ function ProfilePage() {
   }, [type]);
 
   return (
+ 
     <div className="profilepage">
-      <HeaderProfile user={userData} />
+      <HeaderProfile user={user} userId ={userId } />
       <ProfileTabs type={type} setType={setType} />
+
+     
 
       {type === "posts" ? (
         <Box sx={{ p: 2, display: "flex", justifyContent: "center" }}>
           {isLoading ? (
-            <CircularProgress color="primary" /> // Hiển thị hiệu ứng loading
+            <CircularProgress color="primary" />
           ) : (
             <Grid2
               container
-              direction="row"
-              sx={{
-                justifyContent: "center",
-                alignItems: "center",
-                display: "grid",
-                columnGap: 1,
-                rowGap: 1,
-                gridTemplateColumns: "repeat(3,1fr)",
-              }}
+              sx={{ justifyContent: "center", alignItems: "center", display: "grid", columnGap: 1, rowGap: 1, gridTemplateColumns: "repeat(3,1fr)" }}
             >
               {data.map((item) => (
-               <ProfilePost item={item}/>
+                <ProfilePost key={item.id} item={item} />
               ))}
             </Grid2>
           )}
@@ -93,5 +102,4 @@ function ProfilePage() {
     </div>
   );
 }
-
 export default ProfilePage;

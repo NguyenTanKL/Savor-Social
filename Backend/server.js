@@ -1,18 +1,20 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const postRoutes = require('./routes/postRoutes');
-const userRoutes = require('./routes/userRoutes');
+// const postRoutes = require('./routes/postRoutes');
+// const userRoutes = require('./routes/userRoutes');
 const http = require('http');
 const { Server } = require('socket.io');
 const nodemon = require('nodemon');
 const cors = require('cors');
-const route = require('./routes/user/index')
+const router = require('./routes/index')
 const path = require("path");
-const authRoutes = require("./routes/authRoutes");
+// const authRoutes = require("./routes/authRoutes");
 require('./models/UserModel'); 
 require('./models/chatModel');
 const cookieParser = require("cookie-parser");
+
+
 
 
 const app = express();
@@ -21,12 +23,11 @@ const MONGO_URI = process.env.MONGO_URI;
 
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api', postRoutes);
-app.use('/api/userRoutes', userRoutes);
+router(app);
 
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -69,8 +70,7 @@ io.on("connection", (socket) => {
 });
 
 
-route(app);
-app.use("/api/auth", authRoutes);
+
 
 server.listen(5000, () => {
     console.log('Server running on port 5000');
