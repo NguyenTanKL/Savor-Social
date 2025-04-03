@@ -21,6 +21,7 @@ function HeaderProfile({ user, userId }) {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
   const [isFollowing, setIsFollowing] = useState(false);
   const dispatch = useDispatch();
   const SearchBar = styled("div")(({ theme }) => ({
@@ -111,6 +112,7 @@ function HeaderProfile({ user, userId }) {
       return false; // Giả định chưa follow nếu có lỗi
     }
   };
+
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
@@ -135,6 +137,7 @@ function HeaderProfile({ user, userId }) {
   
     fetchFollowStatus();
   }, [userId, user._id]);
+d
   return (
     <div className="header__profile">
       <div className="header__left">
@@ -147,6 +150,7 @@ function HeaderProfile({ user, userId }) {
       <div className="header__right">
         <div className="header__1">
           <span>{user.username}</span>
+
                       {userId === userStorage._id ? (
               <button onClick={handleEditProfile}>Edit Profile</button>
             ) : (
@@ -158,6 +162,7 @@ function HeaderProfile({ user, userId }) {
                 {isFollowing ? "Following" : "Follow"}
               </button>
             )}
+
         </div>
         <div className="header__2">
           <div className="header2__content">

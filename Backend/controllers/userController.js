@@ -242,7 +242,6 @@ const checkFollowStatus = async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: targetUserId } = req.params;
-    
     if (!targetUserId) {
       return res.status(400).json({ message: "Thiếu ID của người dùng cần kiểm tra" });
     }

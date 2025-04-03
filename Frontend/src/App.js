@@ -60,7 +60,6 @@ function App() {
                 <Route path="/messages" element={<MessagesPage sender="67c2bb9466a1dd364e1e7456" receiver="67c33d910636489fb457d0ef"/>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 {/* <Route path="/create" element={<CreatePage />} /> */}
-
                 <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />     
                 <Route path="/profile/:userId" element={<ProfilePage />} />
                 <Route path="/editProfile" element={<EditProfilePage />} />
