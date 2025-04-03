@@ -1,0 +1,95 @@
+.map-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+.hh2{
+    text-align: center;
+    height: 10%;
+}
+.map-container-2 {
+    display: flex;
+    height: 70%;
+    border-top: 2px solid #ccc;
+}
+.locations-list {
+    display: flex;
+    flex-direction: column;
+    width: 20%;
+    background: #f8f9fa;
+    padding: 10px;
+    overflow-y: auto;
+    border-right: 1px solid #ddd;
+}
+
+
+.locations-list h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.locations-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.locations-list li {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+    transition: background 0.3s;
+}
+
+.locations-list li:hover {
+    background: #e9ecef;
+}
+
+.locations-list li.selected {
+    background: #007bff;
+    color: white;
+}
+
+.map-display {
+    width: 80%;
+}
+
+/* .location-details {
+
+    display: flex;
+    height: 20vh;
+    bottom: 0px;
+    left: 0px;
+
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+} */
+.detail {
+    position: relative;
+    bottom: 0;
+    left: 0;
+    width: 100%; /* Chiếm toàn bộ chiều ngang của danh sách */
+    background: white;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.go-to-btn {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.go-to-btn:hover {
+    background: #0056b3;
+}
+
+

@@ -12,7 +12,7 @@ import {
   ListItem,
   ListItemText,
   Avatar,
-  Grid2,
+  Grid,
   Stack,
   Badge,
   ListItemAvatar,
@@ -30,6 +30,12 @@ import AddReactionIcon from '@mui/icons-material/AddReaction';
 import ImageIcon from '@mui/icons-material/Image';
 import GifIcon from '@mui/icons-material/Gif';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import axios from "axios";
+import moment from "moment";
+import io from "socket.io-client";
+const socket = io("http://localhost:5000");
+
+const API_URL = "http://localhost:5000/api/chats";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
     '& .MuiBadge-badge': {
@@ -115,41 +121,14 @@ const Actions = [
     },
 ]
 
-function MessagePage() {
+function MessagePage({ sender, receiver }) {
   const [type, setType] = useState();
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! How are you?", sender: "other", time: "00:00 AM" },
-    { id: 2, text: "I'm good, thanks! How about you?", sender: "me", time: "00:01 AM" },
-  ]);
-  const [inputValue, setInputValue] = useState("");
-
-  const [openEmoji, setOpenEmoji] = useState(false);
-
   const messagesEndRef = useRef(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSend = () => {
-    if (inputValue.trim()) {
-      setMessages((prev) => [
-        ...prev,
-        { 
-            id: Date.now(), 
-            text: inputValue.trim(), 
-            sender: "me",
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })    
-        },
-      ]);
-      setInputValue("");
-    }
-  };
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-        handleSend();
+        handleSendMessage();
     }
   };
 
@@ -162,12 +141,104 @@ const handleMenuClick = (event) => {
   const handleMenuClose = () => {
     setAnchorEl(null);
 };
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState("");
+
+    // Fetch messages when component mounts
+    useEffect(() => {
+        const fetchMessages = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/messages`, {
+                    params: { sender, receiver },
+                });
+
+                setMessages(response.data);
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+            }
+        };
+
+        fetchMessages();
+    }, [sender, receiver]); // Re-fetch when sender/receiver changes
+
+    useEffect(() => {
+        socket.on("receiveMessage", (message) => {
+            console.log("Received new message:", message);
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+        };
+    }, []);
+
+    // Handle sending message
+    const handleSendMessage = async () => {
+        if (!newMessage.trim()) return;
+
+        try {
+            const messageData = {
+                sender: sender,
+                receiver: receiver,
+                message: newMessage,
+            };
+
+            // Emit message to server using Socket.io
+            socket.emit("sendMessage", messageData);
+
+            const response = await axios.post(`${API_URL}/send`, {
+                sender,
+                receiver,
+                message: newMessage,
+            });
+
+            if (response.data.success) {
+                const newMsg = {
+                    sender: { _id: sender },  // Set sender correctly
+                    message: newMessage,
+                    createdAt: new Date().toISOString(),
+                };
+    
+                setMessages((prevMessages) => [...prevMessages, newMsg]);
+                setNewMessage(""); // Clear input after sending
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
+    };
+
+    // const handleFileSelect = async (event) => {
+    //     const file = event.target.files[0];
+    //     if (!file) return;
+
+    //     const formData = new FormData();
+    //     formData.append("file", file);
+
+    //     try {
+    //         const { data } = await axios.post(`http://localhost:5000/api/upload/file`, formData, {
+    //             headers: { "Content-Type": "multipart/form-data" },
+    //         });
+    //         handleSendMessage({ type: "file", content: data.fileUrl });
+    //     } catch (error) {
+    //         console.error("File upload failed", error);
+    //     }
+    //     handleMenuClose();
+    // };  
+
+    const [showPicker, setShowPicker] = useState(false);
+
+    const addEmoji = (emoji) => {
+        setNewMessage(prev => prev + emoji.emoji); // Append selected emoji
+    };
+    
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
-    <Box style={{width: "100%", height: "100%"}}>
-        <Grid2 container >
+    <Box style={{width: "100%", height: "100%", border: "none", borderLeft: "2px solid #ebedf0"}}>
+        <Grid container >
             {/* list of account */}
-            <Grid2 size={3.5}>
+            <Grid item xs={6} md={3.5}>
                 <Box style={{ borderRight: "2px solid #ebedf0", height: "100%"}}>
                     <Toolbar style={{width: "100%", padding: "0", backgroundColor: "rgb(205, 224, 252)"}}>
                         <Typography
@@ -202,7 +273,7 @@ const handleMenuClick = (event) => {
                             Messages
                         </Typography>
                         {account.map((item) => (
-                            <List sx={{ width: '100%', maxWidth: 330, bgcolor: 'background.paper' }}>
+                            <List sx={{ width: '100%', maxWidth: 350, bgcolor: 'background.paper' }}>
                                 <ListItem onClick={() => setType(item.id)} style={{ backgroundColor: type == item.id ? "rgb(173, 202, 246)" : "#f0f0f0", borderRadius: "15px" }}>
                                     <Stack width={"100%"} direction={"row"} alignItems={"center"} justifyContent={"space-between"} spacing={5}>
                                         <Stack direction={"row"} spacing={0.3}>
@@ -229,9 +300,9 @@ const handleMenuClick = (event) => {
                         ))}
                     </Box>
                 </Box>
-            </Grid2>
+            </Grid>
             {/* chat screen */}
-            <Grid2 size={8.5}>
+            <Grid item xs={6} md={8.5}>
                 <Box sx={{height: "64px", width: "100%", backgroundColor: "rgb(205, 224, 252)"}}>
                     <Stack direction={"row"} alignItems={"center"} justifyContent={"space-between"} sx={{height: "100%", width: "100%"}}>
                         <Stack direction={"row"} spacing={2} alignItems={"center"}>
@@ -265,21 +336,21 @@ const handleMenuClick = (event) => {
                 <Box style={{width: "100%", height: "550px"}}>
                     <Box sx={{ flex: 1, overflowY: "auto", padding: "16px", maxHeight: "520px" }}>
                         <List>
-                        {messages.map((message) => (
+                        {messages.map((message, index) => (
                             <ListItem
-                            key={message.id}
+                            key={index}
                             sx={{
                                 margin: "8px 0",
                                 display: "flex",
-                                justifyContent: message.sender === "me" ? "flex-end" : "flex-start",
-                                textAlign: message.sender === "me" ? "right" : "left",
+                                justifyContent: message.sender._id === sender ? "flex-end" : "flex-start",
+                                textAlign: message.sender._id === sender ? "right" : "left",
                             }}
                             >
                                 <Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent={"flex-end"}>
                                     <ListItemText
                                         secondary={
                                             <Typography variant="caption" color="textSecondary">
-                                                {message.time}
+                                                {moment(message.createdAt).format("dddd DD/MM, HH:mm")}           
                                             </Typography>
                                         }
                                     />
@@ -288,22 +359,45 @@ const handleMenuClick = (event) => {
                                     sx={{
                                         padding: "0 5px",
                                         backgroundColor:
-                                        message.sender === "me" ? "#d1e7ff" : "#EEEEEE",
+                                        message.sender._id === sender ? "#d1e7ff" : "#EEEEEE",
                                         justifyContent:
-                                        message.sender === "me" ? "right" : "left",
+                                        message.sender._id === sender ? "right" : "left",
                                         whiteSpace: "pre-line",
                                         wordBreak: "break-word",
                                         borderRadius: "15px",
+                                        maxWidth: "350px"
                                     }}
                                     >
-                                        <ListItemText
-                                            primary={
-                                                <Typography sx={{ whiteSpace: "pre-line" }}>
-                                                    {message.text}
-                                                </Typography>
-                                            }
-                                            
-                                        />
+                                        {message.message && (
+                                            <ListItemText
+                                                primary={
+                                                    <Typography sx={{ whiteSpace: "pre-line" }}>
+                                                        {message.message}
+                                                    </Typography>
+                                                }
+                                            />
+                                        )}
+                                        {message.fileUrl && (
+                                            <>
+                                                {message.fileType.startsWith("image/") ? (
+                                                    <img
+                                                        src={message.fileUrl}
+                                                        alt="Uploaded file"
+                                                        style={{ maxWidth: "100%", borderRadius: "10px", marginTop: "5px" }}
+                                                    />
+                                                ) : message.fileType.startsWith("video/") ? (
+                                                    <video
+                                                        controls
+                                                        src={message.fileUrl}
+                                                        style={{ maxWidth: "100%", borderRadius: "10px", marginTop: "5px" }}
+                                                    />
+                                                ) : (
+                                                    <a href={message.fileUrl} download style={{ textDecoration: "none", color: "blue" }}>
+                                                        📄 Download File
+                                                    </a>
+                                                )}
+                                            </>
+                                        )}
                                     </Paper>
                                 </Stack>
                             </ListItem>
@@ -314,9 +408,11 @@ const handleMenuClick = (event) => {
                 </Box>
                 <Box style={{height: "50px", width: "100%", position: "sticky", bottom: 0, right: 100}}>
                     <Stack>
-                        <Box sx={{display: openEmoji ? "inline" : "none", zIndex: 10, position: 'fixed', bottom: 102, right: 90}}>
-                            <EmojiPicker />
-                        </Box>
+                        {showPicker && (
+                            <Box sx={{display: showPicker ? "inline" : "none", zIndex: 10, position: 'fixed', bottom: 102, right: 90}}>
+                                <EmojiPicker onEmojiClick={addEmoji}/>
+                            </Box>
+                        )}
                     </Stack>
                     <Box sx={{
                         width: "100%",
@@ -333,17 +429,27 @@ const handleMenuClick = (event) => {
                                 onClose={handleMenuClose}
                             >
                                 {Actions.map((ele) => (
-                                    <MenuItem onClick={handleMenuClose}>{ele.icon}{ele.title}</MenuItem>
+                                    // <MenuItem onClick={() => document.getElementById("file-upload").click()}>
+                                    <MenuItem>
+                                        {ele.icon}{ele.title}
+                                        {/* <input
+                                            id="file-upload"
+                                            type="file"
+                                            accept="image/*,video/*"
+                                            style={{ display: "none" }}
+                                            onChange={handleFileSelect}
+                                        /> */}
+                                    </MenuItem>
                                 ))}
                             </Menu>
                             <StyleInput
                             variant="outlined"
                             fullWidth
                             placeholder="Type a message..."
-                            value={inputValue}
+                            value={newMessage}
                             multiline={true}
                             type="small"
-                            onChange={(e) => setInputValue(e.target.value)}
+                            onChange={(e) => setNewMessage(e.target.value)}
                             onKeyPress={handleKeyPress}
                             style={{width: "100%", bottom: "0px", marginLeft: "10px"}}
                             InputProps={{
@@ -355,21 +461,19 @@ const handleMenuClick = (event) => {
                                 </InputAdornment>,
                                 endAdornment: <InputAdornment position="start">
                                     <IconButton>
-                                        <AddReactionIcon onClick={() => {
-                                            setOpenEmoji(prev => !prev)
-                                        }}/>
+                                        <AddReactionIcon onClick={() => setShowPicker(!showPicker)}/>
                                     </IconButton>
                                 </InputAdornment>,
                             }}
                             />
                             <IconButton color="primary">
-                                <SendIcon onClick={handleSend}/>
+                                <SendIcon onClick={handleSendMessage}/>
                             </IconButton>
                         </Stack>
                     </Box>
                 </Box>
-            </Grid2>
-        </Grid2>
+            </Grid>
+        </Grid>
     </Box>
   );
 };

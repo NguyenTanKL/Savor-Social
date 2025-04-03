@@ -33,6 +33,11 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: false
     },
+    my_vouchers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'vouchers',
+        default: []
+    }],
     address: {
         type: String,
         required: false
@@ -45,12 +50,12 @@ const UserSchema = new mongoose.Schema({
         type: [String],
         default: []
     },
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }], // Danh sách user mà người này follow
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }], // Danh sách user follow người này
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Danh sách user mà người này follow
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Danh sách user follow người này
     followerCount: { type: Number, default: 0 }, // Thêm trường followerCount
     followingCount: { type: Number, default: 0 }, // Thêm trường followingCount
 });
 
-const UserModel = new mongoose.model('users',UserSchema);
+const UserModel = mongoose.model('User',UserSchema);
 
 module.exports = UserModel;

@@ -1,7 +1,7 @@
 // controllers/authController.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../Models/UserModel");
+const User = require("../models/UserModel");
 const dotenv = require("dotenv");
 const { followUser } = require("./userController");
 dotenv.config();
@@ -44,7 +44,7 @@ const registerUser = async (req, res) => {
     const token = jwt.sign(
       { userId: newUser._id },
       process.env.SECRET_KEY || "my_secret_key",
-      { expiresIn: "1h" }
+      { expiresIn: "24h" }
     );
 
     // **Trả về thông tin user đầy đủ**
