@@ -5,6 +5,7 @@ const userRouter = require("../routes/userRoutes.js");
 const chatRouter = require("../routes/user/chatRouter.js");
 const voucherRouter = require("../routes/user/voucherRouter.js");
 const uploadRouter = require("../routes/helper/uploadRouter.js");
+const postRouter = require("../routes/postRoutes.js");
 // import postRouter from "./postRoutes.js";
 // import chatRouter from "./chatRoutes.js";
 
@@ -22,6 +23,7 @@ function route(app){
     app.use('/api/user/', userRouter);
     app.use('/api/chats/', chatRouter);
     app.use('/api/vouchers/', voucherRouter);
+    app.use('/api/posts/',postRouter);
 }
 
 module.exports = route

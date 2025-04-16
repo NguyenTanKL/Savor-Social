@@ -137,7 +137,6 @@ function HeaderProfile({ user, userId }) {
   
     fetchFollowStatus();
   }, [userId, user._id]);
-d
   return (
     <div className="header__profile">
       <div className="header__left">

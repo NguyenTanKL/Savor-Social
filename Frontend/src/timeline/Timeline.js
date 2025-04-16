@@ -85,7 +85,7 @@ function Timeline() {
                                     <span> What is here?</span>
                                 </div>
                                 <div className="timeline__posts">
-                                    {posts.map((post,index) => (
+                                    {/* {posts.map((post,index) => (
                                         <Post 
                                         key={index}
                                         
@@ -98,7 +98,7 @@ function Timeline() {
                                         timestamp={post.timestamp}
                                         is_voucher={post.is_voucher}
                                         is_ad={post.is_ad}/>
-                                    ))}
+                                    ))} */}
                                 </div>
                         </div>
                 </Grid>

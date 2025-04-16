@@ -10,7 +10,7 @@ import SavedPostsPage from './pages/SavedPostsPage';
 import VouchersPage from './pages/restaurantVoucher/VouchersPage';
 import MessagesPage from './pages/MessagesPage';
 import NotificationsPage from './pages/NotificationsPage';
-import CreatePage from './pages/createPost/CreatePage';
+import CreatePost from './pages/createPost/CreatePage';
 import EditProfilePage from './pages/EditProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
@@ -21,6 +21,7 @@ import SetupPage from './pages/SetupPage/SetupPage';
 import RecommendationsPage from './pages/RecommendationsPage/RecommendationsPage';
 function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const token = localStorage.getItem("token"); // Kiểm tra token
   const isAuthenticated = useSelector((state) => state.user.isAuthenticated); // Lấy từ Redux
 
@@ -59,7 +60,7 @@ function App() {
                 <Route path="/vouchers" element={<VouchersPage />} />
                 <Route path="/messages" element={<MessagesPage sender="67c2bb9466a1dd364e1e7456" receiver="67c33d910636489fb457d0ef"/>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
-                {/* <Route path="/create" element={<CreatePage />} /> */}
+                <Route path="/create" element={<CreatePost />} />
                 <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />     
                 <Route path="/profile/:userId" element={<ProfilePage />} />
                 <Route path="/editProfile" element={<EditProfilePage />} />
