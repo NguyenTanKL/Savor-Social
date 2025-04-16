@@ -59,7 +59,7 @@ function App() {
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
 
                 <Route path="/vouchers" element={<UserVouchersPage userId={userStorage._id}/>} />
-                <Route path="/messages" element={<MessagesPage sender={userStorage._id} receiver="67c33d910636489fb457d0ef"/>} />
+                <Route path="/messages" element={<MessagesPage sender={userStorage._id}/>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 {/* <Route path="/create" element={<CreatePage />} /> */}
 
