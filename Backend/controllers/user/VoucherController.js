@@ -1,4 +1,4 @@
-const Voucher = require('../../Models/voucherModel');
+const Voucher = require('../../models/voucherModel');
 const User = require('../../models/UserModel');
 const { bucket } = require("../../config/cloudinary/cloudinaryConfig");
 const multer = require("multer");
@@ -30,64 +30,38 @@ class VoucherController{
     }
 
     // GET /summary
-    async getGroupOfVouchers(req, res) {
+    async getAllVouchers(req, res) {
         try {
-            const vouchers = await Voucher.aggregate([
-                {
-                    $group: {
-                        _id: "$name", // Group by voucher name
-                        total: { $sum: 1 }, // Count total vouchers of this type
-                        image: { $first: "$img" }, // Get the first image
-                        collected: { 
-                            $sum: { 
-                                $cond: [ { $eq: ["$quantity", 0] }, 1, 0 ] // Count as collected if quantity = 0
-                            } 
-                        },
-                        used: { 
-                            $sum: { 
-                                $cond: [ { $eq: ["$status", "used"] }, 1, 0 ] // Count as used if status is "used"
-                            } 
-                        },
-                        expired: { 
-                            $sum: { 
-                                $cond: [ { $lt: ["$expire_day", new Date()] }, 1, 0 ] // Count as expired if past date
-                            } 
-                        },
-                        dateStart: { $min: "$release_day" }, // Use $min to ensure correct date format
-                        dateEnd: { $max: "$expire_day" } // Use $max for expiry dates
-                    }
-                },
-                {
-                    $sort: { dateEnd: -1 } // Sort by expiry date
-                },
-                {
-                    $project: {
-                        _id: 1,
-                        total: 1,
-                        collected: 1,
-                        image: 1,
-                        used: 1,
-                        expired: 1,
-                        formattedDateStart: {
-                            $dateToString: { format: "%d/%m/%Y", date: "$dateStart" }
-                        },
-                        formattedDateEnd: {
-                            $dateToString: { format: "%d/%m/%Y", date: "$dateEnd" }
-                        }
-                    }
-                }
-            ]);
-    
-            res.status(200).json(vouchers);
-        } catch (error) {
+            // const restaurantId = req.user.id;
+
+            // const vouchers = await Voucher.find({ restaurant_id: restaurantId });
+            const vouchers = await Voucher.find();
+            
+            const formattedVouchers = vouchers.map(v => ({
+              _id: v._id,
+              name: v.name,
+              quantity: v.quantity,
+              release_day: v.release_day,
+              expire_day: v.expire_day,
+              description: v.description,
+              image: v.image,
+              code: v.code,
+              status: v.status,
+              formattedDateStart: v.release_day ? new Date(v.release_day).toLocaleDateString() : null,
+              formattedDateEnd: v.expire_day ? new Date(v.expire_day).toLocaleDateString() : null,
+            }));
+        
+            res.status(200).json(formattedVouchers);
+          } catch (error) {
+            console.error("Fetch vouchers error:", error);
             res.status(500).json({ message: "Server error", error: error.message });
-        }
+          }
     }
 
     // POST /create
     async createVoucher(req, res){
         try {
-            const { name, quantity, release_day, expire_day, description } = req.body;
+            const { name, quantity, release_day, expire_day, description, restaurantId } = req.body;
     
             // Validate required fields
             if (!name || !quantity || !release_day || !expire_day || !description) {
@@ -96,46 +70,44 @@ class VoucherController{
 
             const imageUrl = req.file ? req.file.path : null;
             
-            const vouchers = Array.from({ length: quantity }, (_, index) => ({
+            const vouchers = new Voucher({
                 name,
                 description,
                 release_day,
                 expire_day,
                 img: imageUrl,
                 status: "available",
-                quantity: 1,
-                code: `${name.replace(/\s+/g, "").toUpperCase()}-${index + 1}`, // Unique code
-            }));
+                quantity: quantity,
+                restaurant_id: restaurantId
+            });
     
             // await newVoucher.save();
-            await Voucher.insertMany(vouchers);
+            await vouchers.save();
             res.status(201).json({ message: "Voucher created successfully" });
         } catch (error) {
             res.status(500).json({ message: "Server error", error: error.message });
         }
     }
 
-    // POST /delete/:name
+    // POST /delete/:id
     async deleteVoucher(req, res) {
         try {
-            const { name } = req.params;
+            const { id } = req.params;
     
             // Find vouchers by name
-            const vouchers = await Voucher.find({ name });
-            if (!vouchers.length) {
+            const voucher = await Voucher.findById(id);
+            if (!voucher) {
                 return res.status(404).json({ message: "Voucher not found" });
             }
     
             // Delete images from Cloudinary
-            for (const voucher of vouchers) {
-                if (voucher.img) {
-                    const publicId = voucher.img.split('/').pop().split('.')[0]; // Extract public_id
-                    await cloudinary.uploader.destroy(`vouchers/${publicId}`);
-                }
+            if (voucher.img) {
+                const publicId = voucher.img.split('/').pop().split('.')[0]; // Extract public_id
+                await cloudinary.uploader.destroy(`vouchers/${publicId}`);
             }
     
             // Delete vouchers from the database
-            await Voucher.deleteMany({ name });
+            await Voucher.findByIdAndDelete(id);
     
             res.status(200).json({ message: "Vouchers deleted successfully" });
         } catch (error) {
@@ -178,7 +150,7 @@ class VoucherController{
             // Reduce voucher quantity, add information about the collector
             voucher.quantity -= 1;
             voucher.status = "collected";
-            voucher.collector = userId;
+            voucher.collector.push(userId);
             voucher.by = user.username;
             await voucher.save();
     

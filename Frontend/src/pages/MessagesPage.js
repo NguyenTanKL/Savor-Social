@@ -35,7 +35,8 @@ import moment from "moment";
 import io from "socket.io-client";
 const socket = io("http://localhost:5000");
 
-const API_URL = "http://localhost:5000/api/chats";
+const CHAT_API_URL = "http://localhost:5000/api/chats";
+const USER_API_URL = "http://localhost:5000/api/user";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
     '& .MuiBadge-badge': {
@@ -121,8 +122,10 @@ const Actions = [
     },
 ]
 
-function MessagePage({ sender, receiver }) {
+function MessagePage({ sender }) {
   const [type, setType] = useState();
+  const [selectedReceiver, setSelectedReceiver] = useState(null);
+
   const messagesEndRef = useRef(null);
 
   const handleKeyPress = (event) => {
@@ -148,10 +151,10 @@ const handleMenuClick = (event) => {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(`${API_URL}/messages`, {
-                    params: { sender, receiver },
+                const response = await axios.get(`${CHAT_API_URL}/messages`, {
+                    params: { sender, receiver: selectedReceiver },
                 });
-
+                
                 setMessages(response.data);
             } catch (error) {
                 console.error("Error fetching messages:", error);
@@ -159,11 +162,12 @@ const handleMenuClick = (event) => {
         };
 
         fetchMessages();
-    }, [sender, receiver]); // Re-fetch when sender/receiver changes
+    }, [sender, selectedReceiver]); // Re-fetch when sender/receiver changes
 
     useEffect(() => {
         socket.on("receiveMessage", (message) => {
-            console.log("Received new message:", message);
+            // console.log("Received new message:", message);
+            setMessages((prevMessages) => [...prevMessages, message]);
         });
 
         return () => {
@@ -178,18 +182,14 @@ const handleMenuClick = (event) => {
         try {
             const messageData = {
                 sender: sender,
-                receiver: receiver,
+                receiver: selectedReceiver,
                 message: newMessage,
             };
 
             // Emit message to server using Socket.io
             socket.emit("sendMessage", messageData);
 
-            const response = await axios.post(`${API_URL}/send`, {
-                sender,
-                receiver,
-                message: newMessage,
-            });
+            const response = await axios.post(`${CHAT_API_URL}/send`, messageData);
 
             if (response.data.success) {
                 const newMsg = {
@@ -206,24 +206,6 @@ const handleMenuClick = (event) => {
         }
     };
 
-    // const handleFileSelect = async (event) => {
-    //     const file = event.target.files[0];
-    //     if (!file) return;
-
-    //     const formData = new FormData();
-    //     formData.append("file", file);
-
-    //     try {
-    //         const { data } = await axios.post(`http://localhost:5000/api/upload/file`, formData, {
-    //             headers: { "Content-Type": "multipart/form-data" },
-    //         });
-    //         handleSendMessage({ type: "file", content: data.fileUrl });
-    //     } catch (error) {
-    //         console.error("File upload failed", error);
-    //     }
-    //     handleMenuClose();
-    // };  
-
     const [showPicker, setShowPicker] = useState(false);
 
     const addEmoji = (emoji) => {
@@ -233,6 +215,34 @@ const handleMenuClick = (event) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+
+  useEffect(() => {
+    const fetchFollower = async () => {
+        try {
+          const token = localStorage.getItem("token"); // Retrieve stored token
+          if (!token) {
+            console.error("No token found! Redirecting to login...");
+            return;
+          }
+    
+          const { data } = await axios.get(`${USER_API_URL}/follower/${sender}`, {
+            headers: {
+              Authorization: `Bearer ${token}`, // Attach token
+              "Content-Type": "application/json",
+            },
+          });
+    
+          setFollowers(data);
+        } catch (error) {
+          console.error("Error fetching followers:", error.response?.data?.message || error.message);
+        }
+      };
+    
+      if (sender) fetchFollower(); // Only fetch if sender is valid
+  }, [sender]);
 
   return (
     <Box style={{width: "100%", height: "100%", border: "none", borderLeft: "2px solid #ebedf0"}}>
@@ -258,7 +268,7 @@ const handleMenuClick = (event) => {
                             Friends
                         </Typography>
                         <Stack spacing={3} direction="row">
-                        {account.map((item) => (
+                        {followers.map((item) => (
                             <StyledBadge
                                 overlap="circular"
                                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -272,9 +282,9 @@ const handleMenuClick = (event) => {
                         <Typography >
                             Messages
                         </Typography>
-                        {account.map((item) => (
+                        {followers.map((item) => (
                             <List sx={{ width: '100%', maxWidth: 350, bgcolor: 'background.paper' }}>
-                                <ListItem onClick={() => setType(item.id)} style={{ backgroundColor: type == item.id ? "rgb(173, 202, 246)" : "#f0f0f0", borderRadius: "15px" }}>
+                                <ListItem onClick={() => {setType(item._id); setSelectedReceiver(item._id);}} style={{ backgroundColor: type == item._id ? "rgb(173, 202, 246)" : "#f0f0f0", borderRadius: "15px"}}>
                                     <Stack width={"100%"} direction={"row"} alignItems={"center"} justifyContent={"space-between"} spacing={5}>
                                         <Stack direction={"row"} spacing={0.3}>
                                             <ListItemAvatar>
@@ -283,16 +293,16 @@ const handleMenuClick = (event) => {
                                                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                                     variant="dot"
                                                     >
-                                                    <Avatar alt={item.name} src={item.img} />
+                                                    <Avatar alt={item.username} src={item.img} />
                                                 </StyledBadge>
                                             </ListItemAvatar>
                                             <Stack spacing={0.3}>
-                                                <ListItemText primary={item.name} secondary={item.message} />
+                                                <ListItemText primary={item.username} secondary={item.message} />
                                             </Stack>
                                         </Stack>
                                         <Stack spacing={1.5} alignItems={"center"}>
                                             <Typography variant="caption" color="textSecondary">{item.time}</Typography>
-                                            <Badge badgeContent={2} color="primary" />
+                                            {/* <Badge badgeContent={2} color="primary" /> */}
                                         </Stack>
                                     </Stack>
                                 </ListItem>
@@ -429,16 +439,8 @@ const handleMenuClick = (event) => {
                                 onClose={handleMenuClose}
                             >
                                 {Actions.map((ele) => (
-                                    // <MenuItem onClick={() => document.getElementById("file-upload").click()}>
                                     <MenuItem>
                                         {ele.icon}{ele.title}
-                                        {/* <input
-                                            id="file-upload"
-                                            type="file"
-                                            accept="image/*,video/*"
-                                            style={{ display: "none" }}
-                                            onChange={handleFileSelect}
-                                        /> */}
                                     </MenuItem>
                                 ))}
                             </Menu>

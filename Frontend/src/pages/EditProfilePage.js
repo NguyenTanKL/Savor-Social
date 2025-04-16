@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './EditProfilePage.css';
+import axios from 'axios';
 
-function EditProfilePage() {
+function EditProfilePage({userId}) {
+  const USER_API_URL = "http://localhost:5000/api/user";
+
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -13,6 +16,13 @@ function EditProfilePage() {
     showSuggestions: false,
   });
 
+  useEffect(() => {
+      // Fetch user data
+      axios.get(`${USER_API_URL}/get-by-id/${userId}`).then(res => {
+          setFormData(res.data);
+      });
+  }, [userId]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -21,9 +31,22 @@ function EditProfilePage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Không tìm thấy token!");
+        return;
+      }
+
+      await axios.put(`${USER_API_URL}/update-user`, formData,{
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert('Profile updated!');
+    } catch (err) {
+        alert('Update failed');
+    }
   };
 
   return (
@@ -56,7 +79,7 @@ function EditProfilePage() {
         </div>
         <div className="form-group">
           <label>Phone Number</label>
-          <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} />
+          <input type="text" name="phone" value={formData.phone} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>Gender</label>

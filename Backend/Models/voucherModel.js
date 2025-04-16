@@ -43,13 +43,23 @@ const VoucherSchema = new mongoose.Schema({
         type: String,
         unique: true
     },
-    collector: {
+    collector: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users'
-    },
-    by: {
+    }],
+    by: [{
         type: String
+    }]
+});
+
+VoucherSchema.pre("save", async function (next) {
+    if (!this.code) {
+        this.code = [...Array(10)].map(() => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            return chars.charAt(Math.floor(Math.random() * chars.length));
+        }).join('');
     }
+    next();
 });
 
 const voucher = new mongoose.model('vouchers',VoucherSchema);

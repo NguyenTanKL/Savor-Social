@@ -1,13 +1,17 @@
 const mongoose = require ('mongoose');
 
 const UserSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: false
+    },
     username: {
         type: String,
         required: true
     },
     email: {
         type: String,
-        required: false
+        required: true
     },
     password: {
         type: String,
@@ -16,6 +20,22 @@ const UserSchema = new mongoose.Schema({
         select: true,
     },
     phone: {
+        type: String,
+        required: false
+    },
+    bio: {
+        type: String,
+        required: false
+    },
+    website: {
+        type: String,
+        required: false
+    },
+    email: {
+        type: String,
+        required: false
+    },
+    gender: {
         type: String,
         required: false
     },
@@ -45,9 +65,17 @@ const UserSchema = new mongoose.Schema({
     preferences: {
         type: [String],
         default: []
-    }
+    },
+    foodTypes: {
+        type: [String],
+        default: []
+    },
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Danh sách user mà người này follow
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Danh sách user follow người này
+    followerCount: { type: Number, default: 0 }, // Thêm trường followerCount
+    followingCount: { type: Number, default: 0 }, // Thêm trường followingCount
 });
 
-const UserModel = mongoose.model('users',UserSchema);
+const UserModel = mongoose.model('User',UserSchema);
 
 module.exports = UserModel;
