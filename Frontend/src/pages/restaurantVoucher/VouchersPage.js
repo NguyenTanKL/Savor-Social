@@ -1,5 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import {  useNavigate,useParams } from "react-router-dom";
+import { useDispatch, useSelector } from 'react-redux'
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField'
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -10,6 +12,8 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import Grid2 from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Item from "@mui/material/ListItem";
 import HeaderProfile from "../../components/HeaderProfile";
 import { styled } from '@mui/material/styles';
 import "./VouchersPage.css";
@@ -18,24 +22,9 @@ import axios from "axios";
 
 const API_URL = "http://localhost:5000/api/vouchers";
 
-function VouchersPage() {
-
+function VouchersPage( {restaurantId}) {
+    const userStorage = useSelector(state => state.user.user);
     const [selectedVoucherType, setSelectedVoucherType] = useState(null);
-    
-    const userData = {
-        name: 'Haidilao.vn',
-        account_name: 'Haidilaovn',
-        job: 'Nhà hàng lấu HAIDILAO VIETNAM',
-        followers: '13.6K',
-        following: '27',
-        posts: '9',
-        socialLinks: [
-            { platform: 'Facebook', url: 'https://facebook.com/username' },
-            { platform: 'Twitter', url: 'https://twitter.com/username' },
-            { platform: 'LinkedIn', url: 'https://linkedin.com/in/username' }
-        ],
-        is_res: true
-    };
 
     const tabs  =  [
         { label: "List of vouchers", value: "lst_voucher" },
@@ -73,7 +62,7 @@ function VouchersPage() {
         };
         
         fetchVouchers();
-    }, [type]);
+    }, [restaurantId, type]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -85,12 +74,13 @@ function VouchersPage() {
         formData.append("release_day", voucherData.release_day);
         formData.append("expire_day", voucherData.expire_day);
         formData.append("description", voucherData.description);
+        formData.append("restaurant_id", restaurantId);
     
         // Append the image file if selected
         if (selectedImage) {
             formData.append("image", selectedImage);
         }
-    
+
         try {
             const response = await fetch(`${API_URL}/create`, {
                 method: "POST",
@@ -117,9 +107,24 @@ function VouchersPage() {
         }
     };    
 
+    const handleDeleteVoucher = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this voucher?")) return;
+    
+        try {
+            const response = await axios.delete(`${API_URL}/delete/${id}`);
+            if (response.status === 200) {
+                alert("Voucher deleted successfully!");
+                setVoucher((prevVouchers) => prevVouchers.filter(v => v._id !== id));
+            }
+        } catch (error) {
+            console.error("Error deleting voucher:", error);
+            alert("Failed to delete voucher");
+        }
+    };    
+
     return (
         <div className="voucherpage">
-            <HeaderProfile user= {userData}/>
+            <HeaderProfile user={userStorage}/>
             <div style={{ marginBottom: "20px" }}>
                 {tabs.map((tab) => (
                 <Button
@@ -147,19 +152,19 @@ function VouchersPage() {
                     <div style={{marginLeft: "20px"}}>
                         <Grid2 container spacing={ 1 } columns={ 12 }>
                             {voucher.map((voucher) => (
-                            <Grid2 item xs={12} sm={6} md={4} key={voucher.id} sx={{ pr: 2 }}>
+                            <Grid2 item xs={12} sm={6} md={4} key={voucher._id} sx={{ pr: 2 }}>
                                 <Card style={{backgroundColor: "#f5f5f5"}} sx={{ display: 'flex', width: "100%"}}>
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                         <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
                                             <Typography component="div" variant="h6">
-                                                {voucher._id}
+                                                {voucher.name}
                                             </Typography>
                                             <Typography
                                                 variant="subtitle1"
                                                 component="div"
                                                 sx={{ color: 'text.secondary' }}
                                             >
-                                                Number of vouchers: {voucher.total}
+                                                Number of vouchers: {voucher.quantity}
                                             </Typography>
                                             <Typography
                                                 variant="subtitle1"
@@ -175,13 +180,26 @@ function VouchersPage() {
                                             >
                                                 Date end: {voucher.formattedDateEnd}
                                             </Typography>
-                                            <Button 
-                                                variant="outlined" 
-                                                color="dark" 
-                                                style={{width: "70px", marginTop: "10px"}}
-                                                onClick={() => setSelectedVoucherType(voucher._id)}>
-                                                    Details
-                                            </Button>
+                                            <Stack direction="row" spacing={0}>
+                                                <Item>
+                                                    <Button 
+                                                        variant="outlined" 
+                                                        color="dark" 
+                                                        style={{width: "50px", marginTop: "10px"}}
+                                                        onClick={() => setSelectedVoucherType(voucher.name)}>
+                                                            Details
+                                                    </Button>
+                                                </Item>
+                                                <Item>
+                                                    <Button 
+                                                        variant="outlined" 
+                                                        color="error" 
+                                                        style={{width: "40px", marginTop: "10px"}}
+                                                        onClick={() => handleDeleteVoucher(voucher._id)}>
+                                                            Delete
+                                                    </Button> 
+                                                </Item>
+                                            </Stack>
                                         </CardContent>
                                     </Box>
                                     <CardMedia
@@ -227,10 +245,6 @@ function VouchersPage() {
                     Upload image
                     <VisuallyHiddenInput
                         type="file"
-                        // onChange={(event) => {
-                        //     console.log(event.target.files);
-                        //     setSelectedImage(event.target.files[0]);
-                        // }}
                         onChange={(event) => {
                             if (event.target.files.length > 0) {
                                 setSelectedImage(event.target.files[0]);

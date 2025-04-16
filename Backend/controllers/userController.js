@@ -32,7 +32,7 @@ const getNormalUsers = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     console.log("body:", req.body);
-    const { address, preferences } = req.body;
+    const updates = req.body;
     // Lấy userId từ middleware userAuth (được gán vào req.user)
     const userId = req.user.id;
     const user = await User.findById(userId);
@@ -40,8 +40,12 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
     // Cập nhật các trường nếu có
-    if (address !== undefined) user.address = address;
-    if (preferences !== undefined) user.preferences = preferences;
+    // if (address !== undefined) user.address = address;
+    // if (preferences !== undefined) user.preferences = preferences;
+    // Dynamically update any valid fields
+    Object.keys(updates).forEach(field => {
+      user[field] = updates[field];
+    });
     
     await user.save();
     res.json({ message: 'Cập nhật người dùng thành công', user });

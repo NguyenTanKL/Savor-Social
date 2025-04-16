@@ -4,6 +4,9 @@ import { createSlice } from "@reduxjs/toolkit";
 const getInitialUser = () => {
     const userFromStorage = localStorage.getItem("user");
     console.log("userFromStorage:", userFromStorage); // Debug giá trị
+    if (!userFromStorage || userFromStorage === "undefined") {
+      return {}; // Return an empty object instead of null
+    }
     if (userFromStorage && typeof userFromStorage === "string") {
       try {
         return JSON.parse(userFromStorage);

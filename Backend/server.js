@@ -9,6 +9,7 @@ const { Server } = require('socket.io');
 const nodemon = require('nodemon');
 const cors = require('cors');
 const router = require('./routes/index')
+const route = require('./routes/user/index')
 const path = require("path");
 // const authRoutes = require("./routes/authRoutes");
 require('./models/UserModel'); 
@@ -47,6 +48,8 @@ const db  = require('./config/db');
 
 db.connect();
 
+route(app);
+
 // Create a middleware to allow CORS to create voucher
 app.use(cors({
     origin: ["http://localhost:3000", 'http://localhost:3000/vouchers'],
@@ -75,9 +78,6 @@ io.on("connection", (socket) => {
         console.log("Client disconnected:", socket.id);
     });
 });
-
-
-
 
 server.listen(5000, () => {
     console.log('Server running on port 5000');

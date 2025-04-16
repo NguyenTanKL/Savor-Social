@@ -174,6 +174,17 @@ function HeaderProfile({ user, userId }) {
             <span>{user.followingCount}</span> following
           </div>
         </div>
+        <div className="header__3">
+          <div className="header2__content">
+            <span>{user.name}</span>
+          </div>
+          <div className="header3__content" style={{ cursor: "pointer" }}>
+            <span>{user.address}</span>
+          </div>
+          <div className="header3__content" style={{ cursor: "pointer" }}>
+            <span>{user.website}</span>
+          </div>
+        </div>
       </div>
 
       {/* Modal hiển thị danh sách following */}
@@ -275,7 +286,7 @@ function HeaderProfile({ user, userId }) {
                 "&:hover": { backgroundColor: "rgb(219, 219, 219)" },
               }}
             >
-              Romove
+              Remove
             </Button>
           </ListItem>
         ))

@@ -8,6 +8,7 @@ import SearchPage from './pages/SearchPage';
 import FavouriteMapPage from './pages/FavouriteMapPage';
 import SavedPostsPage from './pages/SavedPostsPage';
 import VouchersPage from './pages/restaurantVoucher/VouchersPage';
+import UserVouchersPage from './pages/VouchersPage';
 import MessagesPage from './pages/MessagesPage';
 import NotificationsPage from './pages/NotificationsPage';
 import CreatePost from './pages/createPost/CreatePage';
@@ -20,6 +21,7 @@ import Grid from '@mui/material/Grid';
 import SetupPage from './pages/SetupPage/SetupPage';
 import RecommendationsPage from './pages/RecommendationsPage/RecommendationsPage';
 function App() {
+  const userStorage = useSelector(state => state.user.user);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const token = localStorage.getItem("token"); // Kiểm tra token
@@ -48,7 +50,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
 
             {/* Protected routes */}
-            {isLoggedIn ? (
+            {isLoggedIn && userStorage.usertype == "normal" ? (
               <>
                 <Route path="home" element={<HomePage />} />
                 <Route path="/setup" element={<SetupPage />} />
@@ -66,8 +68,28 @@ function App() {
                 <Route path="/editProfile" element={<EditProfilePage />} />
                 <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
               </>
-            ) : (
-              <Route path="*" element={<Navigate to="/login" />} />
+            ) : isLoggedIn && userStorage.usertype == "restaurant" ? (
+              <>
+                <Route path="home" element={<HomePage />} />
+                <Route path="/setup" element={<SetupPage />} />
+                <Route path="/recommendations" element={<RecommendationsPage />} />
+                <Route path="/" element={<Navigate to="/home" />} /> {/* Điều hướng mặc định */}
+                <Route path="/favouriteMap" element={<FavouriteMapPage />} />
+                <Route path="/savedPosts" element={<SavedPostsPage />} />
+
+                <Route path="/vouchers" element={<VouchersPage restaurantIdId={userStorage._id}/>} />
+                <Route path="/messages" element={<MessagesPage sender={userStorage._id}/>} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                {/* <Route path="/create" element={<CreatePage />} /> */}
+
+                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />     
+                <Route path="/profile/:userId" element={<ProfilePage />} />
+                <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id}/>} />
+                <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
+              </>
+            ) : 
+            (
+                <Route path="*" element={<Navigate to="/login" />} />
             )}
           </Routes>
 

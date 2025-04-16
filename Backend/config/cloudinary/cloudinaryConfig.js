@@ -9,7 +9,7 @@ cloudinary.config({
     api_secret: process.env.CLOUD_SECRET,
 });
 
-const voucherStorage = new CloudinaryStorage({
+const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: "vouchers", // Folder name in Cloudinary
@@ -17,14 +17,7 @@ const voucherStorage = new CloudinaryStorage({
         public_id: (req, file) => file.originalname.split(".")[0],
     },
 });
-const postStorage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: "posts", // Folder cho bài viết
-        format: async (req, file) => "png", // Convert all images to PNG
-        public_id: (req, file) => `post_${Date.now()}_${file.originalname.split(".")[0]}`, // Đặt public_id để tránh trùng lặp
-    },
-});
-const uploadVoucher = multer({ storage: voucherStorage });
-const uploadPost = multer({storage:postStorage})
-module.exports = { cloudinary, uploadPost, uploadVoucher };
+
+const upload = multer({ storage });
+
+module.exports = { cloudinary, upload };

@@ -1,4 +1,5 @@
 const Chat = require('../../models/chatModel');
+const User = require('../../models/UserModel');
 
 class ChatController{
 
@@ -45,8 +46,8 @@ class ChatController{
             console.error(error);
             res.status(500).json({ error: "Message could not be sent" });
         }
-    }    
-   
+    }
+    
 }
 
 module.exports = new ChatController

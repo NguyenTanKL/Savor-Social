@@ -1,6 +1,10 @@
 const mongoose = require ('mongoose');
 
 const UserSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: false
+    },
     username: {
         type: String,
         required: true
@@ -16,6 +20,22 @@ const UserSchema = new mongoose.Schema({
         select: true,
     },
     phone: {
+        type: String,
+        required: false
+    },
+    bio: {
+        type: String,
+        required: false
+    },
+    website: {
+        type: String,
+        required: false
+    },
+    email: {
+        type: String,
+        required: false
+    },
+    gender: {
         type: String,
         required: false
     },
