@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
+const user = require('./routes/user');
 const http = require('http');
 const { Server } = require('socket.io');
 const nodemon = require('nodemon');
@@ -24,14 +25,13 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use('/api/user', user);
 app.use('/api', postRoutes);
 app.use('/api/userRoutes', userRoutes);
 
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-require("dotenv").config();
 
 
 
@@ -75,4 +75,3 @@ app.use("/api/auth", authRoutes);
 server.listen(5000, () => {
     console.log('Server running on port 5000');
 });
-

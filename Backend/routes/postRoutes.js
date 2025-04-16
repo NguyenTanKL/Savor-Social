@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post'); // Model bài post của bạn
 const User = require("../models/User");
+const mongoose = require("mongoose");
 // API lấy tất cả bài post
 router.get('/posts', async (req, res) => {
     try {
@@ -109,11 +110,12 @@ router.post("/:postID/like", async (req, res) => {
         }
 
         console.log("Bài post tìm thấy:", post);
-
+        const userObjectId = new mongoose.Types.ObjectId(userId);
         let liked = post.likes.users.includes(userId);
         if (liked) {
-            post.likes.users = post.likes.users.filter(id => id !== userId);
+            post.likes.users = post.likes.users.filter(user => !user.equals(userObjectId));
             post.likes.count = Math.max(0, post.likes.count - 1);
+            console.log("da xoa thanh cong");
         } else {
             post.likes.users.push(userId);
             post.likes.count += 1;
@@ -127,6 +129,7 @@ router.post("/:postID/like", async (req, res) => {
         console.error("Lỗi trong server:", err); // Log lỗi cụ thể ra terminal
         res.status(500).json({ error: "Lỗi server", message: err.message });
     }
+
 });
 
 module.exports = router;

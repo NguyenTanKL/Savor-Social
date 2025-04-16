@@ -1,11 +1,11 @@
-import React, { useState , useEffect} from "react";
-import {Avatar, Button} from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Avatar, Button } from "@mui/material";
 import "./Post.css";
 import Typography from "@mui/material/Typography";
 import Card from '@mui/material/Card';
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import FavoriteIcon from "@mui/icons-material/Favorite"; 
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
@@ -16,8 +16,9 @@ import SentimentSatisfiedOutlinedIcon from '@mui/icons-material/SentimentSatisfi
 import axios from "axios";
 import Grid from "@mui/material/Grid";
 import Modal from "../../components/Modal";
+import RoomIcon from "@mui/icons-material/Room"; // Icon đậm
 
-function Post( {user,postID, postImage, likes, caption, address, timestamp, is_voucher, is_ad}) {
+function Post({ user, postID, postImage, likes, caption, address, timestamp, is_voucher, is_ad, isSelected, onSelect }) {
     const [open, setOpen] = React.useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [userData, setUserData] = useState(null);
@@ -39,10 +40,25 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
     }, [user]);
     useEffect(() => {
         // Kiểm tra nếu user đã like post
-        if (likes.users.includes(user)) {
+
+        if (likes && likes.users && likes.users.includes(userId_)) {
             setLiked(true);
         }
+
+
     }, [likes, user]);
+
+    const userFromStorage = localStorage.getItem("user");
+    let user_
+    let userId_
+    let postId_ = Post.postID
+    if (userFromStorage) {
+        user_ = JSON.parse(userFromStorage); // Chuyển từ JSON string thành object
+        userId_ = user_.id; // Lấy id từ object
+        console.log("User ID:", userId_);
+    } else {
+        console.log("Không tìm thấy user trong localStorage");
+    }
 
     const handleLike = async () => {
         try {
@@ -51,53 +67,58 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
             setLikeCount(prev => newLikedStatus ? prev + 1 : prev - 1);
 
             // Gửi request cập nhật danh sách like
-            await axios.post(`http://localhost:5000/api/${postID}/like`, 
-                { userId: user }, 
+            await axios.post(`http://localhost:5000/api/${postID}/like`,
+                { userId: userId_ },
                 { headers: { "Content-Type": "application/json" } }
             );
-            
+
         } catch (err) {
             console.error("Lỗi khi like post:", err);
         }
     };
 
-    // useEffect(() => {
-    //     // Kiểm tra xem bài post đã được lưu chưa
-    //     axios.get(`http://localhost:5000/api/user/${currentUser}/savedPosts`)
-    //         .then(res => {
-    //             if (res.data.savedPosts.includes(Post.postId)) {
-    //                 setIsSaved(true);
-    //             }
-    //         })
-    //         .catch(err => console.error(err));
-    // }, [currentUser, Post.postId]);
+    useEffect(() => {
+        // Kiểm tra xem bài post đã được lưu chưa
+        axios.get(`http://localhost:5000/api/user/${userId_}/savedPosts`)
+            .then(res => {
+                if (res.data.savedPosts.includes(postID)) {
+                    setIsSaved(true);
+                }
+            })
+            .catch(err => console.error(err));
+    }, [userId_, postID]);
 
-    // const handleSavePost = async () => {
-    //     try {
-    //         const response = await axios.post("http://localhost:5000/api/user/savePost", {
-    //             userId: currentUser,
-    //             postId: postId,
-    //         });
-    //         setIsSaved(response.data.saved);
-    //     } catch (error) {
-    //         console.error("Lỗi khi lưu bài viết", error);
-    //     }
-    // };
+    const handleSavePost = async () => {
+        try {
+            const response = await axios.put(`http://localhost:5000/api/user/${userId_}/savePost/${postID}`, {
+                userId: userId_,
+                postId: postID,
+            });
+            if (isSaved)
+            {
+                setIsSaved(false);
+            }
+            else {setIsSaved(true)}
+            
+        } catch (error) {
+            console.error("Lỗi khi lưu bài viết", error);
+        }
+    };
     //  console.log("User data:", user);
     //  console.log("User data img:", user.avatar);
     if (is_voucher && is_ad) {
-        return(
+        return (
             <div className="post">
                 <div className="post__header">
                     <div className="post__headerAuthor">
-                    <Avatar src={userData?.avatar}>?</Avatar>
+                        <Avatar src={userData?.avatar}>?</Avatar>
                         {user}  <span> • {timestamp}  • Advertisement</span>
                     </div>
-                    <MoreHorizIcon/>
+                    <MoreHorizIcon />
                 </div>
                 <div className="post__address">
-                <FmdGoodOutlinedIcon className="postIcon" color="action" /> 
-                <span>{address}</span>
+                    <FmdGoodOutlinedIcon className="postIcon" color="action" />
+                    <span>{address}</span>
                 </div>
                 <div className="post__image">
                     <img src={postImage} alt=""></img>
@@ -107,53 +128,53 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
                         <Grid container>
                             {/* Left Section */}
                             <Grid
-                            item
-                            xs={8}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                padding: '16px',
-                            }}
-                            >
-                            <Typography
-                                variant="h4"
+                                item
+                                xs={8}
                                 style={{
-                                fontFamily: 'Rochester, Arial, sans-serif',
-                                fontWeight: 500,
-                                marginBottom: 8,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    padding: '16px',
                                 }}
-                                className="rochester"
                             >
-                                Voucher
-                            </Typography>
-                            <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
-                            <Typography variant="body2">Ngày hết hạn: <span style={{fontWeight: "bold"}}>31/01/2025</span></Typography>
-                            <Typography variant="body2">Số lượng còn: <span style={{fontWeight: "bold"}}>36</span></Typography>
+                                <Typography
+                                    variant="h4"
+                                    style={{
+                                        fontFamily: 'Rochester, Arial, sans-serif',
+                                        fontWeight: 500,
+                                        marginBottom: 8,
+                                    }}
+                                    className="rochester"
+                                >
+                                    Voucher
+                                </Typography>
+                                <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
+                                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>31/01/2025</span></Typography>
+                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>36</span></Typography>
                             </Grid>
 
                             {/* Right Section */}
                             <Grid
-                            item
-                            xs={4}
-                            style={{
-                                backgroundColor: '#2196F3', // Blue background
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}
-                            >
-                            <Button
-                                variant="text"
+                                item
+                                xs={4}
                                 style={{
-                                backgroundColor: '#2196F3',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: '20px',
+                                    backgroundColor: '#2196F3', // Blue background
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
                                 }}
                             >
-                                Nhận
-                            </Button>
+                                <Button
+                                    variant="text"
+                                    style={{
+                                        backgroundColor: '#2196F3',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        fontSize: '20px',
+                                    }}
+                                >
+                                    Nhận
+                                </Button>
                             </Grid>
                         </Grid>
                     </Card>
@@ -161,12 +182,12 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
                 <div className="post__footer ">
                     <div className="post_footerIcons">
                         <div className="post__iconsMain">
-                            <FavoriteBorderIcon className="postIcon"/>
-                            <ChatBubbleOutlineIcon className="postIcon"/>
-                            <TelegramIcon className="postIcon"/>
+                            <FavoriteBorderIcon className="postIcon" />
+                            <ChatBubbleOutlineIcon className="postIcon" />
+                            <TelegramIcon className="postIcon" />
                         </div>
                         <div className="post_iconSave">
-                            <MapOutlinedIcon className="postIcon" />    
+                            <MapOutlinedIcon className="postIcon" />
                             <FmdGoodOutlinedIcon className="postIcon" />
                             {/* <div onClick={handleSavePost}>
                             {isSaved ? (
@@ -177,103 +198,103 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
                             </div> */}
                         </div>
                     </div>
-                <span className="post_likes">{likes.count} likes</span> 
-                <br/>
-                <div className="post__caption">
-                    <span>{user} </span> {caption}
-                </div>
-                <div className="post__comment">
-                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
-                    {open && <Modal 
-                        open={open} 
-                        onClose={() => setOpen(false)}
-                        user= {user}
-                        postImage={postImage} 
-                        likes={likes} 
-                        caption={caption}
-                        address={address}
-                        timestamp={timestamp}
-                    />}
-                    <div className="comment">
-                        <input placeholder="Add a comment…"  />
-                        <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
+                    <span className="post_likes">{likes.count} likes</span>
+                    <br />
+                    <div className="post__caption">
+                        <span>{user} </span> {caption}
                     </div>
-                </div>
-                
+                    <div className="post__comment">
+                        <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                        {open && <Modal
+                            open={open}
+                            onClose={() => setOpen(false)}
+                            user={user}
+                            postImage={postImage}
+                            likes={likes}
+                            caption={caption}
+                            address={address}
+                            timestamp={timestamp}
+                        />}
+                        <div className="comment">
+                            <input placeholder="Add a comment…" />
+                            <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
+                        </div>
+                    </div>
+
                 </div>
             </div>
         )
     } else if (is_voucher && !is_ad) {
-        return(
+        return (
             <div className="post">
                 <div className="post__header">
                     <div className="post__headerAuthor">
-                    <Avatar src={userData?.avatar}>?</Avatar>
+                        <Avatar src={userData?.avatar}>?</Avatar>
                         {user}  <span> • {timestamp}</span>
                     </div>
-                    <MoreHorizIcon/>
+                    <MoreHorizIcon />
                 </div>
                 <div className="post__address">
-                <FmdGoodOutlinedIcon className="postIcon" color="action" /> 
-                <span>{address}</span>
+                    <FmdGoodOutlinedIcon className="postIcon" color="action" />
+                    <span>{address}</span>
                 </div>
                 <div className="post__image">
                     <img src={postImage} alt=""></img>
                 </div>
                 <div>
-                    <Card elevation={3} style={{ maxWidth: 600, margin: 'auto', minHeight: "80px"}}>
+                    <Card elevation={3} style={{ maxWidth: 600, margin: 'auto', minHeight: "80px" }}>
                         <Grid container>
                             {/* Left Section */}
                             <Grid
-                            item
-                            xs={8}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                padding: '16px',
-                            }}
-                            >
-                            <Typography
-                                variant="h4"
+                                item
+                                xs={8}
                                 style={{
-                                fontFamily: 'Rochester, Arial, sans-serif',
-                                fontWeight: 500,
-                                marginBottom: 8,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    padding: '16px',
                                 }}
-                                className="rochester"
                             >
-                                Voucher
-                            </Typography>
-                            <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
-                            <Typography variant="body2">Ngày hết hạn: <span style={{fontWeight: "bold"}}>31/01/2025</span></Typography>
-                            <Typography variant="body2">Số lượng còn: <span style={{fontWeight: "bold"}}>36</span></Typography>
+                                <Typography
+                                    variant="h4"
+                                    style={{
+                                        fontFamily: 'Rochester, Arial, sans-serif',
+                                        fontWeight: 500,
+                                        marginBottom: 8,
+                                    }}
+                                    className="rochester"
+                                >
+                                    Voucher
+                                </Typography>
+                                <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
+                                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>31/01/2025</span></Typography>
+                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>36</span></Typography>
                             </Grid>
 
                             {/* Right Section */}
                             <Grid
-                            item
-                            xs={4}
-                            style={{
-                                backgroundColor: '#2196F3', // Blue background
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}
-                            >
-                            <Button
-                                variant="text"
+                                item
+                                xs={4}
                                 style={{
-                                backgroundColor: '#2196F3',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: '20px',
-                                width: "100%",
-                                height: "100%"
+                                    backgroundColor: '#2196F3', // Blue background
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
                                 }}
                             >
-                                Nhận
-                            </Button>
+                                <Button
+                                    variant="text"
+                                    style={{
+                                        backgroundColor: '#2196F3',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        fontSize: '20px',
+                                        width: "100%",
+                                        height: "100%"
+                                    }}
+                                >
+                                    Nhận
+                                </Button>
                             </Grid>
                         </Grid>
                     </Card>
@@ -281,56 +302,56 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
                 <div className="post__footer ">
                     <div className="post_footerIcons">
                         <div className="post__iconsMain">
-                            <FavoriteBorderIcon className="postIcon"/>
-                            <ChatBubbleOutlineIcon className="postIcon"/>
-                            <TelegramIcon className="postIcon"/>
+                            <FavoriteBorderIcon className="postIcon" />
+                            <ChatBubbleOutlineIcon className="postIcon" />
+                            <TelegramIcon className="postIcon" />
                         </div>
                         <div className="post_iconSave">
-                            <MapOutlinedIcon className="postIcon" />    
+                            <MapOutlinedIcon className="postIcon" />
                             <FmdGoodOutlinedIcon className="postIcon" />
                             <BookmarkBorderIcon className="postIcon" />
                         </div>
                     </div>
-                <span className="post_likes">{likes.count} likes</span> 
-                <br/>
-                <div className="post__caption">
-                    <span>{user} </span> {caption}
-                </div>
-                <div className="post__comment">
-                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
-                    {open && <Modal 
-                        open={open} 
-                        onClose={() => setOpen(false)}
-                        user= {user}
-                        postImage={postImage} 
-                        likes={likes} 
-                        caption={caption}
-                        address={address}
-                        timestamp={timestamp}
-                    />}
-                    <div className="comment">
-                        <input placeholder="Add a comment…"  />
-                        <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
+                    <span className="post_likes">{likes.count} likes</span>
+                    <br />
+                    <div className="post__caption">
+                        <span>{user} </span> {caption}
                     </div>
-                </div>
-                
+                    <div className="post__comment">
+                        <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                        {open && <Modal
+                            open={open}
+                            onClose={() => setOpen(false)}
+                            user={user}
+                            postImage={postImage}
+                            likes={likes}
+                            caption={caption}
+                            address={address}
+                            timestamp={timestamp}
+                        />}
+                        <div className="comment">
+                            <input placeholder="Add a comment…" />
+                            <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
+                        </div>
+                    </div>
+
                 </div>
             </div>
         )
     } else if (!is_voucher && is_ad) {
-        return(
+        return (
             <div className="post">
                 <div className="post__header">
                     <div className="post__headerAuthor">
-                    <Avatar src={userData?.avatar}>?</Avatar>
+                        <Avatar src={userData?.avatar}>?</Avatar>
                         {user}  <span> • {timestamp} • Advertisement</span>
                         <br></br>
                     </div>
-                    <MoreHorizIcon/>
+                    <MoreHorizIcon />
                 </div>
                 <div className="post__address">
-                <FmdGoodOutlinedIcon className="postIcon" color="action" /> 
-                <span>{address}</span>
+                    <FmdGoodOutlinedIcon className="postIcon" color="action" />
+                    <span>{address}</span>
                 </div>
                 <div className="post__image">
                     <img src={postImage} alt=""></img>
@@ -338,55 +359,55 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
                 <div className="post__footer ">
                     <div className="post_footerIcons">
                         <div className="post__iconsMain">
-                            <FavoriteBorderIcon className="postIcon"/>
-                            <ChatBubbleOutlineIcon className="postIcon"/>
-                            <TelegramIcon className="postIcon"/>
+                            <FavoriteBorderIcon className="postIcon" />
+                            <ChatBubbleOutlineIcon className="postIcon" />
+                            <TelegramIcon className="postIcon" />
                         </div>
                         <div className="post_iconSave">
-                            <MapOutlinedIcon className="postIcon" />    
+                            <MapOutlinedIcon className="postIcon" />
                             <FmdGoodOutlinedIcon className="postIcon" />
                             <BookmarkBorderIcon className="postIcon" />
                         </div>
                     </div>
-                <span className="post_likes">{likes.count} likes</span> 
-                <br/>
-                <div className="post__caption">
-                    <span>{user} </span> {caption}
-                </div>
-                <div className="post__comment">
-                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
-                    {open && <Modal 
-                        open={open} 
-                        onClose={() => setOpen(false)}
-                        user= {user}
-                        postImage={postImage} 
-                        likes={likes} 
-                        caption={caption}
-                        address={address}
-                        timestamp={timestamp}
-                    />}
-                    <div className="comment">
-                        <input placeholder="Add a comment…"  />
-                        <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
+                    <span className="post_likes">{likes.count} likes</span>
+                    <br />
+                    <div className="post__caption">
+                        <span>{user} </span> {caption}
                     </div>
-                </div>
-                
+                    <div className="post__comment">
+                        <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                        {open && <Modal
+                            open={open}
+                            onClose={() => setOpen(false)}
+                            user={user}
+                            postImage={postImage}
+                            likes={likes}
+                            caption={caption}
+                            address={address}
+                            timestamp={timestamp}
+                        />}
+                        <div className="comment">
+                            <input placeholder="Add a comment…" />
+                            <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
+                        </div>
+                    </div>
+
                 </div>
             </div>
         )
     } else {
-        return(
+        return (
             <div className="post">
                 <div className="post__header">
                     <div className="post__headerAuthor">
-                    <Avatar src={userData?.avatar}>?</Avatar>
+                        <Avatar src={userData?.avatar}>?</Avatar>
                         {user}  <span> • {timestamp}</span>
                     </div>
-                    <MoreHorizIcon/>
+                    <MoreHorizIcon />
                 </div>
                 <div className="post__address">
-                <FmdGoodOutlinedIcon className="postIcon" color="action" /> 
-                <span>{address}</span>
+                    <FmdGoodOutlinedIcon className="postIcon" color="action" />
+                    <span>{address}</span>
                 </div>
                 <div className="post__image">
                     <img src={postImage} alt=""></img>
@@ -395,42 +416,53 @@ function Post( {user,postID, postImage, likes, caption, address, timestamp, is_v
                     <div className="post_footerIcons">
                         <div className="post__iconsMain">
                             {liked ? (
-                            <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-                        ) : (
-                            <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-                        )}
-                            <ChatBubbleOutlineIcon className="postIcon"/>
-                            <TelegramIcon className="postIcon"/>
+                                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+                            ) : (
+                                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+                            )}
+                            <ChatBubbleOutlineIcon className="postIcon" />
+                            <TelegramIcon className="postIcon" />
                         </div>
                         <div className="post_iconSave">
-                            <MapOutlinedIcon className="postIcon" />    
-                            <FmdGoodOutlinedIcon className="postIcon" />
-                            <BookmarkBorderIcon className="postIcon" />
+                            <MapOutlinedIcon className="postIcon" />
+                            {isSelected ? (
+                                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+                            ) : (
+                                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                            )}
+                            {/* <BookmarkBorderIcon className="postIcon" /> */}
+                            
+                            {isSaved ? (
+                                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                            ) : (
+                                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                            )}
+                            
                         </div>
                     </div>
-                <span className="post_likes">{likes.count} likes</span> 
-                <br/>
-                <div className="post__caption">
-                    <span>{user} </span> {caption}
-                </div>
-                <div className="post__comment">
-                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
-                    {open && <Modal 
-                        open={open} 
-                        onClose={() => setOpen(false)}
-                        user= {user}
-                        postImage={postImage} 
-                        likes={likes} 
-                        caption={caption}
-                        address={address}
-                        timestamp={timestamp}
-                    />}
-                    <div className="comment">
-                        <input placeholder="Add a comment…"  />
-                        <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled"/>
+                    <span className="post_likes">{likeCount} likes</span>
+                    <br />
+                    <div className="post__caption">
+                        <span>{user} </span> {caption}
                     </div>
-                </div>
-                
+                    <div className="post__comment">
+                        <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                        {open && <Modal
+                            open={open}
+                            onClose={() => setOpen(false)}
+                            user={user}
+                            postImage={postImage}
+                            likes={likes}
+                            caption={caption}
+                            address={address}
+                            timestamp={timestamp}
+                        />}
+                        <div className="comment">
+                            <input placeholder="Add a comment…" />
+                            <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
+                        </div>
+                    </div>
+
                 </div>
             </div>
         )
