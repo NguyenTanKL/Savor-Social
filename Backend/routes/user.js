@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
-const Post = require("../models/Post");
+const User = require("../models/UserModel");
+const Post = require("../models/PostModel");
 
 // API để thêm hoặc xóa post khỏi danh sách đã lưu
 router.put("/:userId/savePost/:postId", async (req, res) => {

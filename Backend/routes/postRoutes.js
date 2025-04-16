@@ -1,6 +1,22 @@
-const express = require('express');
+// src/routes/postRouter.js
+const express = require("express")
+const {
+    createPost,
+    getPosts,
+  deletePost,
+  likePost,
+  unlikePost,
+  getComments,
+  createComment,
+  createReply,
+  likeComment,
+  unlikeComment
+} =  require("../controllers/postController.js");
+const userAuth = require("../middlewares/authMiddleware.js")
+// Cấu hình multer để xử lý file upload
+const {upload} = require("../config/cloudinary/cloudinaryConfig.js")
 const router = express.Router();
-const Post = require('../models/Post'); // Model bài post của bạn
+const Post = require('../models/PostModel'); // Model bài post của bạn
 const User = require("../models/User");
 const mongoose = require("mongoose");
 // API lấy tất cả bài post
@@ -132,4 +148,18 @@ router.post("/:postID/like", async (req, res) => {
 
 });
 
-module.exports = router;
+
+// Routes
+// router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết
+router.post("/", userAuth,upload.single("image"), createPost);
+router.get("/", getPosts); // Lấy danh sách bài viết
+router.delete("/:postId", userAuth, deletePost); // Xóa bài viết
+router.post("/like", userAuth, likePost); // Thích bài viết
+router.post("/unlike", userAuth, unlikePost); // Bỏ thích bài viết
+router.get("/:postId/comments", userAuth, getComments); // Lấy danh sách bình luận
+router.post("/comments", userAuth, createComment); // Tạo bình luận
+router.post("/comments/replies", userAuth,createReply);
+router.post("/likeComment",userAuth, likeComment);
+router.post("/unlikeComment",userAuth, unlikeComment);
+
+module.exports =  router;

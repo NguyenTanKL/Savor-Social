@@ -76,27 +76,39 @@
 
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
 const user = require('./routes/user');
+const multer = require('multer');
+// const postRoutes = require('./routes/postRoutes');
+// const userRoutes = require('./routes/userRoutes');
 const http = require('http');
 const { Server } = require('socket.io');
 const nodemon = require('nodemon');
 const cors = require('cors');
+const router = require('./routes/index')
 const route = require('./routes/user/index')
 const path = require("path");
-const authRoutes = require("./routes/authRoutes");
+// const authRoutes = require("./routes/authRoutes");
 require('./models/UserModel'); 
 require('./models/chatModel');
 const cookieParser = require("cookie-parser");
+
+
 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
-
+const storage = multer.diskStorage({
+    destination: './uploads/',
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + path.extname(file.originalname));
+    },
+  });
+  const upload = multer({ storage });
 // Middleware
 // app.use(cors());
 app.use(cors({
@@ -119,6 +131,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const db  = require('./config/db');
 
 db.connect();
+
+route(app);
 
 // Create a middleware to allow CORS to create voucher
 
@@ -144,10 +158,6 @@ io.on("connection", (socket) => {
         console.log("Client disconnected:", socket.id);
     });
 });
-
-
-route(app);
-app.use("/api/auth", authRoutes);
 
 server.listen(5000, () => {
     console.log('Server running on port 5000');

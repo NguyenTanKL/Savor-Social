@@ -3,6 +3,8 @@ import "./Sidenav.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../redux/Reducer/userSlice";
+import { useSelector } from "react-redux";
+import CreatePost from "../pages/createPost/CreatePage";
 import {
   HomeOutlined,
   Search,
@@ -19,10 +21,11 @@ import { Avatar, Box, Button, Popover, MenuItem, Typography } from "@mui/materia
 import axios from "axios";
 
 function Sidenav({ onSearchClick, onCloseSearch }) {
+  const userId = useSelector((state) => state.user.user);
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const [open,setOpen] = useState(false);
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -43,6 +46,14 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
       alert("Lỗi khi đăng xuất!");
     }
     handleCloseMenu();
+  };
+  const handleOpenCreatePost = () => {
+    setOpen(true);
+  };
+
+  // Hàm đóng dialog CreatePost
+  const handleCloseCreatePost = () => {
+    setOpen(false);
   };
   return (
     <div className="sidenav">
@@ -78,11 +89,11 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
           <NotificationsNoneOutlined />
           <span>Notifications</span>
         </NavLink>
-        <NavLink to="/create" className="sidenav__button">
+        <div className="sidenav__button" onClick={handleOpenCreatePost}>
           <AddBoxOutlined />
           <span>Create</span>
-        </NavLink>
-        <NavLink to="/profile" className="sidenav__button" onClick={onCloseSearch}>
+        </div>
+        <NavLink to= {`/profile/${userId._id}`} className="sidenav__button" onClick={onCloseSearch}>
           <Avatar />
           <span>Profile</span>
         </NavLink>
@@ -107,6 +118,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
           </MenuItem>
         </Box>
       </Popover>
+      <CreatePost open={open} onClose={handleCloseCreatePost} />
     </div>
   );
 }
