@@ -1,3 +1,4 @@
+// src/pages/ProfilePage.js
 import React, { useState, useEffect } from "react";
 import {  useNavigate,useParams } from "react-router-dom";
 import "./ProfilePage.css";
@@ -5,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import axios from "axios";
 import { Box, CircularProgress } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
-import Button from "@mui/material/Button";
+import { getPostsAsync } from "../redux/Reducer/postSlice"; // Import getPostsAsync
 import HeaderProfile from "../components/HeaderProfile";
 import ProfileTabs from "../components/ProfileTabs";
 import FavouriteMap from "../components/FavouriteMap";
@@ -47,34 +48,53 @@ function ProfilePage() {
       axios
         .get(`https://jsonplaceholder.typicode.com/photos?_limit=9`)
         .then((response) => {
-          const updatedData = response.data.map((item) => ({
-            ...item,
-            thumbnailUrl:
-              "https://th.bing.com/th/id/OIP.F48Ta-u-I74gaRY18l_8sAHaE8?rs=1&pid=ImgDetMain",
-          }));
-          setData(updatedData);
+          if (!response.ok) {
+            throw new Error('Failed to fetch user');
+          }
+          return response.json();
         })
-        .catch(() => {
-          const defaultData = Array.from({ length: 9 }, (_, index) => ({
-            id: index + 1,
-            thumbnailUrl:
-              "https://th.bing.com/th/id/OIP.F48Ta-u-I74gaRY18l_8sAHaE8?rs=1&pid=ImgDetMain",
-            title: `Default Image ${index + 1}`,
-          }));
-          setData(defaultData);
+        .then((data) => {
+          setUser(data);
+          console.log("user id:", userId);
+          console.log("user api", data);
+          setIsFollowing(data.isFollowing); // Kiểm tra trạng thái follow
         })
-        .finally(() => {
-          setTimeout(() => setIsLoading(false), 500); // Dừng loading sau 0.5s
+        .catch((error) => {
+          console.error("Error fetching user:", error);
+          navigate('/login'); // Chuyển hướng nếu lỗi (ví dụ: không có quyền truy cập)
         });
     } else {
-      setData([]);
+      console.log("userStore", userStorage);
+      setUser(userStorage); // Nếu là chính user đang đăng nhập, lấy từ redux
+      console.log("User:", user);
     }
-  }, [type]);
+  }, [userId, userStorage, navigate]);
 
+  // Lấy danh sách bài viết
+  useEffect(() => {
+    if (type === "posts") {
+      // Dispatch action để lấy tất cả bài viết
+      dispatch(getPostsAsync())
+        .unwrap()
+        .catch((err) => {
+          console.error("Error fetching posts:", err);
+        });
+    } 
+  }, [type, dispatch]);
+
+  // Lọc bài viết theo userId
+  const userPosts = (postState && Array.isArray(postState)) 
+  ? postState.filter((post) => post.userId && post.userId._id && post.userId._id.toString() === userId)
+  : [];
+
+  console.log("userPosts:",userPosts);
+  const handlePostDelete = () => {
+    // Không cần gọi lại getPostsAsync vì state đã được cập nhật trong postSlice
+  };
   return (
  
     <div className="profilepage">
-      <HeaderProfile user={user} userId ={userId } />
+      <HeaderProfile user={user} userId={userId} />
       <ProfileTabs type={type} setType={setType} />
 
      
@@ -83,13 +103,41 @@ function ProfilePage() {
         <Box sx={{ p: 2, display: "flex", justifyContent: "center" }}>
           {isLoading ? (
             <CircularProgress color="primary" />
+          ) : error ? (
+            <Box sx={{ textAlign: "center", p: 2 }}>
+              <p>Error loading posts: {error.message || "Something went wrong"}</p>
+            </Box>
+          ) : userPosts.length === 0 ? (
+            <Box sx={{ textAlign: "center", p: 2 }}>
+              <p>No posts available.</p>
+            </Box>
           ) : (
             <Grid2
               container
-              sx={{ justifyContent: "center", alignItems: "center", display: "grid", columnGap: 1, rowGap: 1, gridTemplateColumns: "repeat(3,1fr)" }}
+              sx={{
+                justifyContent: "center",
+                alignItems: "center",
+                display: "grid",
+                columnGap: 1,
+                rowGap: 1,
+                gridTemplateColumns: "repeat(3, 1fr)",
+              }}
             >
-              {data.map((item) => (
-                <ProfilePost key={item.id} item={item} />
+              {userPosts.map((post) => (
+                <ProfilePost
+                  key={post._id}
+                  postInfo={post}
+                    // id: post._id,
+                    // imageUrl: post.imageUrl, // Ảnh từ backend
+                    // content: post.content || "No caption", // Caption của bài viết
+                    // user: post.userId || {},
+                    // comments:post.comments || [],
+                    // username:user.username
+                  usernamePost = {user.username}
+                  
+                  handlePostDelete={handlePostDelete}
+                  canDelete={post.userId?._id === userStorage._id}
+                />
               ))}
             </Grid2>
           )}

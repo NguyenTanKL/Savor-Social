@@ -8,6 +8,9 @@ import UnfollowDialog from "./unfollowModal/unfollowModal";
 import { InputBase } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { styled } from "@mui/material/styles";
+import { toggleFollow } from "../api/userApi";
+import { updateUser } from "../redux/Reducer/userSlice";
+import { useDispatch} from "react-redux";
 function HeaderProfile({ user, userId }) {
   const navigate = useNavigate();
   const userStorage = useSelector((state) => state.user.user) || {};
@@ -19,6 +22,8 @@ function HeaderProfile({ user, userId }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [isFollowing, setIsFollowing] = useState(false);
+  const dispatch = useDispatch();
   const SearchBar = styled("div")(({ theme }) => ({
     display: "flex",
     alignItems: "center",
@@ -39,9 +44,21 @@ function HeaderProfile({ user, userId }) {
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const handleEditProfile = () => {
-    navigate("/editProfile");
+    navigate("/EditProfilePage");
   };
+  const handleFollowToggle = async () => {
 
+    if (isFollowing) {
+    setSelectedUser(user);
+    setOpenDialog(true);  // Mở UnfollowDialog
+  } else {
+    // Nếu chưa follow, thì gọi API follow
+    const newStatus = await toggleFollow(user._id, isFollowing);
+    console.log("new status:", newStatus);
+    setIsFollowing(newStatus.isFollowing);
+    dispatch(updateUser(newStatus.user));
+  }
+  };
   const handleShowFollowing = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -79,11 +96,29 @@ function HeaderProfile({ user, userId }) {
       console.error("Lỗi khi lấy danh sách following:", error);
     }
   };
+  const checkFollow = async (id) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(`http://localhost:5000/api/user/check-follow/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      console.log("Trạng thái follow:", response.data.isFollowing);
+      return response.data.isFollowing;
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra follow:", error);
+      return false; // Giả định chưa follow nếu có lỗi
+    }
+  };
+
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
   // ✅ Cập nhật UI sau khi unfollow
   const handleUnfollowSuccess = (unfollowedUserId) => {
+    setIsFollowing(false);
     setFollowingList((prevList) => prevList.filter((u) => u._id !== unfollowedUserId));
   };
 
@@ -91,7 +126,17 @@ function HeaderProfile({ user, userId }) {
     setSelectedUser(user);
     setOpenDialog(true);
   };
-
+  useEffect(() => {
+    const fetchFollowStatus = async () => {
+      if (userId !== user._id) { // Chỉ kiểm tra nếu không phải user đang đăng nhập
+        const status = await checkFollow(userId);
+        console.log("status:", status);
+        setIsFollowing(status);
+      }
+    };
+  
+    fetchFollowStatus();
+  }, [userId, user._id]);
   return (
     <div className="header__profile">
       <div className="header__left">
@@ -104,11 +149,19 @@ function HeaderProfile({ user, userId }) {
       <div className="header__right">
         <div className="header__1">
           <span>{user.username}</span>
-          {userId === userStorage._id ? (
-            <button onClick={handleEditProfile}>Edit Profile</button>
-          ) : (
-            <button>Follow</button>
-          )}
+
+                      {userId === userStorage._id ? (
+              <button onClick={handleEditProfile}>Edit Profile</button>
+            ) : (
+              <button onClick={handleFollowToggle} 
+                style={{
+                  backgroundColor: isFollowing ? "#e0e0e0" : "#0095f6",
+                  color: isFollowing ? "black" : "white",
+                }}>
+                {isFollowing ? "Following" : "Follow"}
+              </button>
+            )}
+
         </div>
         <div className="header__2">
           <div className="header2__content">

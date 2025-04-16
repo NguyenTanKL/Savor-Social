@@ -9,12 +9,14 @@ import {
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import "./ShareModal.css";
+import {  useSelector } from "react-redux";
 
 const ShareModal = ({ open, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [followingUsers, setFollowingUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const currentUser = useSelector((state) => state.user.user);
 
   // Gọi API để lấy danh sách người dùng đang follow khi modal mở
   useEffect(() => {
@@ -28,14 +30,13 @@ const ShareModal = ({ open, onClose }) => {
             throw new Error("Token không tồn tại");
           }
 
-          const response = await fetch("http://localhost:5000/api/user/following", {
+          const response = await fetch(`http://localhost:5000/api/user/following/${currentUser._id}`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`,
               "Content-Type": "application/json",
             },
           });
-
           if (!response.ok) {
             throw new Error("Lỗi khi lấy danh sách following");
           }

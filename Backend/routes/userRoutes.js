@@ -16,4 +16,5 @@ router.get("/following/:userId", userAuth, getFollowing);
 router.get("/follower/:userId", userAuth, getFollowers);
 router.post("/search", searchUser);
 router.get("/get-by-id/:userId", getUserById);
+router.get("/check-follow/:id",userAuth,checkFollowStatus);
 module.exports =  router;

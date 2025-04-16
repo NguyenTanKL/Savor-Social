@@ -5,7 +5,7 @@ const userAuth = require("../../middlewares/authMiddleware");
 
 const voucherController = require('../../controllers/user/VoucherController');
 
-router.post('/create', upload.single("image"), voucherController.createVoucher)
+router.post('/create', uploadVoucher.single("image"), voucherController.createVoucher)
 
 router.delete('/delete/:id', voucherController.deleteVoucher)
 
