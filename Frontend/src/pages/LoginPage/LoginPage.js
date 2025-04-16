@@ -18,10 +18,15 @@ function LoginPage () {
   const [errorMessage, setErrorMessage] = useState("");
 
   // Chỉ chuyển hướng ngay khi component mount nếu đã đăng nhập
-  if (isAuthenticated) {
-    navigate("/home");
-    return null; // Không render gì nếu đã đăng nhập
-  }
+  // if (isAuthenticated) {
+  //   navigate("/home");
+  //   return null; // Không render gì nếu đã đăng nhập
+  // }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/home");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (event) => {
     setLoginData({
@@ -35,6 +40,7 @@ function LoginPage () {
       const response = await axios.post("http://localhost:5000/api/auth/login", loginData);
       dispatch(login(response.data.user)); // Dispatch trước
       localStorage.setItem("token", response.data.token);
+      console.log("User được lưu vào localStorage:", response.data.user);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       navigate("/home");
     } catch (error) {

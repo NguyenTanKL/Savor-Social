@@ -58,7 +58,7 @@ router.post("/login", async (req, res) => {
     // Tạo JWT Token
     const token = jwt.sign({ id: user._id }, "my_secret_key", { expiresIn: "1h" });
 
-    res.json({ token, userId: user._id });
+    res.json({ token, user });
   } catch (error) {
     console.error("Lỗi đăng nhập:", error);
     res.status(500).json({ message: "Lỗi server" });

@@ -53,7 +53,7 @@ function Timelinepostsaved() {
     let userId_
     if (userFromStorage) {
         user_ = JSON.parse(userFromStorage); // Chuyển từ JSON string thành object
-        userId_ = user_.id; // Lấy id từ object
+        userId_ = user_._id; // Lấy id từ object
         console.log("User ID:", userId_);
     } else {
         console.log("Không tìm thấy user trong localStorage");
