@@ -1,9 +1,8 @@
 // src/pages/ProfilePage.js
 import React, { useState, useEffect } from "react";
-import {  useNavigate,useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./ProfilePage.css";
-import { useDispatch, useSelector } from 'react-redux'
-import axios from "axios";
+import { useDispatch, useSelector } from 'react-redux';
 import { Box, CircularProgress } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import { getPostsAsync } from "../redux/Reducer/postSlice"; // Import getPostsAsync
@@ -14,39 +13,26 @@ import ProfilePost from "../components/ProfilePost";
 
 function ProfilePage() {
   const userStorage = useSelector(state => state.user.user);
+  
+  const postState = useSelector(state => state.posts.posts || []);  console.log("postState:",postState);
+  const { posts, loading: isLoading, error } = postState; // Lấy posts, loading, error từ Redux
   const [type, setType] = useState("posts");
   const [isFollowing, setIsFollowing] = useState(false);
-  const [data, setData] = useState([]);
   const [user, setUser] = useState({});
-  const [isLoading, setIsLoading] = useState(false); // Thêm state loading
   const { userId } = useParams();
   const dispatch = useDispatch();
-  console.log("id:",userId )
-  useEffect(() => {
-    console.log("id:",userId )
-    if (userId  !== userStorage._id) {
-      // Nếu id khác userStorage._id => Lấy thông tin user khác
-      axios.get(`http://localhost:5000/api/user/get-by-id/${userId}`)
-        .then((response) => {
-          setUser(response.data);
-          console.log("user id:",userId);
-          console.log("user api", response.data);
-          setIsFollowing(response.data.isFollowing); // Kiểm tra trạng thái follow
-        })
-        .catch((error) => console.error("Error fetching user:", error));
-    } else {
-      console.log("userStore", userStorage)
-      setUser(userStorage); // Nếu là chính user đang đăng nhập, lấy từ redux
-      console.log("User:",user);
-    }
+  const navigate = useNavigate();
 
-  }, [userId , userStorage]);
+  // Lấy thông tin user
   useEffect(() => {
-    
-    if (type === "posts") {
-      setIsLoading(true); // Bắt đầu loading
-      axios
-        .get(`https://jsonplaceholder.typicode.com/photos?_limit=9`)
+    console.log("id:", userId);
+    if (userId !== userStorage._id) {
+      // Nếu id khác userStorage._id => Lấy thông tin user khác
+      fetch(`http://localhost:5000/api/user/get-by-id/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`, // Thêm token nếu cần
+        },
+      })
         .then((response) => {
           if (!response.ok) {
             throw new Error('Failed to fetch user');
@@ -92,12 +78,9 @@ function ProfilePage() {
     // Không cần gọi lại getPostsAsync vì state đã được cập nhật trong postSlice
   };
   return (
- 
     <div className="profilepage">
       <HeaderProfile user={user} userId={userId} />
       <ProfileTabs type={type} setType={setType} />
-
-     
 
       {type === "posts" ? (
         <Box sx={{ p: 2, display: "flex", justifyContent: "center" }}>
@@ -150,4 +133,5 @@ function ProfilePage() {
     </div>
   );
 }
+
 export default ProfilePage;

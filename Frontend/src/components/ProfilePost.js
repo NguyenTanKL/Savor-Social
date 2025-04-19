@@ -8,11 +8,10 @@ import Sheet from "@mui/joy/Sheet";
 import { Avatar } from "@mui/material";
 import Typography from "@mui/joy/Typography";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"; // Icon Like
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"; // Icon Comment
-import SendIcon from "@mui/icons-material/Send"; // Icon Share
-import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder"; // Icon Saved
-import Divider from "@mui/material/Divider";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import SendIcon from "@mui/icons-material/Send";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import Comment from "../components/Comment";
 import PostOptionsDialog from "./post/PostOptionsDialog";
@@ -21,8 +20,9 @@ import { getCommentsAsync, createCommentAsync, likePostAsync, unlikePostAsync } 
 import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
 import ShareModal from "./ShareModal/ShareModal";
-import moment from 'moment/moment'
-function ProfilePost({ postInfo,usernamePost, onPostDelete, canDelete }) {
+import moment from 'moment/moment';
+
+function ProfilePost({ postInfo, usernamePost, onPostDelete, canDelete }) {
   const [open, setOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -31,16 +31,15 @@ function ProfilePost({ postInfo,usernamePost, onPostDelete, canDelete }) {
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
   const isLiked = postInfo.likes?.includes(currentUserId) || false;
-  const [liking, setLiking] = useState(false);
   const { comments, loading } = useSelector((state) => ({
     comments: state.posts?.comments || { commentList: [] },
-    // loading: state.post?.loading || false,
   }));
   const commentInputRef = useRef(null);
-console.log("comment:",comments);
-console.log("postInfo:",postInfo);
+  console.log("comment:", comments);
+  console.log("postInfo:", postInfo);
+
   const handleOpenModal = () => {
-    console.log("getcommnet:",postInfo._id)
+    console.log("getcomment:", postInfo._id);
     setOpen(true);
     dispatch(getCommentsAsync(postInfo._id));
   };
@@ -60,14 +59,15 @@ console.log("postInfo:",postInfo);
       dispatch(getCommentsAsync(postInfo._id));
     });
   };
+
   const handleOpenShareModal = () => {
     setShareModalOpen(true);
   };
 
-  // Hàm đóng ShareModal
   const handleCloseShareModal = () => {
     setShareModalOpen(false);
   };
+
   const handleLike = () => {
     if (!postInfo?._id || !currentUserId) {
       console.error("Missing required fields for liking post", {
@@ -78,23 +78,24 @@ console.log("postInfo:",postInfo);
     }
 
     if (isLiked) {
-      // Unlike
       console.log("unlike");
       dispatch(unlikePostAsync({ postId: postInfo._id, userId: currentUserId }));
     } else {
-      // Like
       dispatch(likePostAsync({ postId: postInfo._id, userId: currentUserId }));
     }
   };
+
   const handleDelete = () => {
     onPostDelete();
     setOpen(false);
   };
+
   const handleFocusCommentInput = () => {
     if (commentInputRef.current) {
       commentInputRef.current.focus();
     }
   };
+
   return (
     <>
       <Grid2 postInfo key={postInfo._id} style={{ width: "307.66px", height: "307.66px" }}>
@@ -152,7 +153,7 @@ console.log("postInfo:",postInfo);
             </Box>
 
             {/* Phần nội dung và bình luận bên phải */}
-            <Stack direction="column" sx={{ flex: 1, borderLeft: "1px solid #e0e0e0", position: "relative" }}>
+            <Stack direction="column" sx={{ flex: 1, borderLeft: "1px solid #e0e0e0" }}>
               {/* Header: Thông tin người đăng */}
               <Stack
                 direction="row"
@@ -178,7 +179,7 @@ console.log("postInfo:",postInfo);
                   flex: 1,
                   p: 2,
                   overflowY: "auto",
-                  pb: "60px", // Khoảng cách để phần nhập bình luận không che nội dung
+                  height: "calc(100% - 130px)", // Trừ chiều cao của header (~50px) và footer (~80px)
                 }}
               >
                 {/* Nội dung bài post */}
@@ -191,30 +192,39 @@ console.log("postInfo:",postInfo);
                       </Typography>
                       <Typography fontSize={12} color="text.secondary">
                         {moment(postInfo.createdAt).fromNow()}
-                    </Typography>
+                      </Typography>
                     </Stack>
-                    
                     <Typography fontSize={14}>{postInfo.content || ""}</Typography>
-                    
                   </Stack>
                 </Stack>
-                  {/* Danh sách bình luận */}
-                  {comments.commentList.length > 0 ? (
-                    comments.commentList.map((comment) => (
-                      <Comment
-                        key={comment._id}
-                        commentInfo = {comment}
-                        replies = {comment.replies || []}
-                      />
+                {/* Danh sách bình luận */}
+                {comments.commentList.length > 0 ? (
+                  comments.commentList.map((comment) => (
+                    <Comment
+                      key={comment._id}
+                      commentInfo={comment}
+                      replies={comment.replies || []}
+                    />
                   ))
                 ) : (
                   <Typography fontSize={14} sx={{ p: 2, textAlign: "center" }}>
                     No comments yet.
                   </Typography>
                 )}
+              </Stack>
+
+              {/* Phần footer: Biểu tượng và nhập bình luận (cố định ở dưới cùng) */}
+              <Stack
+                direction="column"
+                sx={{
+                  borderTop: "1px solid #e0e0e0",
+                  bgcolor: "white",
+                  p: 1,
+                }}
+              >
                 {/* Biểu tượng Like, Comment, Share, Saved */}
-                <Stack direction="row" sx={{ gap: 2, mb: 2, alignItems: "center" }}>
-                <IconButton onClick={handleLike}>
+                <Stack direction="row" sx={{ gap: 2, alignItems: "center", mb: 1 }}>
+                  <IconButton onClick={handleLike}>
                     {isLiked ? (
                       <FavoriteIcon sx={{ fontSize: 24, color: "red" }} />
                     ) : (
@@ -233,53 +243,38 @@ console.log("postInfo:",postInfo);
                 </Stack>
 
                 {/* Số lượt thích */}
-                <Typography fontSize={14} fontWeight="bold" sx={{ mb: 2 }}>
+                <Typography fontSize={14} fontWeight="bold" sx={{ mb: 1 }}>
                   {postInfo.likes?.length || 0} likes
                 </Typography>
 
-                
-              </Stack>
-
-              {/* Phần nhập bình luận (cố định ở dưới cùng) */}
-              <Stack
-                direction="row"
-                sx={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  p: 1, // Giảm padding để trông gọn hơn
-                  borderTop: "1px solid #e0e0e0",
-                  alignItems: "center",
-                  gap: 1,
-                  bgcolor: "white",
-                }}
-              >
-                <Avatar src={postInfo.user?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
-                <TextField
-                  inputRef={commentInputRef}
-                  fullWidth
-                  variant="standard"
-                  placeholder="Add a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  InputProps={{
-                    disableUnderline: true,
-                    style: { fontSize: 14 },
-                  }}
-                  sx={{
-                    "& .MuiInputBase-root": {
-                      padding: "0 8px", // Giảm padding để trông gọn hơn
-                    },
-                  }}
-                />
-                <IconButton
-                  onClick={handleCreateComment}
-                  disabled={loading || !commentText.trim()}
-                  sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
-                >
-                  <SendIcon sx={{ fontSize: 20 }} />
-                </IconButton>
+                {/* Phần nhập bình luận */}
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+                  <Avatar src={postInfo.user?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
+                  <TextField
+                    inputRef={commentInputRef}
+                    fullWidth
+                    variant="standard"
+                    placeholder="Add a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    InputProps={{
+                      disableUnderline: true,
+                      style: { fontSize: 14 },
+                    }}
+                    sx={{
+                      "& .MuiInputBase-root": {
+                        padding: "0 8px",
+                      },
+                    }}
+                  />
+                  <IconButton
+                    onClick={handleCreateComment}
+                    disabled={loading || !commentText.trim()}
+                    sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
+                  >
+                    <SendIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
+                </Stack>
               </Stack>
             </Stack>
           </Sheet>

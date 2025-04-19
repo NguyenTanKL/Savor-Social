@@ -65,7 +65,7 @@ function App() {
                 <Route path="/create" element={<CreatePost />} />
                 <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />     
                 <Route path="/profile/:userId" element={<ProfilePage />} />
-                <Route path="/editProfile" element={<EditProfilePage />} />
+                <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id} />} />
                 <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
               </>
             ) : isLoggedIn && userStorage.usertype == "restaurant" ? (
