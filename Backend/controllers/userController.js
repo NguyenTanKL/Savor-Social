@@ -1,4 +1,5 @@
 // controllers/userController.js
+const userAuth = require("../middlewares/authMiddleware");
 const User = require("../models/UserModel");
 
 const getAllUsers = async (req, res) => {
@@ -264,6 +265,66 @@ const checkFollowStatus = async (req, res) => {
     res.status(500).json({ message: "Lỗi server nội bộ" });
   }
 };
+const getVouchers = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.find({ _id: userId }).populate('my_vouchers', 'name release_day expire_day img description code');
+
+    if (!user) {
+      return res.status(404).json({ message: 'No vouchers found for this ID' });
+    }
+
+    const vouchersRaw = user
+      .map(v => v.my_vouchers)
+      .flat()
+      .filter(Boolean); // filter out nulls
+    
+      const vouchers = vouchersRaw.map(voucher => ({
+        _id: voucher._id,
+        name: voucher.name,
+        release_day: voucher.release_day
+                      ? new Date(voucher.release_day).toLocaleDateString("en-GB")
+                      : null,
+        expire_day: voucher.expire_day
+                      ? new Date(voucher.expire_day).toLocaleDateString("en-GB")
+                      : null,
+        img: voucher.img,
+        description: voucher.description,
+        code: voucher.code
+      }));
+
+
+      res.status(200).json(vouchers);
+  } catch (error) {
+    console.error("Error fetching vouchers by user:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+const removeVoucherFromUser = async (req, res) => {
+  try {
+    const { userId, voucherId } = req.params;
+
+    // Update user: pull voucherId from my_vouchers
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { my_vouchers: voucherId } },
+      { new: true }
+    ).populate('my_vouchers');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      message: 'Voucher removed from user successfully',
+      my_vouchers: user.my_vouchers,
+    });
+  } catch (error) {
+    console.error('Error removing voucher from user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 module.exports = {
   getAllUsers,
   getRestaurants,
@@ -277,4 +338,6 @@ module.exports = {
   getUserById,
   getFollowers,
   checkFollowStatus,
+  getVouchers,
+  removeVoucherFromUser,
 };

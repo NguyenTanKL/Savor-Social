@@ -44,7 +44,7 @@ function HeaderProfile({ user, userId }) {
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const handleEditProfile = () => {
-    navigate("/EditProfilePage");
+    navigate("/editProfile");
   };
   const handleFollowToggle = async () => {
 
