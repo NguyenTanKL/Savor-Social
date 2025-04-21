@@ -17,7 +17,7 @@ const userAuth = require("../middlewares/authMiddleware.js")
 const {upload} = require("../config/cloudinary/cloudinaryConfig.js")
 const router = express.Router();
 const Post = require('../models/PostModel'); // Model bài post của bạn
-const User = require("../models/User");
+const User = require("../models/UserModel");
 const mongoose = require("mongoose");
 // API lấy tất cả bài post
 router.get('/posts', async (req, res) => {
