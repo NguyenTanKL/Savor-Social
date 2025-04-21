@@ -12,6 +12,13 @@ class VoucherController{
         try {
             const vouchers = await Voucher.find({ name: req.params.name });
 
+            for (let voucher of vouchers) {
+                if (new Date(voucher.expire_day).getTime() < Date.now()) {
+                    voucher.status = "expired";
+                    await voucher.save();
+                }
+            }
+
             const formattedVouchers = vouchers.map(voucher => ({
                 _id: voucher._id,
                 name: voucher.name,
@@ -20,7 +27,7 @@ class VoucherController{
                 expire_day: new Date(voucher.expire_day).toLocaleDateString("en-GB"),
                 code: voucher.code,
                 description: voucher.description,
-                by: voucher.by
+                quantity: voucher.quantity,
             }));
     
             res.json(formattedVouchers);
@@ -32,10 +39,10 @@ class VoucherController{
     // GET /summary
     async getAllVouchers(req, res) {
         try {
-            // const restaurantId = req.user.id;
+            const restaurantId = req.params.restaurantId; // Lấy restaurantId từ params
 
-            // const vouchers = await Voucher.find({ restaurant_id: restaurantId });
-            const vouchers = await Voucher.find();
+            const vouchers = await Voucher.find({ restaurant_id: restaurantId });
+            // const vouchers = await Voucher.find();
             
             const formattedVouchers = vouchers.map(v => ({
               _id: v._id,
@@ -44,7 +51,7 @@ class VoucherController{
               release_day: v.release_day,
               expire_day: v.expire_day,
               description: v.description,
-              image: v.image,
+              image: v.img,
               code: v.code,
               status: v.status,
               formattedDateStart: v.release_day ? new Date(v.release_day).toLocaleDateString() : null,
@@ -78,7 +85,7 @@ class VoucherController{
                 img: imageUrl,
                 status: "available",
                 quantity: quantity,
-                restaurant_id: restaurantId
+                restaurant_id: restaurantId,
             });
     
             // await newVoucher.save();
@@ -115,11 +122,11 @@ class VoucherController{
         }
     }      
 
-    // POST /collect/:voucherId
+    // POST /:userId/collect/:voucherId
     async collectVoucher(req, res) {
         try {
             const { voucherId } = req.params;
-            const { userId } = req.body;
+            const { userId } = req.params;
     
             // Check if the voucher exists
             const voucher = await Voucher.findById(voucherId);
@@ -130,6 +137,11 @@ class VoucherController{
             // Check if the voucher is still available
             if (voucher.quantity <= 0) {
                 return res.status(400).json({ message: "Voucher is out of stock" });
+            }
+
+            // Check if the voucher is expired
+            if (voucher.status == "expired") {
+                return res.status(400).json({ message: "Voucher has expired" });
             }
     
             // Check if the user exists
@@ -149,7 +161,6 @@ class VoucherController{
     
             // Reduce voucher quantity, add information about the collector
             voucher.quantity -= 1;
-            voucher.status = "collected";
             voucher.collector.push(userId);
             voucher.by = user.username;
             await voucher.save();
@@ -158,6 +169,30 @@ class VoucherController{
         } catch (error) {
             return res.status(500).json({ message: "Server error", error: error.message });
         }
+    }
+
+    async getCollector(req, res) {
+        try {
+            const { voucherId } = req.params;
+        
+            // Find all vouchers with the same ID (or same code if you're using per-user vouchers)
+            const vouchers = await Voucher.find({ _id: voucherId }).populate('collector', 'username avatar -password');
+        
+            if (!vouchers) {
+              return res.status(404).json({ message: 'No vouchers found for this ID' });
+            }
+        
+            // If it's a list of vouchers (e.g., per-user), map each collector
+            const users = vouchers
+              .map(v => v.collector)
+              .flat() // Flatten the array of collectors
+              .filter(Boolean); // filter out nulls
+        
+            res.status(200).json(users);
+          } catch (error) {
+            console.error("Error fetching users by voucher:", error);
+            res.status(500).json({ message: "Server error", error: error.message });
+          }
     }
    
 }

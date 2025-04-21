@@ -1,7 +1,7 @@
 // routes/userRoutes.js
 const express = require("express")
 const User = require("../models/UserModel"); 
-const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers, checkFollowStatus } = require("../controllers/userController.js")
+const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers, checkFollowStatus, getVouchers, removeVoucherFromUser } = require("../controllers/userController.js")
 const userAuth = require("../middlewares/authMiddleware.js")
 
 const router = express.Router();
@@ -18,6 +18,8 @@ router.get("/follower/:userId", userAuth, getFollowers);
 router.post("/search", searchUser);
 router.get("/get-by-id/:userId", getUserById);
 router.get("/check-follow/:id",userAuth,checkFollowStatus);
+router.get("/vouchers/:userId", getVouchers);
+router.delete('/:userId/voucher/:voucherId', removeVoucherFromUser);
 
 // API lấy thông tin user theo ID
 router.get("/:userId", async (req, res) => {

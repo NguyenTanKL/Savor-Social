@@ -133,6 +133,7 @@ const db  = require('./config/db');
 db.connect();
 
 route(app);
+router(app);
 
 // Create a middleware to allow CORS to create voucher
 
