@@ -9,12 +9,13 @@ router.post('/create', upload.single("image"), voucherController.createVoucher)
 
 router.delete('/delete/:id', voucherController.deleteVoucher)
 
-router.post('/collect/:voucherId', voucherController.collectVoucher)
+router.post('/:userId/collect/:voucherId', voucherController.collectVoucher)
 
-router.get('/summary', voucherController.getAllVouchers)
+router.get('/summary/:restaurantId', voucherController.getAllVouchers)
 
 router.get('/:name', voucherController.getListOfVouchers)
 
 router.get('/voucher_detail/:voucher_id', voucherController.getVouchers_detail)
+router.get('/collector/:voucherId', voucherController.getCollector)
 
 module.exports = router;
