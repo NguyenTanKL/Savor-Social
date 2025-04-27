@@ -30,7 +30,8 @@ function ProfilePost({ postInfo,usernamePost, onPostDelete, canDelete }) {
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
-  const isLiked = postInfo.likes?.includes(currentUserId) || false;
+  const isLiked = Array.isArray(postInfo.likes) && postInfo.likes.includes(currentUserId);
+  // const isLiked = postInfo.likes?.includes(currentUserId) || false;
   const [liking, setLiking] = useState(false);
   const { comments, loading } = useSelector((state) => ({
     comments: state.posts?.comments || { commentList: [] },

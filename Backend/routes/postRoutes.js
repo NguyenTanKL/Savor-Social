@@ -124,7 +124,7 @@ router.post("/:postID/like", async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: "Bài post không tồn tại" });
         }
-
+       
         console.log("Bài post tìm thấy:", post);
         const userObjectId = new mongoose.Types.ObjectId(userId);
         let liked = post.likes.users.includes(userId);

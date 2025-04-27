@@ -24,6 +24,7 @@ function route(app){
     app.use('/api/chats/', chatRouter);
     app.use('/api/vouchers/', voucherRouter);
     app.use('/api/posts/',postRouter);
+    
 }
 
 module.exports = route

@@ -162,8 +162,9 @@ import "./MapUser.css";
 import "@goongmaps/goong-js/dist/goong-js.css"; // Import CSS của Goong
 import goongjs from "@goongmaps/goong-js";
 
-const GOONG_MAPS_API_KEY = "oyPuAhIOG5pbK18KxlnjmLtHFTBkUB5gRluI8ieP"; // Thay thế bằng khóa API của bạn
-
+// const GOONG_MAPS_API_KEY = "oyPuAhIOG5pbK18KxlnjmLtHFTBkUB5gRluI8ieP"; // Thay thế bằng khóa API của bạn
+const GOONG_MAPS_API_KEY = "oyPuAhIOG5pbK18KxlnjmLtHFTBkUB5gRluI8ieP";
+const GOONG_PLACES_API_KEY = "bI22G8oebQwHbOmJ6CGZLpBqhFWTow7pXwpyrOXT";
 function MapUser({ selectedPostId, posts }) {
     const [coordinates, setCoordinates] = useState(null);
     const [userLocation, setUserLocation] = useState(null);
@@ -207,53 +208,82 @@ function MapUser({ selectedPostId, posts }) {
             center: [coordinates.lng, coordinates.lat],
             zoom: 14,
         });
+        map.on('load', () => {
+            // Thêm marker cho bài viết
+            new goongjs.Marker().setLngLat([coordinates.lng, coordinates.lat]).addTo(map);
 
-        // Thêm marker cho bài viết
-        new goongjs.Marker().setLngLat([coordinates.lng, coordinates.lat]).addTo(map);
+            // Thêm marker cho vị trí hiện tại của người dùng
+            new goongjs.Marker({ color: 'red' }).setLngLat([userLocation.lng, userLocation.lat]).addTo(map);
 
-        // Thêm marker cho vị trí hiện tại của người dùng
-        new goongjs.Marker({ color: 'red' }).setLngLat([userLocation.lng, userLocation.lat]).addTo(map);
+            // Lấy dữ liệu chỉ đường từ Goong API
+            const getDirections = async () => {
+                // const directionsUrl = `https://api.goong.io/directions?origin=${userLocation.lat},${userLocation.lng}&destination=${coordinates.lat},${coordinates.lng}&key=${GOONG_MAPS_API_KEY}`;
+                // const response = await fetch(directionsUrl);
+                const response = await fetch(
+                    `https://rsapi.goong.io/Direction?origin=${userLocation.lat},${userLocation.lng}&destination=${coordinates.lat},${coordinates.lng}&vehicle=car&api_key=${GOONG_PLACES_API_KEY}`
+                );
 
-        // Lấy dữ liệu chỉ đường từ Goong API
-        const getDirections = async () => {
-            const directionsUrl = `https://api.goong.io/directions?origin=${userLocation.lat},${userLocation.lng}&destination=${coordinates.lat},${coordinates.lng}&key=${GOONG_MAPS_API_KEY}`;
-            const response = await fetch(directionsUrl);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
 
-            if (data && data.routes) {
-                const route = data.routes[0]; // Lấy tuyến đường đầu tiên
+                if (data && data.routes) {
+                    const route = data.routes[0]; // Lấy tuyến đường đầu tiên
 
-                // Vẽ tuyến đường lên bản đồ
-                const routeCoordinates = route.legs[0].steps.map(step => [step.start_location.lng, step.start_location.lat]);
-                const line = new goongjs.GeoJSONSource({
-                    data: {
+                    // Vẽ tuyến đường lên bản đồ
+                    const routeCoordinates = route.legs[0].steps.map(step => [step.start_location.lng, step.start_location.lat]);
+                    // const line = new goongjs.GeoJSONSource({
+                    //     data: {
+                    //         type: "Feature",
+                    //         geometry: {
+                    //             type: "LineString",
+                    //             coordinates: routeCoordinates,
+                    //         },
+                    //     },
+                    // });
+
+                    // map.addSource('route', line);
+                    // map.addLayer({
+                    //     id: 'route',
+                    //     type: 'line',
+                    //     source: 'route',
+                    //     layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    //     paint: {
+                    //         'line-color': '#3887be',
+                    //         'line-width': 5,
+                    //     },
+                    // });
+                    const geoJsonData = {
                         type: "Feature",
                         geometry: {
                             type: "LineString",
                             coordinates: routeCoordinates,
                         },
-                    },
-                });
+                    };
 
-                map.addSource('route', line);
-                map.addLayer({
-                    id: 'route',
-                    type: 'line',
-                    source: 'route',
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: {
-                        'line-color': '#3887be',
-                        'line-width': 5,
-                    },
-                });
-            }
-        };
+                    // Thêm Source vào bản đồ
+                    map.addSource('route', {
+                        type: 'geojson',
+                        data: geoJsonData
+                    });
 
-        getDirections();
+                    // Thêm Layer vào bản đồ
+                    map.addLayer({
+                        id: 'route',
+                        type: 'line',
+                        source: 'route',
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: {
+                            'line-color': '#3887be',
+                            'line-width': 5,
+                        },
+                    });
+                }
+            };
 
+            getDirections();
+        });
         return () => map.remove();
     }, [coordinates, userLocation]);
 

@@ -159,6 +159,19 @@ class VoucherController{
             return res.status(500).json({ message: "Server error", error: error.message });
         }
     }
+
+    async getVouchers_detail(req,res)
+    {
+        try {
+            const voucher = await Voucher.findById(req.params.voucher_id);
+            console.log("day la api router nhan duoc", req.params);
+            if (!voucher) return res.status(404).json({ message: "Voucher không tồn tại" });
+            res.json(voucher);
+        } catch (err) {
+            res.status(500).json({ message: "Lỗi server" });
+        }
+
+    }
    
 }
 

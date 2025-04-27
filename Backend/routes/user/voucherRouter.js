@@ -15,4 +15,6 @@ router.get('/summary', voucherController.getAllVouchers)
 
 router.get('/:name', voucherController.getListOfVouchers)
 
+router.get('/voucher_detail/:voucher_id', voucherController.getVouchers_detail)
+
 module.exports = router;

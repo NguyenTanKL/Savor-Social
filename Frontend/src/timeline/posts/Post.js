@@ -18,12 +18,28 @@ import Grid from "@mui/material/Grid";
 import Modal from "../../components/Modal";
 import RoomIcon from "@mui/icons-material/Room"; // Icon đậm
 
-function Post({ user, postID, postImage, likes, caption, address, timestamp, is_voucher, is_ad, isSelected, onSelect }) {
+function Post({ user, postID, images = [], likes, caption, address, timestamp, is_voucher, is_ad, isSelected, onSelect, ad_id, voucher_id }) {
     const [open, setOpen] = React.useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [userData, setUserData] = useState(null);
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(likes.count);
+    const [voucherData, setVoucherData] = useState(null);
+    const [current, setCurrent] = React.useState(0);
+    const nextImage = () => setCurrent((prev) => (prev + 1) % images.length);
+    const prevImage = () => setCurrent((prev) => (prev - 1 + images.length) % images.length);
+    useEffect(() => {
+        // console.log("Dữ liệu voucher từ API:");
+        if (is_voucher) {
+            axios.get(`http://localhost:5000/api/vouchers/voucher_detail/${voucher_id}`)
+                .then(res => {
+                    console.log("Dữ liệu voucher từ API:", res.data); // In ra console
+                    setVoucherData(res.data); // Lưu vào state
+                })
+                .catch(err => console.error("Lỗi khi lấy thông tin voucher:", err));
+        }
+    }, [is_voucher, voucher_id]);
+
     useEffect(() => {
         console.log("User ID cua bai post:", user);
         if (user) {
@@ -38,15 +54,7 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                 });
         }
     }, [user]);
-    useEffect(() => {
-        // Kiểm tra nếu user đã like post
 
-        if (likes && likes.users && likes.users.includes(userId_)) {
-            setLiked(true);
-        }
-
-
-    }, [likes, user]);
 
     const userFromStorage = localStorage.getItem("user");
     let user_
@@ -58,7 +66,15 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
     } else {
         console.log("Không tìm thấy user trong localStorage");
     }
+    useEffect(() => {
+        // Kiểm tra nếu user đã like post
 
+        if (likes && likes.users && likes.users.includes(userId_)) {
+            setLiked(true);
+        }
+
+
+    }, [likes, user, userId_]);
     const handleLike = async () => {
         try {
             const newLikedStatus = !liked;
@@ -70,6 +86,18 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                 { userId: userId_ },
                 { headers: { "Content-Type": "application/json" } }
             );
+            console.log("kiem tra xem user la gi:", user)
+            console.log("kiem tra xem userId_ la gi:", userId_)
+            if (userId_ !== user) {
+                await axios.post("http://localhost:5000/api/notifications/create", {
+                    senderId: userId_,
+                    receiverId: user,
+                    type: "like",
+                    postId: postID,
+                    createdAt: new Date()
+                });
+                console.log("thong bao thanh cong")
+            }
 
         } catch (err) {
             console.error("Lỗi khi like post:", err);
@@ -93,12 +121,11 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                 userId: userId_,
                 postId: postID,
             });
-            if (isSaved)
-            {
+            if (isSaved) {
                 setIsSaved(false);
             }
-            else {setIsSaved(true)}
-            
+            else { setIsSaved(true) }
+
         } catch (error) {
             console.error("Lỗi khi lưu bài viết", error);
         }
@@ -119,9 +146,23 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                     <FmdGoodOutlinedIcon className="postIcon" color="action" />
                     <span>{address}</span>
                 </div>
-                <div className="post__image">
+                {/* <div className="post__image">
                     <img src={postImage} alt=""></img>
+                </div> */}
+                <div className="post__image" style={{ position: "relative" }}>
+                    <img
+                        src={images[current]}
+                        alt={`post-img-${current}`}
+                        style={{ width: "100%", borderRadius: "10px" }}
+                    />
+                    {images.length > 1 && (
+                        <>
+                            <button onClick={prevImage} className="nav-button left">◀</button>
+                            <button onClick={nextImage} className="nav-button right">▶</button>
+                        </>
+                    )}
                 </div>
+
                 <div>
                     <Card elevation={3} style={{ maxWidth: 600, margin: 'auto' }}>
                         <Grid container>
@@ -147,9 +188,9 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                                 >
                                     Voucher
                                 </Typography>
-                                <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
-                                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>31/01/2025</span></Typography>
-                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>36</span></Typography>
+                                <Typography variant="body1">{voucherData?.description}</Typography>
+                                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
+                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
                             </Grid>
 
                             {/* Right Section */}
@@ -181,23 +222,32 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                 <div className="post__footer ">
                     <div className="post_footerIcons">
                         <div className="post__iconsMain">
-                            <FavoriteBorderIcon className="postIcon" />
+                            {liked ? (
+                                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+                            ) : (
+                                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+                            )}
                             <ChatBubbleOutlineIcon className="postIcon" />
                             <TelegramIcon className="postIcon" />
                         </div>
                         <div className="post_iconSave">
                             <MapOutlinedIcon className="postIcon" />
-                            <FmdGoodOutlinedIcon className="postIcon" />
-                            {/* <div onClick={handleSavePost}>
-                            {isSaved ? (
-                                <BookmarkIcon className="postIcon" color="primary" />
+                            {isSelected ? (
+                                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
                             ) : (
-                                <BookmarkBorderIcon className="postIcon" />
+                                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
                             )}
-                            </div> */}
+                            {/* <BookmarkBorderIcon className="postIcon" /> */}
+
+                            {isSaved ? (
+                                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                            ) : (
+                                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                            )}
+
                         </div>
                     </div>
-                    <span className="post_likes">{likes.count} likes</span>
+                    <span className="post_likes">{likeCount} likes</span>
                     <br />
                     <div className="post__caption">
                         <span>{user} </span> {caption}
@@ -208,7 +258,7 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                             open={open}
                             onClose={() => setOpen(false)}
                             user={user}
-                            postImage={postImage}
+                            postImage={images[0]}
                             likes={likes}
                             caption={caption}
                             address={address}
@@ -237,8 +287,21 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                     <FmdGoodOutlinedIcon className="postIcon" color="action" />
                     <span>{address}</span>
                 </div>
-                <div className="post__image">
+                {/* <div className="post__image">
                     <img src={postImage} alt=""></img>
+                </div> */}
+                <div className="post__image" style={{ position: "relative" }}>
+                    <img
+                        src={images[current]}
+                        alt={`post-img-${current}`}
+                        style={{ width: "100%", borderRadius: "10px" }}
+                    />
+                    {images.length > 1 && (
+                        <>
+                            <button onClick={prevImage} className="nav-button left">◀</button>
+                            <button onClick={nextImage} className="nav-button right">▶</button>
+                        </>
+                    )}
                 </div>
                 <div>
                     <Card elevation={3} style={{ maxWidth: 600, margin: 'auto', minHeight: "80px" }}>
@@ -265,9 +328,9 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                                 >
                                     Voucher
                                 </Typography>
-                                <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
-                                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>31/01/2025</span></Typography>
-                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>36</span></Typography>
+                                <Typography variant="body1">{voucherData?.description}</Typography>
+                                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
+                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
                             </Grid>
 
                             {/* Right Section */}
@@ -301,17 +364,32 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                 <div className="post__footer ">
                     <div className="post_footerIcons">
                         <div className="post__iconsMain">
-                            <FavoriteBorderIcon className="postIcon" />
+                            {liked ? (
+                                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+                            ) : (
+                                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+                            )}
                             <ChatBubbleOutlineIcon className="postIcon" />
                             <TelegramIcon className="postIcon" />
                         </div>
                         <div className="post_iconSave">
                             <MapOutlinedIcon className="postIcon" />
-                            <FmdGoodOutlinedIcon className="postIcon" />
-                            <BookmarkBorderIcon className="postIcon" />
+                            {isSelected ? (
+                                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+                            ) : (
+                                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                            )}
+                            {/* <BookmarkBorderIcon className="postIcon" /> */}
+
+                            {isSaved ? (
+                                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                            ) : (
+                                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                            )}
+
                         </div>
                     </div>
-                    <span className="post_likes">{likes.count} likes</span>
+                    <span className="post_likes">{likeCount} likes</span>
                     <br />
                     <div className="post__caption">
                         <span>{user} </span> {caption}
@@ -322,7 +400,7 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                             open={open}
                             onClose={() => setOpen(false)}
                             user={user}
-                            postImage={postImage}
+                            postImage={images[0]}
                             likes={likes}
                             caption={caption}
                             address={address}
@@ -352,11 +430,24 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                     <FmdGoodOutlinedIcon className="postIcon" color="action" />
                     <span>{address}</span>
                 </div>
-                <div className="post__image">
+                {/* <div className="post__image">
                     <img src={postImage} alt=""></img>
+                </div> */}
+                <div className="post__image" style={{ position: "relative" }}>
+                    <img
+                        src={images[current]}
+                        alt={`post-img-${current}`}
+                        style={{ width: "100%", borderRadius: "10px" }}
+                    />
+                    {images.length > 1 && (
+                        <>
+                            <button onClick={prevImage} className="nav-button left">◀</button>
+                            <button onClick={nextImage} className="nav-button right">▶</button>
+                        </>
+                    )}
                 </div>
                 <div className="post__footer ">
-                    <div className="post_footerIcons">
+                    {/* <div className="post_footerIcons">
                         <div className="post__iconsMain">
                             <FavoriteBorderIcon className="postIcon" />
                             <ChatBubbleOutlineIcon className="postIcon" />
@@ -367,8 +458,35 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                             <FmdGoodOutlinedIcon className="postIcon" />
                             <BookmarkBorderIcon className="postIcon" />
                         </div>
+                    </div> */}
+                    <div className="post_footerIcons">
+                        <div className="post__iconsMain">
+                            {liked ? (
+                                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+                            ) : (
+                                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+                            )}
+                            <ChatBubbleOutlineIcon className="postIcon" />
+                            <TelegramIcon className="postIcon" />
+                        </div>
+                        <div className="post_iconSave">
+                            <MapOutlinedIcon className="postIcon" />
+                            {isSelected ? (
+                                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+                            ) : (
+                                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                            )}
+                            {/* <BookmarkBorderIcon className="postIcon" /> */}
+
+                            {isSaved ? (
+                                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                            ) : (
+                                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                            )}
+
+                        </div>
                     </div>
-                    <span className="post_likes">{likes.count} likes</span>
+                    <span className="post_likes">{likeCount} likes</span>
                     <br />
                     <div className="post__caption">
                         <span>{user} </span> {caption}
@@ -379,12 +497,13 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                             open={open}
                             onClose={() => setOpen(false)}
                             user={user}
-                            postImage={postImage}
+                            postImage={images[0]}
                             likes={likes}
                             caption={caption}
                             address={address}
                             timestamp={timestamp}
                         />}
+
                         <div className="comment">
                             <input placeholder="Add a comment…" />
                             <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
@@ -408,8 +527,21 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                     <FmdGoodOutlinedIcon className="postIcon" color="action" />
                     <span>{address}</span>
                 </div>
-                <div className="post__image">
+                {/* <div className="post__image">
                     <img src={postImage} alt=""></img>
+                </div> */}
+                <div className="post__image" style={{ position: "relative" }}>
+                    <img
+                        src={images[current]}
+                        alt={`post-img-${current}`}
+                        style={{ width: "100%", borderRadius: "10px" }}
+                    />
+                    {images.length > 1 && (
+                        <>
+                            <button onClick={prevImage} className="nav-button left">◀</button>
+                            <button onClick={nextImage} className="nav-button right">▶</button>
+                        </>
+                    )}
                 </div>
                 <div className="post__footer ">
                     <div className="post_footerIcons">
@@ -430,13 +562,13 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                                 <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
                             )}
                             {/* <BookmarkBorderIcon className="postIcon" /> */}
-                            
+
                             {isSaved ? (
                                 <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
                             ) : (
                                 <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
                             )}
-                            
+
                         </div>
                     </div>
                     <span className="post_likes">{likeCount} likes</span>
@@ -450,7 +582,7 @@ function Post({ user, postID, postImage, likes, caption, address, timestamp, is_
                             open={open}
                             onClose={() => setOpen(false)}
                             user={user}
-                            postImage={postImage}
+                            postImage={images[0]}
                             likes={likes}
                             caption={caption}
                             address={address}
