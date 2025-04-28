@@ -53,7 +53,7 @@ function Timeline() {
                                 user={post.userId}
                                 postID={post._id}
                                 postComment = {post.comments}
-                                postImage={post.imageUrl}
+                                images={post.images || []}
                                 likes={post.likes}
                                 content={post.content}
                                 tags = {post.tags}
@@ -65,6 +65,9 @@ function Timeline() {
                                 is_ad={post.is_ad}
                                 isSelected={selectedPostId === post._id} // Chỉ bài post đang chọn có `isSelected = true`
                                 onSelect={() => setSelectedPostId(post._id)}
+                                ad_id={post.ad_id}
+                                voucher_id={post.voucher_id}
+                                
                             />
                         ))}
                     </div>

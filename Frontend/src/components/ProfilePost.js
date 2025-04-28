@@ -314,7 +314,7 @@ function ProfilePost({ postInfo, usernamePost, handlePostDelete, canDelete }) {
     <>
       <Grid2 key={postInfo._id} style={{ width: "307.66px", height: "307.66px" }}>
         <img
-          src={postInfo.imageUrl}
+          src={postInfo.images}
           alt={postInfo.content}
           style={{
             width: "100%",

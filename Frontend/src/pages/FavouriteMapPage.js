@@ -275,7 +275,6 @@ function FavouriteMapPage() {
                 {selectedLocation && (
                     <div className="location-details">
                         <h3>{selectedLocation.name}</h3>
-
                         <button onClick={handleGoTo}>Go To</button>
                         <button onClick={() => { setSelectedLocation(null); setRoute(null); }}>Đóng</button>
                     </div>

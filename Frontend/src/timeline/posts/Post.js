@@ -26,7 +26,7 @@ function Post({
   user,
   postID,
   postComment,
-  postImage,
+  images,
   likes,
   content,
   tags,
@@ -38,6 +38,8 @@ function Post({
   is_ad,
   isSelected,
   onSelect,
+  ad_id,
+  voucher_id
 }) {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.user.user);
@@ -47,10 +49,8 @@ function Post({
   const [open, setOpen] = useState(false);
   const [userData, setUserData] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  // const [userRating, setUserRating] = useState(null); // Điểm rating của người dùng hiện tại
-  // const [averageRating, setAverageRating] = useState(null); // Điểm trung bình rating của bài post
-  // const [ratingLoading, setRatingLoading] = useState(false);
-  // Sử dụng hook usePostInteractions
+  const [voucherData, setVoucherData] = useState(null);
+  const [current, setCurrent] =useState(0);
   const {
     liked,
     likeCount,
@@ -64,7 +64,33 @@ function Post({
     loadComments,
     handleCreateComment,
   } = usePostInteractions(postID, likes, currentUserId);
-
+  const nextImage = () => setCurrent((prev) => (prev + 1) % images.length);
+  const prevImage = () => setCurrent((prev) => (prev - 1 + images.length) % images.length);
+  useEffect(() => {
+      // console.log("Dữ liệu voucher từ API:");
+      if (is_voucher) {
+          axios.get(`http://localhost:5000/api/vouchers/voucher_detail/${voucher_id}`)
+              .then(res => {
+                  console.log("Dữ liệu voucher từ API:", res.data); // In ra console
+                  setVoucherData(res.data); // Lưu vào state
+              })
+              .catch(err => console.error("Lỗi khi lấy thông tin voucher:", err));
+      }
+  }, [is_voucher, voucher_id]);
+  useEffect(() => {
+    console.log("User ID cua bai post:", user);
+    if (user) {
+        axios.get(`http://localhost:5000/api/userRoutes/${user}`)
+            .then(res => {
+                console.log("Dữ liệu user nhận được:", res.data);
+                setUserData(res.data);
+            })
+            .catch(err => {
+                console.error("Lỗi khi lấy dữ liệu user:", err);
+                console.log("Lỗi chi tiết:", err.response?.data);
+            });
+    }
+}, [user]);
   // Lấy thông tin user của bài post
   useEffect(() => {
 
@@ -82,67 +108,6 @@ function Post({
         });
     }
   }, [user]);
-  // useEffect(() => {
-  //   const fetchRatingData = async () => {
-  //     try {
-  //       // Lấy điểm trung bình rating của bài post
-  //       console.log("ratifngpost",postID);
-  //       const averageResponse = await axios.get(
-  //         `http://localhost:5000/api/posts/${postID}/rating/average`,
-  //         {
-  //           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  //         }
-  //       );
-  //       setAverageRating(averageResponse.data.averageRating || 0);
-
-  //       // Lấy rating của người dùng hiện tại (nếu có)
-  //       const userRatingResponse = await axios.get(
-  //         `http://localhost:5000/api/posts/${postID}/rating/user/${currentUserId}`,
-  //         {
-  //           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  //         }
-  //       );
-  //       setUserRating(userRatingResponse.data.rating || null);
-  //     } catch (error) {
-  //       console.error("Lỗi khi lấy dữ liệu rating:", error);
-  //     }
-  //   };
-
-  //   if (postID && currentUserId) {
-  //     fetchRatingData();
-  //   }
-  // }, [postID, currentUserId]);
-  // const handleRatingChange = async (event, newValue) => {
-  //   if (!newValue) return; // Nếu người dùng bỏ chọn rating
-  //   setRatingLoading(true);
-  //   try {
-  //     // Gửi yêu cầu cập nhật rating lên server
-  //     const token = localStorage.getItem("token");
-  //     console.log("newvalue:",newValue);
-  //     await axios.post(
-  //       `http://localhost:5000/api/posts/${postID}/rating`,
-  //       { rating: newValue },
-  //       {
-  //         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  //       }
-  //     );
-
-  //     // Cập nhật state sau khi gửi rating thành công
-  //     setUserRating(newValue);
-
-  //     // Fetch lại điểm trung bình rating
-  //     const averageResponse = await axios.get(
-  //       `http://localhost:5000/api/posts/${postID}/rating/average`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       }
-  //     );
-  //     setAverageRating(averageResponse.data.averageRating || 0);
-  //   } catch (error) {
-  //     console.error("Lỗi khi gửi rating:", error);
-  //   } finally {
-  //     setRatingLoading(false);
-  //   }
-  // };
   const usernameOfPost = userData?.username || "Unknown";
   const handleOpenShareModal = () => {
     setShareModalOpen(true);
@@ -156,131 +121,386 @@ function Post({
 
   if (is_voucher && is_ad) {
     return (
-      <div className="post">
-        <div className="post__header">
-          <div className="post__headerAuthor">
-            <Avatar src={userData?.avatar}>?</Avatar>
-            {usernameOfPost} <span> • {timestamp} • Advertisement</span>
-          </div>
-          <MoreHorizIcon />
-        </div>
-        <div className="post__address">
-          <FmdGoodOutlinedIcon className="postIcon" color="action" />
-          <span>{address}</span>
-        </div>
-        <div className="post__image">
-          <img src={postImage} alt="" />
-        </div>
-        <div>
-          <Card elevation={3} style={{ maxWidth: 600, margin: "auto" }}>
-            <Grid container>
-              <Grid
-                item
-                xs={8}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  padding: "16px",
-                }}
-              >
-                <Typography
-                  variant="h4"
-                  style={{
-                    fontFamily: "Rochester, Arial, sans-serif",
-                    fontWeight: 500,
-                    marginBottom: 8,
-                  }}
-                  className="rochester"
-                >
-                  Voucher
-                </Typography>
-                <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
-                <Typography variant="body2">
-                  Ngày hết hạn: <span style={{ fontWeight: "bold" }}>31/01/2025</span>
-                </Typography>
-                <Typography variant="body2">
-                  Số lượng còn: <span style={{ fontWeight: "bold" }}>36</span>
-                </Typography>
-              </Grid>
-              <Grid
-                item
-                xs={4}
-                style={{
-                  backgroundColor: "#2196F3",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Button
-                  variant="text"
-                  style={{
-                    backgroundColor: "#2196F3",
-                    color: "white",
-                    fontWeight: "bold",
-                    fontSize: "20px",
-                  }}
-                >
-                  Nhận
-                </Button>
-              </Grid>
-            </Grid>
-          </Card>
-        </div>
-        <div className="post__footer">
-          <div className="post_footerIcons">
-            <div className="post__iconsMain">
-              {liked ? (
-                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-              ) : (
-                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-              )}
-              <ChatBubbleOutlineIcon className="postIcon" onClick={handleOpenPostDetail} />
-              <TelegramIcon className="postIcon" />
+        <div className="post">
+            <div className="post__header">
+                <div className="post__headerAuthor">
+                    <Avatar src={userData?.avatar}>?</Avatar>
+                    {user}  <span> • {timestamp}  • Advertisement</span>
+                </div>
+                <MoreHorizIcon />
             </div>
-            <div className="post_iconSave">
-              <MapOutlinedIcon className="postIcon" />
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
-              ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
-              )}
-              {isSaved ? (
-                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
-              ) : (
-                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
-              )}
+            <div className="post__address">
+                <FmdGoodOutlinedIcon className="postIcon" color="action" />
+                <span>{address}</span>
             </div>
-          </div>
-          <span className="post_likes">{likeCount} likes</span>
-          <br />
-          <div className="post__caption">
-            <span>{usernameOfPost} </span> {content}
-          </div>
-          <div className="post__comment">
-            <span onClick={handleOpenPostDetail} style={{ cursor: "pointer" }}>
-              View all 13,384 comments
-            </span>
-            <div className="comment">
-              <input
-                placeholder="Add a comment…"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-              />
-              <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
-              <button
-                onClick={() => handleCreateComment(username)}
-                disabled={loading || !commentText.trim()}
-              >
-                Post
-              </button>
+            {/* <div className="post__image">
+                <img src={postImage} alt=""></img>
+            </div> */}
+            <div className="post__image" style={{ position: "relative" }}>
+                <img
+                    src={images[current]}
+                    alt={`post-img-${current}`}
+                    style={{ width: "100%", borderRadius: "10px" }}
+                />
+                {images.length > 1 && (
+                    <>
+                        <button onClick={prevImage} className="nav-button left">◀</button>
+                        <button onClick={nextImage} className="nav-button right">▶</button>
+                    </>
+                )}
             </div>
-          </div>
+
+            <div>
+                <Card elevation={3} style={{ maxWidth: 600, margin: 'auto' }}>
+                    <Grid container>
+                        {/* Left Section */}
+                        <Grid
+                            item
+                            xs={8}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                padding: '16px',
+                            }}
+                        >
+                            <Typography
+                                variant="h4"
+                                style={{
+                                    fontFamily: 'Rochester, Arial, sans-serif',
+                                    fontWeight: 500,
+                                    marginBottom: 8,
+                                }}
+                                className="rochester"
+                            >
+                                Voucher
+                            </Typography>
+                            <Typography variant="body1">{voucherData?.description}</Typography>
+                            <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
+                            <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
+                        </Grid>
+
+                        {/* Right Section */}
+                        <Grid
+                            item
+                            xs={4}
+                            style={{
+                                backgroundColor: '#2196F3', // Blue background
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Button
+                                variant="text"
+                                style={{
+                                    backgroundColor: '#2196F3',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '20px',
+                                }}
+                            >
+                                Nhận
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Card>
+            </div>
+            <div className="post__footer ">
+                <div className="post_footerIcons">
+                    <div className="post__iconsMain">
+                        {liked ? (
+                            <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+                        ) : (
+                            <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+                        )}
+                        <ChatBubbleOutlineIcon className="postIcon" />
+                        <TelegramIcon className="postIcon" />
+                    </div>
+                    <div className="post_iconSave">
+                        <MapOutlinedIcon className="postIcon" />
+                        {isSelected ? (
+                            <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+                        ) : (
+                            <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                        )}
+                        {/* <BookmarkBorderIcon className="postIcon" /> */}
+
+                        {isSaved ? (
+                            <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                        ) : (
+                            <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                        )}
+
+                    </div>
+                </div>
+                <span className="post_likes">{likeCount} likes</span>
+                <br />
+                <div className="post__caption">
+                    <span>{user} </span> {content}
+                </div>
+                <div className="post__comment">
+                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                    {open && <Modal
+                        open={open}
+                        onClose={() => setOpen(false)}
+                        user={user}
+                        postImage={images[0]}
+                        likes={likes}
+                        caption={content}
+                        address={address}
+                        timestamp={timestamp}
+                    />}
+                    <div className="comment">
+                        <input placeholder="Add a comment…" />
+                        <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
+                    </div>
+                </div>
+
+            </div>
         </div>
-      </div>
-    );
-  } else if (is_voucher && !is_ad) {
+    )
+} else if (is_voucher && !is_ad) {
+    return (
+        <div className="post">
+            <div className="post__header">
+                <div className="post__headerAuthor">
+                    <Avatar src={userData?.avatar}>?</Avatar>
+                    {user}  <span> • {timestamp}</span>
+                </div>
+                <MoreHorizIcon />
+            </div>
+            <div className="post__address">
+                <FmdGoodOutlinedIcon className="postIcon" color="action" />
+                <span>{address}</span>
+            </div>
+            {/* <div className="post__image">
+                <img src={postImage} alt=""></img>
+            </div> */}
+            <div className="post__image" style={{ position: "relative" }}>
+                <img
+                    src={images[current]}
+                    alt={`post-img-${current}`}
+                    style={{ width: "100%", borderRadius: "10px" }}
+                />
+                {images.length > 1 && (
+                    <>
+                        <button onClick={prevImage} className="nav-button left">◀</button>
+                        <button onClick={nextImage} className="nav-button right">▶</button>
+                    </>
+                )}
+            </div>
+            <div>
+                <Card elevation={3} style={{ maxWidth: 600, margin: 'auto', minHeight: "80px" }}>
+                    <Grid container>
+                        {/* Left Section */}
+                        <Grid
+                            item
+                            xs={8}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                padding: '16px',
+                            }}
+                        >
+                            <Typography
+                                variant="h4"
+                                style={{
+                                    fontFamily: 'Rochester, Arial, sans-serif',
+                                    fontWeight: 500,
+                                    marginBottom: 8,
+                                }}
+                                className="rochester"
+                            >
+                                Voucher
+                            </Typography>
+                            <Typography variant="body1">{voucherData?.description}</Typography>
+                            <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
+                            <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
+                        </Grid>
+
+                        {/* Right Section */}
+                        <Grid
+                            item
+                            xs={4}
+                            style={{
+                                backgroundColor: '#2196F3', // Blue background
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Button
+                                variant="text"
+                                style={{
+                                    backgroundColor: '#2196F3',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '20px',
+                                    width: "100%",
+                                    height: "100%"
+                                }}
+                            >
+                                Nhận
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Card>
+            </div>
+            <div className="post__footer ">
+                <div className="post_footerIcons">
+                    <div className="post__iconsMain">
+                        {liked ? (
+                            <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+                        ) : (
+                            <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+                        )}
+                        <ChatBubbleOutlineIcon className="postIcon" />
+                        <TelegramIcon className="postIcon" />
+                    </div>
+                    <div className="post_iconSave">
+                        <MapOutlinedIcon className="postIcon" />
+                        {isSelected ? (
+                            <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+                        ) : (
+                            <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                        )}
+                        {/* <BookmarkBorderIcon className="postIcon" /> */}
+
+                        {isSaved ? (
+                            <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                        ) : (
+                            <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                        )}
+
+                    </div>
+                </div>
+                <span className="post_likes">{likeCount} likes</span>
+                <br />
+                <div className="post__caption">
+                    <span>{user} </span> {content}
+                </div>
+                <div className="post__comment">
+                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                    {open && <Modal
+                        open={open}
+                        onClose={() => setOpen(false)}
+                        user={user}
+                        postImage={images[0]}
+                        likes={likes}
+                        caption={content}
+                        address={address}
+                        timestamp={timestamp}
+                    />}
+                    <div className="comment">
+                        <input placeholder="Add a comment…" />
+                        <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    )
+} else if (!is_voucher && is_ad) {
+    return (
+        <div className="post">
+            <div className="post__header">
+                <div className="post__headerAuthor">
+                    <Avatar src={userData?.avatar}>?</Avatar>
+                    {user}  <span> • {timestamp} • Advertisement</span>
+                    <br></br>
+                </div>
+                <MoreHorizIcon />
+            </div>
+            <div className="post__address">
+                <FmdGoodOutlinedIcon className="postIcon" color="action" />
+                <span>{address}</span>
+            </div>
+            {/* <div className="post__image">
+                <img src={postImage} alt=""></img>
+            </div> */}
+            <div className="post__image" style={{ position: "relative" }}>
+                <img
+                    src={images[current]}
+                    alt={`post-img-${current}`}
+                    style={{ width: "100%", borderRadius: "10px" }}
+                />
+                {images.length > 1 && (
+                    <>
+                        <button onClick={prevImage} className="nav-button left">◀</button>
+                        <button onClick={nextImage} className="nav-button right">▶</button>
+                    </>
+                )}
+            </div>
+            <div className="post__footer ">
+                {/* <div className="post_footerIcons">
+                    <div className="post__iconsMain">
+                        <FavoriteBorderIcon className="postIcon" />
+                        <ChatBubbleOutlineIcon className="postIcon" />
+                        <TelegramIcon className="postIcon" />
+                    </div>
+                    <div className="post_iconSave">
+                        <MapOutlinedIcon className="postIcon" />
+                        <FmdGoodOutlinedIcon className="postIcon" />
+                        <BookmarkBorderIcon className="postIcon" />
+                    </div>
+                </div> */}
+                <div className="post_footerIcons">
+                    <div className="post__iconsMain">
+                        {liked ? (
+                            <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+                        ) : (
+                            <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+                        )}
+                        <ChatBubbleOutlineIcon className="postIcon" />
+                        <TelegramIcon className="postIcon" />
+                    </div>
+                    <div className="post_iconSave">
+                        <MapOutlinedIcon className="postIcon" />
+                        {isSelected ? (
+                            <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+                        ) : (
+                            <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                        )}
+                        {/* <BookmarkBorderIcon className="postIcon" /> */}
+
+                        {isSaved ? (
+                            <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                        ) : (
+                            <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                        )}
+
+                    </div>
+                </div>
+                <span className="post_likes">{likeCount} likes</span>
+                <br />
+                <div className="post__caption">
+                    <span>{user} </span> {content}
+                </div>
+                <div className="post__comment">
+                    <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
+                    {open && <Modal
+                        open={open}
+                        onClose={() => setOpen(false)}
+                        user={user}
+                        postImage={images[0]}
+                        likes={likes}
+                        caption={content}
+                        address={address}
+                        timestamp={timestamp}
+                    />}
+
+                    <div className="comment">
+                        <input placeholder="Add a comment…" />
+                        <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    )
+} else {
     return (
       <div className="post">
         <div className="post__header">
@@ -295,205 +515,7 @@ function Post({
           <span>{address}</span>
         </div>
         <div className="post__image">
-          <img src={postImage} alt="" />
-        </div>
-        <div>
-          <Card elevation={3} style={{ maxWidth: 600, margin: "auto", minHeight: "80px" }}>
-            <Grid container>
-              <Grid
-                item
-                xs={8}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  padding: "16px",
-                }}
-              >
-                <Typography
-                  variant="h4"
-                  style={{
-                    fontFamily: "Rochester, Arial, sans-serif",
-                    fontWeight: 500,
-                    marginBottom: 8,
-                  }}
-                  className="rochester"
-                >
-                  Voucher
-                </Typography>
-                <Typography variant="body1">Giảm 50% với tất cả món gà</Typography>
-                <Typography variant="body2">
-                  Ngày hết hạn: <span style={{ fontWeight: "bold" }}>31/01/2025</span>
-                </Typography>
-                <Typography variant="body2">
-                  Số lượng còn: <span style={{ fontWeight: "bold" }}>36</span>
-                </Typography>
-              </Grid>
-              <Grid
-                item
-                xs={4}
-                style={{
-                  backgroundColor: "#2196F3",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Button
-                  variant="text"
-                  style={{
-                    backgroundColor: "#2196F3",
-                    color: "white",
-                    fontWeight: "bold",
-                    fontSize: "20px",
-                    width: "100%",
-                    height: "100%",
-                  }}
-                >
-                  Nhận
-                </Button>
-              </Grid>
-            </Grid>
-          </Card>
-        </div>
-        <div className="post__footer">
-          <div className="post_footerIcons">
-            <div className="post__iconsMain">
-              {liked ? (
-                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-              ) : (
-                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-              )}
-              <ChatBubbleOutlineIcon className="postIcon" onClick={handleOpenPostDetail} />
-              <TelegramIcon className="postIcon" />
-            </div>
-            <div className="post_iconSave">
-              <MapOutlinedIcon className="postIcon" />
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
-              ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
-              )}
-              {isSaved ? (
-                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
-              ) : (
-                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
-              )}
-            </div>
-          </div>
-          <span className="post_likes">{likeCount} likes</span>
-          <br />
-          <div className="post__caption">
-            <span>{usernameOfPost} </span> {content}
-          </div>
-          <div className="post__comment">
-            <span onClick={handleOpenPostDetail} style={{ cursor: "pointer" }}>
-              View all 13,384 comments
-            </span>
-            <div className="comment">
-              <input
-                placeholder="Add a comment…"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-              />
-              <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
-              <button
-                onClick={() => handleCreateComment(username)}
-                disabled={loading || !commentText.trim()}
-              >
-                Post
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  } else if (!is_voucher && is_ad) {
-    return (
-      <div className="post">
-        <div className="post__header">
-          <div className="post__headerAuthor">
-            <Avatar src={userData?.avatar}>?</Avatar>
-            {usernameOfPost} <span> • {timestamp} • Advertisement</span>
-            <br />
-          </div>
-          <MoreHorizIcon />
-        </div>
-        <div className="post__address">
-          <FmdGoodOutlinedIcon className="postIcon" color="action" />
-          <span>{address}</span>
-        </div>
-        <div className="post__image">
-          <img src={postImage} alt="" />
-        </div>
-        <div className="post__footer">
-          <div className="post_footerIcons">
-            <div className="post__iconsMain">
-              {liked ? (
-                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-              ) : (
-                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-              )}
-              <ChatBubbleOutlineIcon className="postIcon" onClick={handleOpenPostDetail} />
-              <TelegramIcon className="postIcon" />
-            </div>
-            <div className="post_iconSave">
-              <MapOutlinedIcon className="postIcon" />
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
-              ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
-              )}
-              {isSaved ? (
-                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
-              ) : (
-                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
-              )}
-            </div>
-          </div>
-          <span className="post_likes">{likeCount} likes</span>
-          <br />
-          <div className="post__caption">
-            <span>{usernameOfPost} </span> {content}
-          </div>
-          <div className="post__comment">
-            <span onClick={handleOpenPostDetail} style={{ cursor: "pointer" }}>
-              View all 13,384 comments
-            </span>
-            <div className="comment">
-              <input
-                placeholder="Add a comment…"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-              />
-              <SentimentSatisfiedOutlinedIcon className="postIcon" color="disabled" />
-              <button
-                onClick={() => handleCreateComment(username)}
-                disabled={loading || !commentText.trim()}
-              >
-                Post
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  } else {
-    return (
-      <div className="post">
-        <div className="post__header">
-          <div className="post__headerAuthor">
-            <Avatar src={userData?.avatar}>?</Avatar>
-            {usernameOfPost} <span> • {timestamp}</span>
-          </div>
-          <MoreHorizIcon />
-        </div>
-        <div className="post__address">
-          <FmdGoodOutlinedIcon className="postIcon" color="action" />
-          <span>{address}</span>
-        </div>
-        <div className="post__image">
-          <img src={postImage} alt="" />
+          <img src={images} alt="" />
         </div>
         <div className="post__footer">
           <div className="post_footerIcons">

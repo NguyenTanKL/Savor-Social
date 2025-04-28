@@ -95,6 +95,8 @@ const path = require("path");
 require('./models/UserModel'); 
 require('./models/chatModel');
 const cookieParser = require("cookie-parser");
+const notificationRouter = require("./routes/notificationRouter");
+
 
 
 
@@ -119,6 +121,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/api/notifications", notificationRouter); 
 app.use('/api/user', user);
 app.use('/api', postRoutes);
 app.use('/api/userRoutes', userRoutes);

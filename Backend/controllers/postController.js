@@ -6,12 +6,12 @@ const cloudinary = require("../config/cloudinary/cloudinaryConfig");
   const createPost = async (req, res) => {
     try {
       const { userId, content, rating, restaurantId } = req.body;
-      let imageUrl = "";
+      let images = [""];
   
       // Nếu có file ảnh được gửi lên, lấy URL từ req.file.path
       if (req.file) {
         console.log("File uploaded to Cloudinary:", req.file);
-        imageUrl = req.file.path; // req.file.path chính là secure_url từ Cloudinary
+        images = req.file.path; // req.file.path chính là secure_url từ Cloudinary
       }
   
       // Thay thế #[hashtag](id) thành #hashtag trong content
@@ -46,7 +46,7 @@ const cloudinary = require("../config/cloudinary/cloudinaryConfig");
       const newPost = new Post({
         userId,
         content: modifiedContent, // Lưu content đã sửa
-        imageUrl,
+        images,
         tags: hashtags, // Lưu hashtag đã phân tích
         taggedUsers: taggedUserIds,
         rating: rating ? Number(rating) : null,

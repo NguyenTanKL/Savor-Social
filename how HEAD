@@ -1,0 +1,845 @@
+[33mcommit 45a598eed43515ecae1ccc431f6633d6427524b6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mhuy1-recover[m[33m)[m
+Merge: 45499d53c 13cabb851
+Author: HuyWithNY <huyhmopubg@gmail.com>
+Date:   Mon Apr 28 19:55:25 2025 +0700
+
+    update task28/4
+
+[1mdiff --cc Backend/controllers/authController.js[m
+[1mindex 89acc9223,89acc9223..85551e40c[m
+[1m--- a/Backend/controllers/authController.js[m
+[1m+++ b/Backend/controllers/authController.js[m
+[36m@@@ -85,7 -85,7 +85,7 @@@[m [mconst loginUser = async (req, res) => [m
+      const token = jwt.sign([m
+        { userId: user._id },[m
+        process.env.SECRET_KEY || "my_secret_key",[m
+[31m--      { expiresIn: "1h" }[m
+[32m++      { expiresIn: "10h" }[m
+      );[m
+      res.json({ token, userId: user._id, user });[m
+    } catch (error) {[m
+[1mdiff --cc Backend/controllers/postController.js[m
+[1mindex f7cc6901c,f7cc6901c..10783d54a[m
+[1m--- a/Backend/controllers/postController.js[m
+[1m+++ b/Backend/controllers/postController.js[m
+[36m@@@ -1,40 -1,40 +1,91 @@@[m
+  const Post = require("../models/PostModel");[m
+  const Comment = require("../models/CommentModel");[m
+[32m++const User = require("../models/UserModel")[m
+  const cloudinary = require("../config/cloudinary/cloudinaryConfig");[m
+    // Tạo bài viết[m
+[31m--const createPost = async (req, res) => {[m
+[31m--  try {[m
+[31m--      const { userId, content } = req.body;[m
+[32m++  const createPost = async (req, res) => {[m
+[32m++    try {[m
+[32m++      const { userId, content, rating, restaurantId } = req.body;[m
+        let imageUrl = "";[m
+[31m--[m
+[32m++  [m
+        // Nếu có file ảnh được gửi lên, lấy URL từ req.file.path[m
+        if (req.file) {[m
+[31m--          console.log("File uploaded to Cloudinary:", req.file);[m
+[31m--          imageUrl = req.file.path; // req.file.path chính là secure_url từ Cloudinary[m
+[32m++        console.log("File uploaded to Cloudinary:", req.file);[m
+[32m++        imageUrl = req.file.path; // req.file.path chính là secure_url từ Cloudinary[m
+        }[m
+[31m--[m
+[31m--      // Tạo bài viết mới[m
+[31m--      const newPost = await Post.create({[m
+[31m--          userId,[m
+[31m--          content: content,[m
+[31m--          imageUrl,[m
+[32m++  [m
+[32m++      // Thay thế #[hashtag](id) thành #hashtag trong content[m
+[32m++      let modifiedContent = content;[m
+[32m++      const hashtagFormatRegex = /#\[([^\]]+)\]\(([^)]+)\)/g;[m
+[32m++      modifiedContent = modifiedContent.replace(hashtagFormatRegex, (match, hashtag) => `#${hashtag}`);[m
+[32m++  [m
+[32m++      // Phân tích nội dung để lấy hashtag và mention[m
+[32m++      const hashtags = [];[m
+[32m++      const taggedUserIds = [];[m
+[32m++      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g; // Regex cho mention: @[username](id)[m
+[32m++      const hashtagRegex = /#[^\s#]+/g; // Regex cho hashtag: #tag[m
+[32m++      let match;[m
+[32m++  [m
+[32m++      // Tìm tất cả các hashtag từ modifiedContent[m
+[32m++      while ((match = hashtagRegex.exec(modifiedContent)) !== null) {[m
+[32m++        const tag = match[0].slice(1).toLowerCase(); // Bỏ dấu # và chuyển thành chữ thường[m
+[32m++        if (!hashtags.includes(tag)) {[m
+[32m++          hashtags.push(tag);[m
+[32m++        }[m
+[32m++      }[m
+[32m++  [m
+[32m++      // Tìm tất cả các mention và lấy id[m
+[32m++      while ((match = mentionRegex.exec(modifiedContent)) !== null) {[m
+[32m++        const userId = match[2]; // ID của người dùng được mention[m
+[32m++        if (!taggedUserIds.includes(userId)) {[m
+[32m++          taggedUserIds.push(userId);[m
+[32m++        }[m
+[32m++      }[m
+[32m++  [m
+[32m++      // Tạo bài post mới[m
+[32m++      const newPost = new Post({[m
+[32m++        userId,[m
+[32m++        content: modifiedContent, // Lưu content đã sửa[m
+[32m++        imageUrl,[m
+[32m++        tags: hashtags, // Lưu hashtag đã phân tích[m
+[32m++        taggedUsers: taggedUserIds,[m
+[32m++        rating: rating ? Number(rating) : null,[m
+[32m++        restaurantId: restaurantId ? restaurantId : null,[m
+[32m++        timestamp: new Date().toISOString(),[m
+        });[m
+[31m--      console.log("New Post Created:", newPost);[m
+[31m--[m
+[31m--      // Lấy danh sách bài viết mới nhất[m
+[32m++  [m
+[32m++      await newPost.save();[m
+[32m++  [m
+[32m++      // Nếu bài post có tag nhà hàng và có rating, cập nhật điểm trung bình của nhà hàng[m
+[32m++      if (restaurantId && rating) {[m
+[32m++        const posts = await Post.find({ restaurantId, rating: { $exists: true } });[m
+[32m++        const totalRating = posts.reduce((sum, post) => sum + post.rating, 0);[m
+[32m++        const averageRating = totalRating / posts.length;[m
+[32m++  [m
+[32m++        // Cập nhật trường rating của nhà hàng trong collection User[m
+[32m++        await User.findByIdAndUpdate(restaurantId, {[m
+[32m++          $set: { rating: Number(averageRating.toFixed(1)) },[m
+[32m++        });[m
+[32m++      }[m
+[32m++  [m
+[32m++      // Lấy tất cả bài post và populate thông tin người dùng[m
+        const posts = await Post.find()[m
+[31m--          .populate({[m
+[31m--              path: "userId",[m
+[31m--              select: "username profileUrl -password",[m
+[31m--          })[m
+[31m--          .sort({ createdAt: -1 });[m
+[31m--[m
+[32m++        .populate({[m
+[32m++          path: "userId",[m
+[32m++          select: "username profileUrl -password",[m
+[32m++        })[m
+[32m++        .populate({[m
+[32m++          path: "taggedUsers",[m
+[32m++          select: "username profileUrl -password",[m
+[32m++        })[m
+[32m++        .sort({ createdAt: -1 });[m
+[32m++  [m
+        res.status(200).json(posts);[m
+[31m--  } catch (err) {[m
+[32m++    } catch (err) {[m
+        console.error("Error in createPost:", err);[m
+        res.status(500).json({ message: "Create Post Failed", error: err.message });[m
+[31m--  }[m
+[31m--};[m
+[32m++    }[m
+[32m++  };[m
+  [m
+  // Xóa bài viết[m
+  const deletePost = async (req, res) => {[m
+[36m@@@ -78,11 -78,11 +129,6 @@@[m
+  const getPosts = async (req, res) => {[m
+      try {[m
+        const posts = await Post.find()[m
+[31m--        .populate({[m
+[31m--          path: "userId",[m
+[31m--          select: "username profileUrl -password",[m
+[31m--        })[m
+[31m--        .sort({ createdAt: -1 });[m
+        console.log("post:",posts )[m
+        res.status(200).json(posts);[m
+      } catch (err) {[m
+[36m@@@ -92,23 -92,23 +138,18 @@@[m
+    };[m
+    [m
+    // Thích bài viết[m
+[31m--const likePost = async (req, res) => {[m
+[32m++  const likePost = async (req, res) => {[m
+      try {[m
+        const { postId, userId } = req.body;[m
+[31m--  [m
+        const likedPost = await Post.findByIdAndUpdate([m
+          postId,[m
+[31m--        { $addToSet: { likes: userId } }, // Sử dụng $addToSet để tránh trùng lặp[m
+[32m++        { $addToSet: { likes: userId } },[m
+          { new: true }[m
+[31m--      ).populate({[m
+[31m--        path: "userId",[m
+[31m--        select: "username profileUrl -password",[m
+[31m--      });[m
+[31m--  [m
+[32m++      )[m
+        if (!likedPost) {[m
+          return res.status(400).json({ message: "You can't like this post" });[m
+        }[m
+[31m--  [m
+[32m++      console.log("likedPost:", likedPost);[m
+        res.status(200).json(likedPost);[m
+      } catch (err) {[m
+        console.error(err);[m
+[36m@@@ -116,28 -116,28 +157,23 @@@[m
+      }[m
+    };[m
+    [m
+[31m--  // Bỏ thích bài viết[m
+[31m--const unlikePost = async (req, res) => {[m
+[32m++  const unlikePost = async (req, res) => {[m
+      try {[m
+        const { postId, userId } = req.body;[m
+[31m--  [m
+        const unlikedPost = await Post.findByIdAndUpdate([m
+          postId,[m
+          { $pull: { likes: userId } },[m
+          { new: true }[m
+        );[m
+[31m--  [m
+        if (!unlikedPost) {[m
+          return res.status(400).json({ message: "You can't unlike this post" });[m
+        }[m
+[31m--  [m
+        res.status(200).json(unlikedPost);[m
+      } catch (err) {[m
+        console.error(err);[m
+        res.status(500).json({ message: "Unlike Post Failed", error: err.message });[m
+      }[m
+    };[m
+[31m--  [m
+    // Tạo bình luận[m
+  const createComment = async (req, res) => {[m
+      try {[m
+[36m@@@ -173,20 -173,20 +209,6 @@@[m
+        res.status(500).json({ message: "Create Comment Failed", error: err.message });[m
+      }[m
+    };[m
+[31m--  // Hàm phụ để thêm reply vào cây replies[m
+[31m--// const addReplyToPath = (replies, path, newReply) => {[m
+[31m--//   if (path.length === 0) {[m
+[31m--//     replies.push(newReply);[m
+[31m--//     return;[m
+[31m--//   }[m
+[31m--[m
+[31m--//   const [index, ...rest] = path;[m
+[31m--//   if (!replies[index]) {[m
+[31m--//     throw new Error('Invalid reply path');[m
+[31m--//   }[m
+[31m--[m
+[31m--//   addReplyToPath(replies[index].replies, rest, newReply);[m
+[31m--// };[m
+   // Tạo reply[m
+  const createReply = async (req, res) => {[m
+    try {[m
+[36m@@@ -333,6 -333,6 +355,71 @@@[m [mconst unlikeComment = async (req, res) [m
+      console.error(err);[m
+      res.status(500).json({ message: "Unlike Comment Failed", error: err.message });[m
+    }[m
+[32m++};[m
+[32m++const getAverageRating = async (req, res) => {[m
+[32m++  try {[m
+[32m++    const restaurantId = req.params.id;[m
+[32m++    const posts = await Post.find({ restaurantId, rating: { $exists: true } });[m
+[32m++[m
+[32m++    if (posts.length === 0) {[m
+[32m++      return res.json({ averageRating: null, totalReviews: 0 });[m
+[32m++    }[m
+[32m++[m
+[32m++    const totalRating = posts.reduce((sum, post) => sum + post.rating, 0);[m
+[32m++    const averageRating = totalRating / posts.length;[m
+[32m++[m
+[32m++    res.json({[m
+[32m++      averageRating: Number(averageRating.toFixed(1)), // Làm tròn 1 chữ số thập phân[m
+[32m++      totalReviews: posts.length,[m
+[32m++    });[m
+[32m++  } catch (error) {[m
+[32m++    console.error("Error calculating restaurant rating:", error);[m
+[32m++    res.status(500).json({ message: "Server error", error });[m
+[32m++  }[m
+[32m++};[m
+[32m++// const userRatingPost = async (req, res) => {[m
+[32m++//   try {[m
+[32m++//     const { rating } = req.body;[m
+[32m++//     const userId = req.user.id; // Giả sử bạn có middleware để lấy user từ token[m
+[32m++//     console.log("ratingpost");[m
+[32m++//     const post = await Post.findById(req.params.postId);[m
+[32m++//     if (!post) return res.status(404).json({ message: "Post not found" });[m
+[32m++[m
+[32m++//     // Kiểm tra xem user đã rating chưa[m
+[32m++//     const existingRatingIndex = post.ratings.findIndex([m
+[32m++//       (r) => r.user.toString() === userId[m
+[32m++//     );[m
+[32m++[m
+[32m++//     if (existingRatingIndex !== -1) {[m
+[32m++//       // Cập nhật rating nếu đã tồn tại[m
+[32m++//       post.ratings[existingRatingIndex].rating = rating;[m
+[32m++//     } else {[m
+[32m++//       // Thêm rating mới[m
+[32m++//       post.ratings.push({ user: userId, rating });[m
+[32m++//     }[m
+[32m++[m
+[32m++//     await post.save();[m
+[32m++//     return res.json({ message: "Rating submitted successfully" });[m
+[32m++//   } catch (error) {[m
+[32m++//     res.status(500).json({ message: "Error submitting rating", error });[m
+[32m++//   }[m
+[32m++// }[m
+[32m++const getByTag = async (req, res) => {[m
+[32m++  try {[m
+[32m++    const { tag } = req.query;[m
+[32m++    if (!tag) {[m
+[32m++      const posts = await Post.find().populate("userId");[m
+[32m++      return res.json(posts);[m
+[32m++    }[m
+[32m++[m
+[32m++    // Chuẩn hóa tag để tìm kiếm[m
+[32m++    const normalizedTag = tag.startsWith('#') ? tag.slice(1).toLowerCase() : tag.toLowerCase();[m
+[32m++    const posts = await Post.find({ tags: normalizedTag }).populate("userId");[m
+[32m++    res.json(posts);[m
+[32m++  } catch (error) {[m
+[32m++    console.error("Error fetching posts:", error);[m
+[32m++    res.status(500).json({ message: "Server error", error });[m
+[32m++  }[m
+  };[m
+    module.exports ={[m
+      createPost,[m
+[36m@@@ -345,4 -345,4 +432,7 @@@[m
+      createReply,[m
+      likeComment,[m
+      unlikeComment,[m
+[32m++    getAverageRating,[m
+[32m++[m
+[32m++   getByTag,[m
+    }[m
+[1mdiff --cc Backend/controllers/userController.js[m
+[1mindex c3b119bfb,c3b119bfb..6f92fb9bc[m
+[1m--- a/Backend/controllers/userController.js[m
+[1m+++ b/Backend/controllers/userController.js[m
+[36m@@@ -1,6 -1,6 +1,6 @@@[m
+  // controllers/userController.js[m
+  const User = require("../models/UserModel");[m
+[31m--[m
+[32m++const Post = require("../models/PostModel");[m
+  const getAllUsers = async (req, res) => {[m
+    try {[m
+      const users = await User.find();[m
+[36m@@@ -203,26 -203,26 +203,71 @@@[m [mconst getFollowers = async (req, res) =[m
+  [m
+  const searchUser = async (req,res) => {[m
+    try {[m
+[31m--    let { keyword } = req.body; [m
+[32m++    const { query, tag } = req.body;[m
+[32m++    const response = {};[m
+[32m++[m
+[32m++    // Nếu có tag, trả về danh sách bài viết có tag đó[m
+[32m++    if (tag) {[m
+[32m++      const posts = await Post.find({[m
+[32m++        tags: tag.toLowerCase(),[m
+[32m++      })[m
+[32m++        .populate("userId", "username")[m
+[32m++        .limit(20);[m
+[32m++      return res.json({ posts });[m
+[32m++    }[m
+  [m
+[31m--    if (!keyword) {[m
+[31m--      return res.json([]);[m
+[32m++    // Nếu không có tag, trả về danh sách user và tag liên quan[m
+[32m++    if (!query) {[m
+[32m++      return res.json({ users: [], tags: [], posts: [] });[m
+      }[m
+  [m
+[32m++    // Tìm kiếm tất cả user (bao gồm cả normal và restaurant)[m
+      const users = await User.find({[m
+[31m--      "$or": [[m
+[31m--        {"username": {"$regex": keyword, "$options": "i" }},[m
+[31m--        { "tag": { "$regex": keyword, "$options": "i" } }[m
+[31m--      ][m
+[32m++      username: { $regex: query, $options: "i" },[m
+      })[m
+[31m--    .select("_id username tag avatar") [m
+[31m--    .limit(10)  [m
+[31m--    .lean();[m
+[31m--    res.json(users);[m
+[31m--  }[m
+[31m--  catch (error) {[m
+[31m--    console.error(error);[m
+[31m--    res.status(500).json({ message: "Lỗi server" });[m
+[32m++      .select("username accountType")[m
+[32m++      .limit(5);[m
+[32m++[m
+[32m++    // Tìm kiếm tag liên quan và số lượng bài viết[m
+[32m++    const tagQuery = query.startsWith("#") ? query.slice(1) : query;[m
+[32m++    const postsWithTags = await Post.find({[m
+[32m++      tags: { $in: [new RegExp(tagQuery, "i")] },[m
+[32m++    });[m
+[32m++[m
+[32m++    // Tạo danh sách tag kèm số lượng bài viết[m
+[32m++    const tagCounts = {};[m
+[32m++    postsWithTags.forEach((post) => {[m
+[32m++      post.tags.forEach((t) => {[m
+[32m++        const normalizedTag = t.toLowerCase();[m
+[32m++        if (normalizedTag.includes(tagQuery.toLowerCase())) {[m
+[32m++          tagCounts[normalizedTag] = (tagCounts[normalizedTag] || 0) + 1;[m
+[32m++        }[m
+[32m++      });[m
+[32m++    });[m
+[32m++[m
+[32m++    const tags = Object.entries(tagCounts)[m
+[32m++      .map(([tag, count]) => ({ tag: `#${tag}`, postCount: count }))[m
+[32m++      .sort((a, b) => b.postCount - a.postCount) // Sắp xếp theo số lượng bài viết giảm dần[m
+[32m++      .slice(0, 5); // Giới hạn 5 tag[m
+[32m++[m
+[32m++    // Tìm kiếm bài post (theo content hoặc tags)[m
+[32m++    const posts = await Post.find({[m
+[32m++      $or: [[m
+[32m++        { content: { $regex: query, $options: "i" } },[m
+[32m++        { tags: { $in: [new RegExp(query, "i")] } },[m
+[32m++      ],[m
+[32m++    })[m
+[32m++      .populate("userId", "username")[m
+[32m++      .limit(5);[m
+[32m++[m
+[32m++    res.json({[m
+[32m++      users,[m
+[32m++      tags,[m
+[32m++      posts,[m
+[32m++    });[m
+[32m++  } catch (error) {[m
+[32m++    console.error("Error searching:", error);[m
+[32m++    res.status(500).json({ message: "Server error", error });[m
+    }[m
+  };[m
+  const getUserById = async(req,res) => {[m
+[36m@@@ -234,7 -234,7 +279,7 @@@[m
+      if (!user) {[m
+        return res.status(404).json({ message: "User not found" });[m
+      }[m
+[31m--[m
+[32m++    console.log("userbyId:",user);[m
+      res.status(200).json(user);[m
+  [m
+    }[m
+[36m@@@ -264,6 -264,6 +309,47 @@@[m [mconst checkFollowStatus = async (req, r[m
+      res.status(500).json({ message: "Lỗi server nội bộ" });[m
+    }[m
+  };[m
+[32m++const removeFollower = async (req, res) => {[m
+[32m++  try {[m
+[32m++    const userId = req.user.id; // Lấy từ token[m
+[32m++    const followerId = req.params.followerId;[m
+[32m++[m
+[32m++    // Tìm user hiện tại[m
+[32m++    const user = await User.findById(userId);[m
+[32m++    if (!user) {[m
+[32m++      return res.status(404).json({ message: "User not found" });[m
+[32m++    }[m
+[32m++[m
+[32m++    // Xóa followerId khỏi danh sách followers[m
+[32m++    user.followers = user.followers.filter((id) => id.toString() !== followerId);[m
+[32m++    [m
+[32m++    // Giảm followerCount[m
+[32m++    user.followerCount = user.followers.length; // Cập nhật followerCount dựa trên độ dài mảng followers[m
+[32m++[m
+[32m++    // Lưu thay đổi[m
+[32m++    await user.save();[m
+[32m++[m
+[32m++    // Tìm follower và xóa userId khỏi danh sách following của họ[m
+[32m++    const follower = await User.findById(followerId);[m
+[32m++    if (!follower) {[m
+[32m++      return res.status(404).json({ message: "Follower not found" });[m
+[32m++    }[m
+[32m++    follower.following = follower.following.filter((id) => id.toString() !== userId);[m
+[32m++    [m
+[32m++    // Giảm followingCount của follower[m
+[32m++    follower.followingCount = follower.following.length; // Cập nhật followingCount[m
+[32m++    await follower.save();[m
+[32m++[m
+[32m++    // Trả về phản hồi với thông tin cập nhật[m
+[32m++    res.status(200).json({ [m
+[32m++      message: "Follower removed", [m
+[32m++      followers: user.followers, [m
+[32m++      followerCount: user.followerCount [m
+[32m++    });[m
+[32m++  } catch (error) {[m
+[32m++    res.status(500).json({ message: "Error removing follower", error });[m
+[32m++  }[m
+[32m++};[m
+  module.exports = {[m
+    getAllUsers,[m
+    getRestaurants,[m
+[36m@@@ -277,4 -277,4 +363,5 @@@[m
+    getUserById,[m
+    getFollowers,[m
+    checkFollowStatus,[m
+[32m++  removeFollower,[m
+  };[m
+[1mdiff --cc Backend/models/PostModel.js[m
+[1mindex d36ee6e0e,d36ee6e0e..c9d8503e4[m
+[1m--- a/Backend/models/PostModel.js[m
+[1m+++ b/Backend/models/PostModel.js[m
+[36m@@@ -2,7 -2,7 +2,7 @@@[m [mconst mongoose = require ('mongoose')[m
+  [m
+  const postSchema = new mongoose.Schema([m
+      {[m
+[31m--        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },[m
+[32m++        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },[m
+          content: { type: String, required: true },[m
+          imageUrl: { type: String, default: "" },[m
+          videos: { type: [String], default: [] },[m
+[36m@@@ -22,14 -22,14 +22,17 @@@[m
+              },[m
+            ],[m
+          tags: { type: [String], default: [] },[m
+[31m--        rating: { type: Number, min: 1, max: 10, default: 5 },[m
+[32m++        taggedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],[m
+[32m++        rating: { type: Number, min: 1, max: 5 }, // Điểm đánh giá từ 1 đến 5[m
+[32m++        restaurantId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },[m
+          comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],[m
+          createdAt: { type: Date, default: Date.now },[m
+          updatedAt: { type: Date, default: Date.now }    [m
+      },[m
+      { timestamps: true }[m
+  );[m
+[31m--[m
+[32m++postSchema.index({ tags: 1 });[m
+[32m++postSchema.index({ restaurantId: 1 });[m
+  const Post = mongoose.model("Post", postSchema);[m
+  [m
+  module.exports = Post;[m
+[1mdiff --cc Backend/models/UserModel.js[m
+[1mindex e92ec508f,c4f46236d..4f10844f3[m
+[1m--- a/Backend/models/UserModel.js[m
+[1m+++ b/Backend/models/UserModel.js[m
+[36m@@@ -31,10 -31,10 +31,6 @@@[m [mconst UserSchema = new mongoose.Schema([m
+          type: String,[m
+          required: false[m
+      },[m
+[31m--    email: {[m
+[31m--        type: String,[m
+[31m--        required: false[m
+[31m--    },[m
+      gender: {[m
+          type: String,[m
+          required: false[m
+[1mdiff --cc Backend/routes/postRoutes.js[m
+[1mindex a2c38d472,be2d8bc30..ffd21c690[m
+[1m--- a/Backend/routes/postRoutes.js[m
+[1m+++ b/Backend/routes/postRoutes.js[m
+[36m@@@ -3,21 -3,155 +3,157 @@@[m [mconst express = require("express"[m
+  const {[m
+      createPost,[m
+      getPosts,[m
+[31m--  deletePost,[m
+[31m--  likePost,[m
+[31m--  unlikePost,[m
+[31m--  getComments,[m
+[31m--  createComment,[m
+[31m--  createReply,[m
+[31m--  likeComment,[m
+[31m--  unlikeComment[m
+[32m++    deletePost,[m
+[32m++    likePost,[m
+[32m++    unlikePost,[m
+[32m++    getComments,[m
+[32m++    createComment,[m
+[32m++    createReply,[m
+[32m++    likeComment,[m
+[32m++    unlikeComment,[m
+[32m++    getAverageRating,[m
+[32m++    getByTag,[m
+  } =  require("../controllers/postController.js");[m
+  const userAuth = require("../middlewares/authMiddleware.js")[m
+  // Cấu hình multer để xử lý file upload[m
+[31m -const {upload} = require("../config/cloudinary/cloudinaryConfig.js")[m
+[32m +const {uploadPost} = require("../config/cloudinary/cloudinaryConfig.js")[m
+  const router = express.Router();[m
+[32m+ const Post = require('../models/PostModel'); // Model bài post của bạn[m
+[32m+ const User = require("../models/User");[m
+[32m+ const mongoose = require("mongoose");[m
+[32m+ // API lấy tất cả bài post[m
+[32m+ router.get('/posts', async (req, res) => {[m
+[32m+     try {[m
+[32m+         const posts = await Post.find().sort({ createdAt: -1 }); // Lấy post mới nhất trước[m
+[32m+         res.json(posts);[m
+[32m+     } catch (err) {[m
+[32m+         res.status(500).json({ message: err.message });[m
+[32m+     }[m
+[32m+ });[m
+[32m+ router.get("/user/:id/savedPosts", async (req, res) => {[m
+[32m+     try {[m
+[32m+         const user = await User.findById(req.params.id).populate("savedPosts");[m
+[32m+         if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });[m
+[32m+         [m
+[32m+         res.json({ savedPosts: user.savedPosts });[m
+[32m+     } catch (error) {[m
+[32m+         res.status(500).json({ message: "Lỗi server" });[m
+[32m+     }[m
+[32m+ });[m
+[32m+ [m
+[32m+ router.post("/a", async (req, res) => {[m
+[32m+     try {[m
+[32m+         const { userId, content, images, videos, location, tags, rating } = req.body;[m
+[32m+ [m
+[32m+         if (!userId || !content) {[m
+[32m+             return res.status(400).json({ message: "Thiếu thông tin cần thiết" });[m
+[32m+         }[m
+[32m+ [m
+[32m+         const newPost = new Post({[m
+[32m+             userId,[m
+[32m+             content,[m
+[32m+             images,[m
+[32m+             videos,[m
+[32m+             location,[m
+[32m+             tags,[m
+[32m+             rating,[m
+[32m+         });[m
+[32m+ [m
+[32m+         await newPost.save();[m
+[32m+         res.status(201).json({ message: "Bài viết đã được lưus", post: newPost });[m
+[32m+     } catch (error) {[m
+[32m+         console.error("Lỗi server:", error);[m
+[32m+         res.status(500).json({ message: "Lỗi server" });[m
+[32m+     }[m
+[32m+ });[m
+[32m+ [m
+[32m+ router.post("/savePost", async (req, res) => {[m
+[32m+     try {[m
+[32m+         const { userId, postId } = req.body;[m
+[32m+     [m
+[32m+         const user = await User.findById(userId);[m
+[32m+         if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });[m
+[32m+ [m
+[32m+         const isSaved = user.savedPosts.includes(postId);[m
+[32m+         [m
+[32m+         if (isSaved) {[m
+[32m+             // Nếu đã lưu, thì xóa khỏi danh sách đã lưu[m
+[32m+             user.savedPosts = user.savedPosts.filter(id => id.toString() !== postId);[m
+[32m+             await user.save();[m
+[32m+             return res.json({ message: "Bỏ lưu bài viết", saved: false });[m
+[32m+         } else {[m
+[32m+             // Nếu chưa lưu, thì thêm vào danh sách đã lưu[m
+[32m+             user.savedPosts.push(postId);[m
+[32m+             await user.save();[m
+[32m+             return res.json({ message: "Đã lưu bài viết", saved: true });[m
+[32m+         }[m
+[32m+     } catch (error) {[m
+[32m+         res.status(500).json({ message: "Lỗi server" });[m
+[32m+     }[m
+[32m+ });[m
+[31m -router.post("/:postID/like", async (req, res) => {[m
+[31m -    try {[m
+[31m -        // const { userId } = req.body;[m
+[31m -        // const post = await Post.findById(req.params.postID);[m
+[31m -        // console.log("like:",userId )[m
+[31m -        // if (!post) {[m
+[31m -        //     return res.status(404).json({ message: "Post not found" });[m
+[31m -        // }[m
+[31m -[m
+[31m -        // if (post.likes.users.includes(userId)) {[m
+[31m -        //     // Nếu user đã like => bỏ like[m
+[31m -        //     post.likes.users = post.likes.users.filter(id => id !== userId);[m
+[31m -        //     post.likes.count -= 1;[m
+[31m -        // } else {[m
+[31m -        //     // Nếu user chưa like => thêm vào danh sách[m
+[31m -        //     post.likes.users.push(userId);[m
+[31m -        //     post.likes.count += 1;[m
+[31m -        // }[m
+[31m -[m
+[31m -        // await post.save();[m
+[31m -        // res.status(200).json({ success: true, likes: post.likes });[m
+[31m -        console.log("Headers:", req.headers);[m
+[31m -        console.log("Body nhận được:", req.body);[m
+[31m -        if (!req.body) {[m
+[31m -            return res.status(400).json({ error: "Body không có dữ liệu" });[m
+[31m -        }[m
+[31m -        const { userId } = req.body;[m
+[31m -        if (!userId) {[m
+[31m -            return res.status(400).json({ error: "Thiếu userId trong request body" });[m
+[31m -        }[m
+[31m -[m
+[31m -        const post = await Post.findById(req.params.postID);[m
+[31m -        if (!post) {[m
+[31m -            return res.status(404).json({ message: "Bài post không tồn tại" });[m
+[31m -        }[m
+[31m -[m
+[31m -        console.log("Bài post tìm thấy:", post);[m
+[31m -        const userObjectId = new mongoose.Types.ObjectId(userId);[m
+[31m -        let liked = post.likes.users.includes(userId);[m
+[31m -        if (liked) {[m
+[31m -            post.likes.users = post.likes.users.filter(user => !user.equals(userObjectId));[m
+[31m -            post.likes.count = Math.max(0, post.likes.count - 1);[m
+[31m -            console.log("da xoa thanh cong");[m
+[31m -        } else {[m
+[31m -            post.likes.users.push(userId);[m
+[31m -            post.likes.count += 1;[m
+[31m -        }[m
+[31m -[m
+[31m -        console.log("Cập nhật like:", post.likes);[m
+[31m -[m
+[31m -        const updatedPost = await post.save();[m
+[31m -        res.status(200).json({ success: true, likes: updatedPost.likes });[m
+[31m -    } catch (err) {[m
+[31m -        console.error("Lỗi trong server:", err); // Log lỗi cụ thể ra terminal[m
+[31m -        res.status(500).json({ error: "Lỗi server", message: err.message });[m
+[31m -    }[m
+[31m -[m
+[31m -});[m
+[32m++// router.post("/:postID/like", async (req, res) => {[m
+[32m++//     try {[m
+[32m++//         // const { userId } = req.body;[m
+[32m++//         // const post = await Post.findById(req.params.postID);[m
+[32m++//         // console.log("like:",userId )[m
+[32m++//         // if (!post) {[m
+[32m++//         //     return res.status(404).json({ message: "Post not found" });[m
+[32m++//         // }[m
+[32m++[m
+[32m++//         // if (post.likes.users.includes(userId)) {[m
+[32m++//         //     // Nếu user đã like => bỏ like[m
+[32m++//         //     post.likes.users = post.likes.users.filter(id => id !== userId);[m
+[32m++//         //     post.likes.count -= 1;[m
+[32m++//         // } else {[m
+[32m++//         //     // Nếu user chưa like => thêm vào danh sách[m
+[32m++//         //     post.likes.users.push(userId);[m
+[32m++//         //     post.likes.count += 1;[m
+[32m++//         // }[m
+[32m++[m
+[32m++//         // await post.save();[m
+[32m++//         // res.status(200).json({ success: true, likes: post.likes });[m
+[32m++//         console.log("Headers:", req.headers);[m
+[32m++//         console.log("Body nhận được:", req.body);[m
+[32m++//         if (!req.body) {[m
+[32m++//             return res.status(400).json({ error: "Body không có dữ liệu" });[m
+[32m++//         }[m
+[32m++//         const { userId } = req.body;[m
+[32m++//         if (!userId) {[m
+[32m++//             return res.status(400).json({ error: "Thiếu userId trong request body" });[m
+[32m++//         }[m
+[32m++[m
+[32m++//         const post = await Post.findById(req.params.postID);[m
+[32m++//         if (!post) {[m
+[32m++//             return res.status(404).json({ message: "Bài post không tồn tại" });[m
+[32m++//         }[m
+[32m++[m
+[32m++//         console.log("Bài post tìm thấy:", post);[m
+[32m++//         const userObjectId = new mongoose.Types.ObjectId(userId);[m
+[32m++//         let liked = post.likes.users.includes(userId);[m
+[32m++//         if (liked) {[m
+[32m++//             post.likes.users = post.likes.users.filter(user => !user.equals(userObjectId));[m
+[32m++//             post.likes.count = Math.max(0, post.likes.count - 1);[m
+[32m++//             console.log("da xoa thanh cong");[m
+[32m++//         } else {[m
+[32m++//             post.likes.users.push(userId);[m
+[32m++//             post.likes.count += 1;[m
+[32m++//         }[m
+[32m++[m
+[32m++//         console.log("Cập nhật like:", post.likes);[m
+[32m++[m
+[32m++//         const updatedPost = await post.save();[m
+[32m++//         res.status(200).json({ success: true, likes: updatedPost.likes });[m
+[32m++//     } catch (err) {[m
+[32m++//         console.error("Lỗi trong server:", err); // Log lỗi cụ thể ra terminal[m
+[32m++//         res.status(500).json({ error: "Lỗi server", message: err.message });[m
+[32m++//     }[m
+[32m++[m
+[32m++// });[m
+[32m+ [m
+[32m+ [m
+  // Routes[m
+[31m- router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết[m
+[32m+ // router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết[m
+[31m -router.post("/", userAuth,upload.single("image"), createPost);[m
+[32m++router.post("/", userAuth,uploadPost.single("image"), createPost);[m
+  router.get("/", getPosts); // Lấy danh sách bài viết[m
+  router.delete("/:postId", userAuth, deletePost); // Xóa bài viết[m
+  router.post("/like", userAuth, likePost); // Thích bài viết[m
+[36m@@@ -27,5 -161,5 +163,8 @@@[m [mrouter.post("/comments", userAuth, crea[m
+  router.post("/comments/replies", userAuth,createReply);[m
+  router.post("/likeComment",userAuth, likeComment);[m
+  router.post("/unlikeComment",userAuth, unlikeComment);[m
+[31m--[m
+[32m++router.get("/:postId/rating/average", userAuth, getAverageRating);[m
+[32m++// router.get("/:postId/rating/user/:userId", userAuth, getUserRatingPost);[m
+[32m++// router.post("/:postId/rating",userAuth, userRatingPost);[m
+[32m++router.get("/getPostBytag",userAuth,getByTag);[m
+  module.exports =  router;[m
+[1mdiff --cc Backend/routes/user/voucherRouter.js[m
+[1mindex efbc9d10a,896ad92aa..d83fbf34b[m
+[1m--- a/Backend/routes/user/voucherRouter.js[m
+[1m+++ b/Backend/routes/user/voucherRouter.js[m
+[36m@@@ -1,6 -1,6 +1,6 @@@[m
+  const express = require("express");[m
+  const router = express.Router();[m
+[31m- const { uploadVoucher } = require("../../config/cloudinary/cloudinaryConfig");[m
+[31m -const { upload } = require("../../config/cloudinary/cloudinaryConfig");[m
+[32m++const { uploadVoucher     } = require("../../config/cloudinary/cloudinaryConfig");[m
+  const userAuth = require("../../middlewares/authMiddleware");[m
+  [m
+  const voucherController = require('../../controllers/user/VoucherController');[m
+[1mdiff --cc Backend/routes/userRoutes.js[m
+[1mindex 57f1e8cf3,39dd3c9be..56a56994f[m
+[1m--- a/Backend/routes/userRoutes.js[m
+[1m+++ b/Backend/routes/userRoutes.js[m
+[36m@@@ -1,6 -1,7 +1,6 @@@[m
+  // routes/userRoutes.js[m
+  const express = require("express")[m
+[31m- const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers,checkFollowStatus } = require("../controllers/userController.js")[m
+[31m -const User = require("../models/UserModel"); [m
+[31m -const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers, checkFollowStatus } = require("../controllers/userController.js")[m
+[32m++const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers,checkFollowStatus, removeFollower } = require("../controllers/userController.js")[m
+  const userAuth = require("../middlewares/authMiddleware.js")[m
+  [m
+  const router = express.Router();[m
+[36m@@@ -17,4 -18,18 +17,5 @@@[m [mrouter.get("/follower/:userId", userAut[m
+  router.post("/search", searchUser);[m
+  router.get("/get-by-id/:userId", getUserById);[m
+  router.get("/check-follow/:id",userAuth,checkFollowStatus);[m
+[31m -[m
+[31m -// API lấy thông tin user theo ID[m
+[31m -router.get("/:userId", async (req, res) => {[m
+[31m -    try {[m
+[31m -        const user = await User.findById(req.params.userId);[m
+[31m -        if (!user) {[m
+[31m -            return res.status(404).json({ message: "User not found" });[m
+[31m -        }[m
+[31m -        res.json(user);[m
+[31m -    } catch (err) {[m
+[31m -        console.error("Lỗi khi lấy dữ liệu user:", err);[m
+[31m -        res.status(500).json({ message: "Lỗi server" });[m
+[31m -    }[m
+[31m -});[m
+[32m++router.delete("/remove-follower/:followerId",userAuth,removeFollower);[m
+  module.exports =  router;[m
+[1mdiff --cc Backend/server.js[m
+[1mindex 051b38f8d,463f86ac2..ef8c08dd2[m
+[1m--- a/Backend/server.js[m
+[1m+++ b/Backend/server.js[m
+[36m@@@ -10,6 -89,6 +89,7 @@@[m [mconst nodemon = require('nodemon')[m
+  const cors = require('cors');[m
+  const router = require('./routes/index')[m
+  const route = require('./routes/user/index')[m
+[32m++[m
+  const path = require("path");[m
+  // const authRoutes = require("./routes/authRoutes");[m
+  require('./models/UserModel'); [m
+[36m@@@ -49,13 -133,9 +134,9 @@@[m [mconst db  = require('./config/db')[m
+  db.connect();[m
+  [m
+  route(app);[m
+[31m--[m
+[32m++router(app);[m
+  // Create a middleware to allow CORS to create voucher[m
+[31m- app.use(cors({[m
+[31m-     origin: ["http://localhost:3000", 'http://localhost:3000/vouchers'],[m
+[31m-     methods: ["GET", "POST", "PUT", "DELETE"],[m
+[31m-     credentials: true[m
+[31m- }));[m
+[32m+ [m
+  [m
+  // Chat[m
+  const server = http.createServer(app);[m
+[1mdiff --cc Frontend/node_modules/.cache/.eslintcache[m
+[1mindex 000000000,d0e4e59b5..ff6c291e8[m
+mode 000000,100644..100644[m
+[1m--- a/Frontend/node_modules/.cache/.eslintcache[m
+[1m+++ b/Frontend/node_modules/.cache/.eslintcache[m
+[36m@@@ -1,0 -1,1 +1,1 @@@[m
+[31m -[{"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\index.js":"1","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\reportWebVitals.js":"2","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\App.js":"3","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\Homepage.js":"4","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\FavouriteMapPage.js":"5","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\CreatePage.js":"6","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\MessagesPage.js":"7","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\SavedPostsPage.js":"8","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\NotificationsPage.js":"9","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\ProfilePage.js":"10","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\SearchPage.js":"11","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\VouchersPage.js":"12","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\navigation\\Sidenav.js":"13","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\Timeline.js":"14","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\HeaderProfile.js":"15","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\Sugesstions.js":"16","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\map\\MapUser.js":"17","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\posts\\Post.js":"18","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\redux\\store.js":"19","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\EditProfilePage.js":"20","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\RestaurantProfilePage.js":"21","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\createPost\\CreatePage.js":"22","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPage.js":"23","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\SetupPage\\SetupPage.js":"24","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\RegisterPage\\RegisterPage.js":"25","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\RecommendationsPage\\RecommendationsPage.js":"26","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\LoginPage\\LoginPage.js":"27","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\redux\\Reducer\\userSlice.js":"28","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\NotificationItem.js":"29","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\Timelinepostsaved.js":"30","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\FavouriteMap.js":"31","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\ProfileTabs.js":"32","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\ProfilePost.js":"33","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\AccountUser.js":"34","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\createPost\\UserCreatePost.js":"35","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\createPost\\RestaurantCreatePost.js":"36","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPageDetail.js":"37","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\utils\\recommendations.js":"38","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\Comment.js":"39","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\Modal.js":"40","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\redux\\Reducer\\postSlice.js":"41","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\friend\\FriendCard.js":"42","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\api\\index.js":"43","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\api\\userApi.js":"44","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\unfollowModal\\unfollowModal.js":"45","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\ShareModal\\ShareModal.js":"46","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\post\\PostOptionsDialog.js":"47","C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\api\\postApi.js":"48"},{"size":611,"mtime":1742234422261,"results":"49","hashOfConfig":"50"},{"size":375,"mtime":1739676360091,"results":"51","hashOfConfig":"50"},{"size":5200,"mtime":1744824492337,"results":"52","hashOfConfig":"50"},{"size":354,"mtime":1744824492338,"results":"53","hashOfConfig":"50"},{"size":11893,"mtime":1742907780770,"results":"54","hashOfConfig":"50"},{"size":156,"mtime":1739676360083,"results":"55","hashOfConfig":"50"},{"size":20083,"mtime":1744824492352,"results":"56","hashOfConfig":"50"},{"size":302,"mtime":1742907780771,"results":"57","hashOfConfig":"50"},{"size":1215,"mtime":1742234422268,"results":"58","hashOfConfig":"50"},{"size":5592,"mtime":1744828598589,"results":"59","hashOfConfig":"50"},{"size":2959,"mtime":1744824492357,"results":"60","hashOfConfig":"50"},{"size":1205,"mtime":1744824492359,"results":"61","hashOfConfig":"50"},{"size":4104,"mtime":1744824492351,"results":"62","hashOfConfig":"50"},{"size":4734,"mtime":1744826018072,"results":"63","hashOfConfig":"50"},{"size":10564,"mtime":1744824492344,"results":"64","hashOfConfig":"50"},{"size":4611,"mtime":1744824492364,"results":"65","hashOfConfig":"50"},{"size":10762,"mtime":1743749472885,"results":"66","hashOfConfig":"50"},{"size":29147,"mtime":1744826106128,"results":"67","hashOfConfig":"50"},{"size":263,"mtime":1744824492363,"results":"68","hashOfConfig":"50"},{"size":3609,"mtime":1744824492351,"results":"69","hashOfConfig":"50"},{"size":11192,"mtime":1742234422274,"results":"70","hashOfConfig":"50"},{"size":6326,"mtime":1744824492360,"results":"71","hashOfConfig":"50"},{"size":13731,"mtime":1744824492361,"results":"72","hashOfConfig":"50"},{"size":4901,"mtime":1744824492358,"results":"73","hashOfConfig":"50"},{"size":3848,"mtime":1744824492356,"results":"74","hashOfConfig":"50"},{"size":8087,"mtime":1744824492354,"results":"75","hashOfConfig":"50"},{"size":4599,"mtime":1744823868623,"results":"76","hashOfConfig":"50"},{"size":3912,"mtime":1744820053544,"results":"77","hashOfConfig":"50"},{"size":900,"mtime":1742234422259,"results":"78","hashOfConfig":"50"},{"size":4569,"mtime":1744818091239,"results":"79","hashOfConfig":"50"},{"size":1702,"mtime":1743748980982,"results":"80","hashOfConfig":"50"},{"size":1654,"mtime":1742234422260,"results":"81","hashOfConfig":"50"},{"size":11162,"mtime":1744824492345,"results":"82","hashOfConfig":"50"},{"size":1407,"mtime":1744824492342,"results":"83","hashOfConfig":"50"},{"size":4043,"mtime":1742234422280,"results":"84","hashOfConfig":"50"},{"size":4547,"mtime":1742234422279,"results":"85","hashOfConfig":"50"},{"size":5792,"mtime":1742234422282,"results":"86","hashOfConfig":"50"},{"size":1672,"mtime":1744824492367,"results":"87","hashOfConfig":"50"},{"size":8430,"mtime":1744824492343,"results":"88","hashOfConfig":"50"},{"size":7748,"mtime":1742911079007,"results":"89","hashOfConfig":"50"},{"size":9473,"mtime":1744824492362,"results":"90","hashOfConfig":"50"},{"size":1231,"mtime":1744824492348,"results":"91","hashOfConfig":"50"},{"size":53,"mtime":1744824492339,"results":"92","hashOfConfig":"50"},{"size":831,"mtime":1744824492340,"results":"93","hashOfConfig":"50"},{"size":1861,"mtime":1744824492350,"results":"94","hashOfConfig":"50"},{"size":3287,"mtime":1744824492347,"results":"95","hashOfConfig":"50"},{"size":2685,"mtime":1744824492349,"results":"96","hashOfConfig":"50"},{"size":1842,"mtime":1744824492339,"results":"97","hashOfConfig":"50"},{"filePath":"98","messages":"99","suppressedMessages":"100","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"1hp3w23",{"filePath":"101","messages":"102","suppressedMessages":"103","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"104","messages":"105","suppressedMessages":"106","errorCount":0,"fatalErrorCount":0,"warningCount":3,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"107","messages":"108","suppressedMessages":"109","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"110","messages":"111","suppressedMessages":"112","errorCount":0,"fatalErrorCount":0,"warningCount":5,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"113","messages":"114","suppressedMessages":"115","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"116","messages":"117","suppressedMessages":"118","errorCount":0,"fatalErrorCount":0,"warningCount":3,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"119","messages":"120","suppressedMessages":"121","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"122","messages":"123","suppressedMessages":"124","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"125","messages":"126","suppressedMessages":"127","errorCount":3,"fatalErrorCount":0,"warningCount":6,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"128","messages":"129","suppressedMessages":"130","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"131","messages":"132","suppressedMessages":"133","errorCount":0,"fatalErrorCount":0,"warningCount":3,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"134","messages":"135","suppressedMessages":"136","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"137","messages":"138","suppressedMessages":"139","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"140","messages":"141","suppressedMessages":"142","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"143","messages":"144","suppressedMessages":"145","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"146","messages":"147","suppressedMessages":"148","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"149","messages":"150","suppressedMessages":"151","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"152","messages":"153","suppressedMessages":"154","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"155","messages":"156","suppressedMessages":"157","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"158","messages":"159","suppressedMessages":"160","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"161","messages":"162","suppressedMessages":"163","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"164","messages":"165","suppressedMessages":"166","errorCount":0,"fatalErrorCount":0,"warningCount":3,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"167","messages":"168","suppressedMessages":"169","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"170","messages":"171","suppressedMessages":"172","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"173","messages":"174","suppressedMessages":"175","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"176","messages":"177","suppressedMessages":"178","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"179","messages":"180","suppressedMessages":"181","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"182","messages":"183","suppressedMessages":"184","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"185","messages":"186","suppressedMessages":"187","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"188","messages":"189","suppressedMessages":"190","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"191","messages":"192","suppressedMessages":"193","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"194","messages":"195","suppressedMessages":"196","errorCount":0,"fatalErrorCount":0,"warningCount":4,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"197","messages":"198","suppressedMessages":"199","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"200","messages":"201","suppressedMessages":"202","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"203","messages":"204","suppressedMessages":"205","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"206","messages":"207","suppressedMessages":"208","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"209","messages":"210","suppressedMessages":"211","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"212","messages":"213","suppressedMessages":"214","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"215","messages":"216","suppressedMessages":"217","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"218","messages":"219","suppressedMessages":"220","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"221","messages":"222","suppressedMessages":"223","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"224","messages":"225","suppressedMessages":"226","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"227","messages":"228","suppressedMessages":"229","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"230","messages":"231","suppressedMessages":"232","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"233","messages":"234","suppressedMessages":"235","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"236","messages":"237","suppressedMessages":"238","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"239","messages":"240","suppressedMessages":"241","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\index.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\reportWebVitals.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\App.js",["242","243","244"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\Homepage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\FavouriteMapPage.js",["245","246","247","248","249"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\CreatePage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\MessagesPage.js",["250","251","252"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\SavedPostsPage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\NotificationsPage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\ProfilePage.js",["253","254","255","256","257","258","259","260","261"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\SearchPage.js",["262"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\VouchersPage.js",["263","264","265"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\navigation\\Sidenav.js",["266"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\Timeline.js",["267"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\HeaderProfile.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\Sugesstions.js",["268","269"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\map\\MapUser.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\posts\\Post.js",["270","271"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\redux\\store.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\EditProfilePage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\RestaurantProfilePage.js",["272","273"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\createPost\\CreatePage.js",["274"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPage.js",["275","276","277"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\SetupPage\\SetupPage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\RegisterPage\\RegisterPage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\RecommendationsPage\\RecommendationsPage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\LoginPage\\LoginPage.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\redux\\Reducer\\userSlice.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\NotificationItem.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\timeline\\Timelinepostsaved.js",["278"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\FavouriteMap.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\ProfileTabs.js",["279","280"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\ProfilePost.js",["281","282","283","284"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\AccountUser.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\createPost\\UserCreatePost.js",["285"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\createPost\\RestaurantCreatePost.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPageDetail.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\utils\\recommendations.js",["286"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\Comment.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\Modal.js",["287"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\redux\\Reducer\\postSlice.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\friend\\FriendCard.js",["288","289"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\api\\index.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\api\\userApi.js",["290"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\unfollowModal\\unfollowModal.js",[],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\ShareModal\\ShareModal.js",["291"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\components\\post\\PostOptionsDialog.js",["292"],[],"C:\\xampp\\htdocs\\Savor-Social\\Frontend\\src\\api\\postApi.js",[],[],{"ruleId":"293","severity":1,"message":"294","line":11,"column":8,"nodeType":"295","messageId":"296","endLine":11,"endColumn":24},{"ruleId":"297","severity":1,"message":"298","line":53,"column":49,"nodeType":"299","messageId":"300","endLine":53,"endColumn":51},{"ruleId":"297","severity":1,"message":"298","line":71,"column":52,"nodeType":"299","messageId":"300","endLine":71,"endColumn":54},{"ruleId":"293","severity":1,"message":"301","line":90,"column":12,"nodeType":"295","messageId":"296","endLine":90,"endColumn":25},{"ruleId":"293","severity":1,"message":"302","line":90,"column":27,"nodeType":"295","messageId":"296","endLine":90,"endColumn":43},{"ruleId":"293","severity":1,"message":"303","line":91,"column":12,"nodeType":"295","messageId":"296","endLine":91,"endColumn":23},{"ruleId":"293","severity":1,"message":"304","line":91,"column":25,"nodeType":"295","messageId":"296","endLine":91,"endColumn":39},{"ruleId":"305","severity":1,"message":"306","line":225,"column":8,"nodeType":"307","endLine":225,"endColumn":15,"suggestions":"308"},{"ruleId":"293","severity":1,"message":"309","line":220,"column":10,"nodeType":"295","messageId":"296","endLine":220,"endColumn":19},{"ruleId":"293","severity":1,"message":"310","line":220,"column":21,"nodeType":"295","messageId":"296","endLine":220,"endColumn":33},{"ruleId":"297","severity":1,"message":"298","line":287,"column":142,"nodeType":"299","messageId":"300","endLine":287,"endColumn":144},{"ruleId":"293","severity":1,"message":"311","line":17,"column":17,"nodeType":"295","messageId":"296","endLine":17,"endColumn":25},{"ruleId":"293","severity":1,"message":"312","line":19,"column":10,"nodeType":"295","messageId":"296","endLine":19,"endColumn":21},{"ruleId":"293","severity":1,"message":"313","line":20,"column":10,"nodeType":"295","messageId":"296","endLine":20,"endColumn":14},{"ruleId":"293","severity":1,"message":"314","line":20,"column":16,"nodeType":"295","messageId":"296","endLine":20,"endColumn":23},{"ruleId":"305","severity":1,"message":"315","line":45,"column":6,"nodeType":"307","endLine":45,"endColumn":28,"suggestions":"316"},{"ruleId":"305","severity":1,"message":"317","line":73,"column":6,"nodeType":"307","endLine":73,"endColumn":37,"suggestions":"318"},{"ruleId":"319","severity":2,"message":"320","line":88,"column":22,"nodeType":"295","messageId":"321","endLine":88,"endColumn":31},{"ruleId":"319","severity":2,"message":"320","line":88,"column":49,"nodeType":"295","messageId":"321","endLine":88,"endColumn":58},{"ruleId":"319","severity":2,"message":"320","line":89,"column":5,"nodeType":"295","messageId":"321","endLine":89,"endColumn":14},{"ruleId":"293","severity":1,"message":"322","line":11,"column":10,"nodeType":"295","messageId":"296","endLine":11,"endColumn":19},{"ruleId":"293","severity":1,"message":"323","line":3,"column":9,"nodeType":"295","messageId":"296","endLine":3,"endColumn":13},{"ruleId":"293","severity":1,"message":"324","line":10,"column":9,"nodeType":"295","messageId":"296","endLine":10,"endColumn":24},{"ruleId":"293","severity":1,"message":"325","line":13,"column":11,"nodeType":"295","messageId":"296","endLine":13,"endColumn":19},{"ruleId":"293","severity":1,"message":"326","line":20,"column":50,"nodeType":"295","messageId":"296","endLine":20,"endColumn":60},{"ruleId":"293","severity":1,"message":"327","line":11,"column":8,"nodeType":"295","messageId":"296","endLine":11,"endColumn":11},{"ruleId":"305","severity":1,"message":"328","line":19,"column":5,"nodeType":"307","endLine":19,"endColumn":24,"suggestions":"329"},{"ruleId":"305","severity":1,"message":"330","line":64,"column":6,"nodeType":"307","endLine":64,"endColumn":19,"suggestions":"331"},{"ruleId":"305","severity":1,"message":"332","line":49,"column":8,"nodeType":"307","endLine":49,"endColumn":21,"suggestions":"333"},{"ruleId":"293","severity":1,"message":"334","line":92,"column":19,"nodeType":"295","messageId":"296","endLine":92,"endColumn":27},{"ruleId":"293","severity":1,"message":"335","line":2,"column":20,"nodeType":"295","messageId":"296","endLine":2,"endColumn":29},{"ruleId":"293","severity":1,"message":"336","line":4,"column":8,"nodeType":"295","messageId":"296","endLine":4,"endColumn":13},{"ruleId":"293","severity":1,"message":"337","line":9,"column":3,"nodeType":"295","messageId":"296","endLine":9,"endColumn":16},{"ruleId":"293","severity":1,"message":"338","line":3,"column":11,"nodeType":"295","messageId":"296","endLine":3,"endColumn":22},{"ruleId":"293","severity":1,"message":"339","line":3,"column":23,"nodeType":"295","messageId":"296","endLine":3,"endColumn":32},{"ruleId":"293","severity":1,"message":"340","line":4,"column":10,"nodeType":"295","messageId":"296","endLine":4,"endColumn":21},{"ruleId":"293","severity":1,"message":"341","line":9,"column":19,"nodeType":"295","messageId":"296","endLine":9,"endColumn":27},{"ruleId":"293","severity":1,"message":"342","line":1,"column":17,"nodeType":"295","messageId":"296","endLine":1,"endColumn":25},{"ruleId":"293","severity":1,"message":"326","line":2,"column":26,"nodeType":"295","messageId":"296","endLine":2,"endColumn":36},{"ruleId":"293","severity":1,"message":"343","line":15,"column":8,"nodeType":"295","messageId":"296","endLine":15,"endColumn":15},{"ruleId":"293","severity":1,"message":"344","line":34,"column":10,"nodeType":"295","messageId":"296","endLine":34,"endColumn":16},{"ruleId":"293","severity":1,"message":"345","line":34,"column":18,"nodeType":"295","messageId":"296","endLine":34,"endColumn":27},{"ruleId":"346","severity":1,"message":"347","line":148,"column":15,"nodeType":"348","endLine":151,"endColumn":17},{"ruleId":"293","severity":1,"message":"349","line":3,"column":18,"nodeType":"295","messageId":"296","endLine":3,"endColumn":28},{"ruleId":"293","severity":1,"message":"350","line":2,"column":11,"nodeType":"295","messageId":"296","endLine":2,"endColumn":18},{"ruleId":"293","severity":1,"message":"335","line":3,"column":20,"nodeType":"295","messageId":"296","endLine":3,"endColumn":29},{"ruleId":"293","severity":1,"message":"312","line":7,"column":10,"nodeType":"295","messageId":"296","endLine":7,"endColumn":21},{"ruleId":"293","severity":1,"message":"351","line":13,"column":9,"nodeType":"295","messageId":"296","endLine":13,"endColumn":26},{"ruleId":"293","severity":1,"message":"352","line":5,"column":7,"nodeType":"295","messageId":"296","endLine":5,"endColumn":21},{"ruleId":"305","severity":1,"message":"353","line":56,"column":6,"nodeType":"307","endLine":56,"endColumn":12,"suggestions":"354"},{"ruleId":"293","severity":1,"message":"342","line":1,"column":10,"nodeType":"295","messageId":"296","endLine":1,"endColumn":18},"no-unused-vars","'UserVouchersPage' is defined but never used.","Identifier","unusedVar","eqeqeq","Expected '===' and instead saw '=='.","BinaryExpression","unexpected","'startLocation' is assigned a value but never used.","'setStartLocation' is assigned a value but never used.","'destination' is assigned a value but never used.","'setDestination' is assigned a value but never used.","react-hooks/exhaustive-deps","React Hook useEffect has a missing dependency: 'map'. Either include it or remove the dependency array.","ArrayExpression",["355"],"'following' is assigned a value but never used.","'setFollowing' is assigned a value but never used.","'setError' is assigned a value but never used.","'isFollowing' is assigned a value but never used.","'data' is assigned a value but never used.","'setData' is assigned a value but never used.","React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.",["356"],"React Hook useEffect has missing dependencies: 'type' and 'user'. Either include them or remove the dependency array.",["357"],"no-undef","'postState' is not defined.","undef","'isFocused' is assigned a value but never used.","'rows' is assigned a value but never used.","'paginationModel' is assigned a value but never used.","'userData' is assigned a value but never used.","'Typography' is defined but never used.","'Box' is defined but never used.","React Hook useMemo has a missing dependency: 'userFromRedux'. Either include it or remove the dependency array.",["358"],"React Hook useEffect has a missing dependency: 'fetchSuggestions'. Either include it or remove the dependency array.",["359"],"React Hook useEffect has a missing dependency: 'userId_'. Either include it or remove the dependency array.",["360"],"'response' is assigned a value but never used.","'useEffect' is defined but never used.","'axios' is defined but never used.","'DialogActions' is defined but never used.","'useNavigate' is defined but never used.","'useParams' is defined but never used.","'useDispatch' is defined but never used.","'setPosts' is assigned a value but never used.","'useState' is defined but never used.","'Divider' is defined but never used.","'liking' is assigned a value but never used.","'setLiking' is assigned a value but never used.","jsx-a11y/alt-text","img elements must have an alt prop, either with meaningful text, or an empty string for decorative images.","JSXOpeningElement","'IconButton' is defined but never used.","'address' is assigned a value but never used.","'handleFollowClick' is assigned a value but never used.","'getAuthHeaders' is assigned a value but never used.","React Hook useEffect has a missing dependency: 'currentUser._id'. Either include it or remove the dependency array.",["361"],{"desc":"362","fix":"363"},{"desc":"364","fix":"365"},{"desc":"366","fix":"367"},{"desc":"368","fix":"369"},{"desc":"370","fix":"371"},{"desc":"372","fix":"373"},{"desc":"374","fix":"375"},"Update the dependencies array to be: [map, route]",{"range":"376","text":"377"},"Update the dependencies array to be: [user, userId, userStorage]",{"range":"378","text":"379"},"Update the dependencies array to be: [userId, userStorage, navigate, type, user]",{"range":"380","text":"381"},"Update the dependencies array to be: [userFromRedux]",{"range":"382","text":"383"},"Update the dependencies array to be: [currentUser, fetchSuggestions]",{"range":"384","text":"385"},"Update the dependencies array to be: [likes, user, userId_]",{"range":"386","text":"387"},"Update the dependencies array to be: [currentUser._id, open]",{"range":"388","text":"389"},[7791,7798],"[map, route]",[1894,1916],"[user, userId, userStorage]",[2852,2883],"[userId, userStorage, navigate, type, user]",[663,682],"[userFromRedux]",[2088,2101],"[currentUser, fetchSuggestions]",[2162,2175],"[likes, user, userId_]",[1739,1745],"[currentUser._id, open]"][m
+[32m++[{"F:\\DACN\\do-an\\Frontend\\src\\index.js":"1","F:\\DACN\\do-an\\Frontend\\src\\reportWebVitals.js":"2","F:\\DACN\\do-an\\Frontend\\src\\App.js":"3","F:\\DACN\\do-an\\Frontend\\src\\redux\\store.js":"4","F:\\DACN\\do-an\\Frontend\\src\\Homepage.js":"5","F:\\DACN\\do-an\\Frontend\\src\\pages\\SavedPostsPage.js":"6","F:\\DACN\\do-an\\Frontend\\src\\pages\\ProfilePage.js":"7","F:\\DACN\\do-an\\Frontend\\src\\pages\\SearchPage.js":"8","F:\\DACN\\do-an\\Frontend\\src\\pages\\NotificationsPage.js":"9","F:\\DACN\\do-an\\Frontend\\src\\pages\\VouchersPage.js":"10","F:\\DACN\\do-an\\Frontend\\src\\navigation\\Sidenav.js":"11","F:\\DACN\\do-an\\Frontend\\src\\pages\\EditProfilePage.js":"12","F:\\DACN\\do-an\\Frontend\\src\\pages\\MessagesPage.js":"13","F:\\DACN\\do-an\\Frontend\\src\\pages\\FavouriteMapPage.js":"14","F:\\DACN\\do-an\\Frontend\\src\\pages\\RestaurantProfilePage.js":"15","F:\\DACN\\do-an\\Frontend\\src\\pages\\createPost\\CreatePage.js":"16","F:\\DACN\\do-an\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPage.js":"17","F:\\DACN\\do-an\\Frontend\\src\\pages\\RegisterPage\\RegisterPage.js":"18","F:\\DACN\\do-an\\Frontend\\src\\pages\\SetupPage\\SetupPage.js":"19","F:\\DACN\\do-an\\Frontend\\src\\pages\\RecommendationsPage\\RecommendationsPage.js":"20","F:\\DACN\\do-an\\Frontend\\src\\pages\\LoginPage\\LoginPage.js":"21","F:\\DACN\\do-an\\Frontend\\src\\redux\\Reducer\\postSlice.js":"22","F:\\DACN\\do-an\\Frontend\\src\\redux\\Reducer\\userSlice.js":"23","F:\\DACN\\do-an\\Frontend\\src\\components\\NotificationItem.js":"24","F:\\DACN\\do-an\\Frontend\\src\\timeline\\Timeline.js":"25","F:\\DACN\\do-an\\Frontend\\src\\timeline\\Timelinepostsaved.js":"26","F:\\DACN\\do-an\\Frontend\\src\\components\\ProfileTabs.js":"27","F:\\DACN\\do-an\\Frontend\\src\\components\\ProfilePost.js":"28","F:\\DACN\\do-an\\Frontend\\src\\components\\FavouriteMap.js":"29","F:\\DACN\\do-an\\Frontend\\src\\components\\HeaderProfile.js":"30","F:\\DACN\\do-an\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPageDetail.js":"31","F:\\DACN\\do-an\\Frontend\\src\\components\\friend\\FriendCard.js":"32","F:\\DACN\\do-an\\Frontend\\src\\utils\\recommendations.js":"33","F:\\DACN\\do-an\\Frontend\\src\\components\\Comment.js":"34","F:\\DACN\\do-an\\Frontend\\src\\timeline\\Sugesstions.js":"35","F:\\DACN\\do-an\\Frontend\\src\\api\\index.js":"36","F:\\DACN\\do-an\\Frontend\\src\\api\\userApi.js":"37","F:\\DACN\\do-an\\Frontend\\src\\components\\post\\PostOptionsDialog.js":"38","F:\\DACN\\do-an\\Frontend\\src\\timeline\\map\\MapUser.js":"39","F:\\DACN\\do-an\\Frontend\\src\\components\\ShareModal\\ShareModal.js":"40","F:\\DACN\\do-an\\Frontend\\src\\components\\unfollowModal\\unfollowModal.js":"41","F:\\DACN\\do-an\\Frontend\\src\\components\\AccountUser.js":"42","F:\\DACN\\do-an\\Frontend\\src\\api\\postApi.js":"43","F:\\DACN\\do-an\\Frontend\\src\\components\\Modal.js":"44","F:\\DACN\\do-an\\Frontend\\src\\timeline\\posts\\Post.js":"45","F:\\DACN\\do-an\\Frontend\\src\\components\\post\\Postnormal.js":"46","F:\\DACN\\do-an\\Frontend\\src\\components\\hooks\\usePostInteractions.js":"47","F:\\DACN\\do-an\\Frontend\\src\\components\\post\\PostNormal.js":"48","F:\\DACN\\do-an\\Frontend\\src\\components\\post\\ProfilePostGrid.js":"49","F:\\DACN\\do-an\\Frontend\\src\\components\\post\\PostDetail.js":"50","F:\\DACN\\do-an\\Frontend\\src\\components\\removeModal\\RemoveFollowerDialog.js":"51","F:\\DACN\\do-an\\Frontend\\src\\pages\\ListPostByTag\\TagPage.js":"52","F:\\DACN\\do-an\\Frontend\\src\\components\\post\\ParsedContent.js":"53"},{"size":629,"mtime":1741589742058,"results":"54","hashOfConfig":"55"},{"size":375,"mtime":1741589742073,"results":"56","hashOfConfig":"55"},{"size":5614,"mtime":1745734241613,"results":"57","hashOfConfig":"55"},{"size":272,"mtime":1744774745456,"results":"58","hashOfConfig":"55"},{"size":367,"mtime":1743655640607,"results":"59","hashOfConfig":"55"},{"size":314,"mtime":1743655640610,"results":"60","hashOfConfig":"55"},{"size":9730,"mtime":1745312933304,"results":"61","hashOfConfig":"55"},{"size":5373,"mtime":1745737923470,"results":"62","hashOfConfig":"55"},{"size":1245,"mtime":1741589742073,"results":"63","hashOfConfig":"55"},{"size":1235,"mtime":1744791817726,"results":"64","hashOfConfig":"55"},{"size":4230,"mtime":1744774745454,"results":"65","hashOfConfig":"55"},{"size":3721,"mtime":1744791817724,"results":"66","hashOfConfig":"55"},{"size":20565,"mtime":1744791817725,"results":"67","hashOfConfig":"55"},{"size":12237,"mtime":1743655640609,"results":"68","hashOfConfig":"55"},{"size":11436,"mtime":1741589742073,"results":"69","hashOfConfig":"55"},{"size":16870,"mtime":1745841872049,"results":"70","hashOfConfig":"55"},{"size":14037,"mtime":1744791817726,"results":"71","hashOfConfig":"55"},{"size":3954,"mtime":1743495407909,"results":"72","hashOfConfig":"55"},{"size":5036,"mtime":1743495407909,"results":"73","hashOfConfig":"55"},{"size":8282,"mtime":1743495407909,"results":"74","hashOfConfig":"55"},{"size":4761,"mtime":1745048644849,"results":"75","hashOfConfig":"55"},{"size":10265,"mtime":1745131203820,"results":"76","hashOfConfig":"55"},{"size":3775,"mtime":1745242824450,"results":"77","hashOfConfig":"55"},{"size":935,"mtime":1741589742058,"results":"78","hashOfConfig":"55"},{"size":3495,"mtime":1745843080890,"results":"79","hashOfConfig":"55"},{"size":4677,"mtime":1745048644853,"results":"80","hashOfConfig":"55"},{"size":1723,"mtime":1741589742058,"results":"81","hashOfConfig":"55"},{"size":13155,"mtime":1745168131879,"results":"82","hashOfConfig":"55"},{"size":1745,"mtime":1741589742058,"results":"83","hashOfConfig":"55"},{"size":15817,"mtime":1745823393119,"results":"84","hashOfConfig":"55"},{"size":5932,"mtime":1743655640611,"results":"85","hashOfConfig":"55"},{"size":1274,"mtime":1743495407908,"results":"86","hashOfConfig":"55"},{"size":1706,"mtime":1743495407909,"results":"87","hashOfConfig":"55"},{"size":8688,"mtime":1744774745451,"results":"88","hashOfConfig":"55"},{"size":4750,"mtime":1743495407909,"results":"89","hashOfConfig":"55"},{"size":54,"mtime":1744774745450,"results":"90","hashOfConfig":"55"},{"size":1474,"mtime":1745310743051,"results":"91","hashOfConfig":"55"},{"size":5997,"mtime":1745169548863,"results":"92","hashOfConfig":"55"},{"size":11041,"mtime":1745048644854,"results":"93","hashOfConfig":"55"},{"size":3388,"mtime":1744774745453,"results":"94","hashOfConfig":"55"},{"size":1913,"mtime":1743614963899,"results":"95","hashOfConfig":"55"},{"size":1448,"mtime":1743495407905,"results":"96","hashOfConfig":"55"},{"size":1904,"mtime":1744774745450,"results":"97","hashOfConfig":"55"},{"size":7920,"mtime":1744272687681,"results":"98","hashOfConfig":"55"},{"size":22432,"mtime":1745843322141,"results":"99","hashOfConfig":"55"},{"size":5466,"mtime":1745161860400,"results":"100","hashOfConfig":"55"},{"size":3315,"mtime":1745161254913,"results":"101","hashOfConfig":"55"},{"size":5466,"mtime":1745161860400,"results":"102","hashOfConfig":"55"},{"size":1201,"mtime":1745161572759,"results":"103","hashOfConfig":"55"},{"size":10913,"mtime":1745843493233,"results":"104","hashOfConfig":"55"},{"size":2050,"mtime":1745233608999,"results":"105","hashOfConfig":"55"},{"size":2577,"mtime":1745737119362,"results":"106","hashOfConfig":"55"},{"size":2208,"mtime":1745840488537,"results":"107","hashOfConfig":"55"},{"filePath":"108","messages":"109","suppressedMessages":"110","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"1n47jno",{"filePath":"111","messages":"112","suppressedMessages":"113","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"114","messages":"115","suppressedMessages":"116","errorCount":0,"fatalErrorCount":0,"warningCount":4,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"117","messages":"118","suppressedMessages":"119","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"120","messages":"121","suppressedMessages":"122","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"123","messages":"124","suppressedMessages":"125","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"126","messages":"127","suppressedMessages":"128","errorCount":0,"fatalErrorCount":0,"warningCount":5,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"129","messages":"130","suppressedMessages":"131","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"132","messages":"133","suppressedMessages":"134","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"135","messages":"136","suppressedMessages":"137","errorCount":0,"fatalErrorCount":0,"warningCount":3,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"138","messages":"139","suppressedMessages":"140","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"141","messages":"142","suppressedMessages":"143","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"144","messages":"145","suppressedMessages":"146","errorCount":0,"fatalErrorCount":0,"warningCount":3,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"147","messages":"148","suppressedMessages":"149","errorCount":0,"fatalErrorCount":0,"warningCount":5,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"150","messages":"151","suppressedMessages":"152","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"153","messages":"154","suppressedMessages":"155","errorCount":0,"fatalErrorCount":0,"warningCount":9,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"156","messages":"157","suppressedMessages":"158","errorCount":0,"fatalErrorCount":0,"warningCount":3,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"159","messages":"160","suppressedMessages":"161","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"162","messages":"163","suppressedMessages":"164","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"165","messages":"166","suppressedMessages":"167","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"168","messages":"169","suppressedMessages":"170","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"171","messages":"172","suppressedMessages":"173","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"174","messages":"175","suppressedMessages":"176","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"177","messages":"178","suppressedMessages":"179","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"180","messages":"181","suppressedMessages":"182","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"183","messages":"184","suppressedMessages":"185","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"186","messages":"187","suppressedMessages":"188","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"189","messages":"190","suppressedMessages":"191","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"192","messages":"193","suppressedMessages":"194","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"195","messages":"196","suppressedMessages":"197","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"198","messages":"199","suppressedMessages":"200","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"201","messages":"202","suppressedMessages":"203","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"204","messages":"205","suppressedMessages":"206","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"207","messages":"208","suppressedMessages":"209","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"210","messages":"211","suppressedMessages":"212","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"213","messages":"214","suppressedMessages":"215","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"216","messages":"217","suppressedMessages":"218","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"219","messages":"220","suppressedMessages":"221","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"222","messages":"223","suppressedMessages":"224","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"225","messages":"226","suppressedMessages":"227","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"228","messages":"229","suppressedMessages":"230","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"231","messages":"232","suppressedMessages":"233","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"234","messages":"235","suppressedMessages":"236","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"237","messages":"238","suppressedMessages":"239","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"240","messages":"241","suppressedMessages":"242","errorCount":0,"fatalErrorCount":0,"warningCount":8,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"243","messages":"244","suppressedMessages":"245","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"246","messages":"247","suppressedMessages":"248","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"249","messages":"250","suppressedMessages":"251","errorCount":0,"fatalErrorCount":0,"warningCount":2,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"252","messages":"253","suppressedMessages":"254","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"255","messages":"256","suppressedMessages":"257","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"258","messages":"259","suppressedMessages":"260","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"261","messages":"262","suppressedMessages":"263","errorCount":0,"fatalErrorCount":0,"warningCount":1,"fixableErrorCount":0,"fixableWarningCount":0,"source":null},{"filePath":"264","messages":"265","suppressedMessages":"266","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"F:\\DACN\\do-an\\Frontend\\src\\index.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\reportWebVitals.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\App.js",["267","268","269","270"],[],"F:\\DACN\\do-an\\Frontend\\src\\redux\\store.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\Homepage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\SavedPostsPage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\ProfilePage.js",["271","272","273","274","275"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\SearchPage.js",["276"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\NotificationsPage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\VouchersPage.js",["277","278","279"],[],"F:\\DACN\\do-an\\Frontend\\src\\navigation\\Sidenav.js",["280"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\EditProfilePage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\MessagesPage.js",["281","282","283"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\FavouriteMapPage.js",["284","285","286","287","288"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\RestaurantProfilePage.js",["289","290"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\createPost\\CreatePage.js",["291","292","293","294","295","296","297","298","299"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPage.js",["300","301","302"],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\RegisterPage\\RegisterPage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\SetupPage\\SetupPage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\RecommendationsPage\\RecommendationsPage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\LoginPage\\LoginPage.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\redux\\Reducer\\postSlice.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\redux\\Reducer\\userSlice.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\NotificationItem.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\timeline\\Timeline.js",["303","304"],[],"F:\\DACN\\do-an\\Frontend\\src\\timeline\\Timelinepostsaved.js",["305"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\ProfileTabs.js",["306","307"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\ProfilePost.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\FavouriteMap.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\HeaderProfile.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\restaurantVoucher\\VouchersPageDetail.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\friend\\FriendCard.js",["308","309"],[],"F:\\DACN\\do-an\\Frontend\\src\\utils\\recommendations.js",["310"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\Comment.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\timeline\\Sugesstions.js",["311","312"],[],"F:\\DACN\\do-an\\Frontend\\src\\api\\index.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\api\\userApi.js",["313"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\post\\PostOptionsDialog.js",["314","315"],[],"F:\\DACN\\do-an\\Frontend\\src\\timeline\\map\\MapUser.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\ShareModal\\ShareModal.js",["316"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\unfollowModal\\unfollowModal.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\AccountUser.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\api\\postApi.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\Modal.js",["317"],[],"F:\\DACN\\do-an\\Frontend\\src\\timeline\\posts\\Post.js",["318","319","320","321","322","323","324","325"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\post\\Postnormal.js",["326","327"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\hooks\\usePostInteractions.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\post\\PostNormal.js",["328","329"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\post\\ProfilePostGrid.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\post\\PostDetail.js",["330"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\removeModal\\RemoveFollowerDialog.js",[],[],"F:\\DACN\\do-an\\Frontend\\src\\pages\\ListPostByTag\\TagPage.js",["331"],[],"F:\\DACN\\do-an\\Frontend\\src\\components\\post\\ParsedContent.js",[],[],{"ruleId":"332","severity":1,"message":"333","line":3,"column":23,"nodeType":"334","messageId":"335","endLine":3,"endColumn":34},{"ruleId":"332","severity":1,"message":"336","line":11,"column":8,"nodeType":"334","messageId":"335","endLine":11,"endColumn":24},{"ruleId":"337","severity":1,"message":"338","line":55,"column":49,"nodeType":"339","messageId":"340","endLine":55,"endColumn":51},{"ruleId":"337","severity":1,"message":"338","line":75,"column":52,"nodeType":"339","messageId":"340","endLine":75,"endColumn":54},{"ruleId":"332","severity":1,"message":"341","line":160,"column":11,"nodeType":"334","messageId":"335","endLine":160,"endColumn":16},{"ruleId":"332","severity":1,"message":"342","line":162,"column":10,"nodeType":"334","messageId":"335","endLine":162,"endColumn":21},{"ruleId":"343","severity":1,"message":"344","line":195,"column":6,"nodeType":"345","endLine":195,"endColumn":24,"suggestions":"346"},{"ruleId":"347","severity":1,"message":"348","line":207,"column":77,"nodeType":"349","messageId":"350","endLine":207,"endColumn":79},{"ruleId":"337","severity":1,"message":"338","line":208,"column":34,"nodeType":"339","messageId":"340","endLine":208,"endColumn":36},{"ruleId":"332","severity":1,"message":"351","line":19,"column":10,"nodeType":"334","messageId":"335","endLine":19,"endColumn":19},{"ruleId":"332","severity":1,"message":"352","line":3,"column":9,"nodeType":"334","messageId":"335","endLine":3,"endColumn":13},{"ruleId":"332","severity":1,"message":"353","line":10,"column":9,"nodeType":"334","messageId":"335","endLine":10,"endColumn":24},{"ruleId":"332","severity":1,"message":"354","line":13,"column":11,"nodeType":"334","messageId":"335","endLine":13,"endColumn":19},{"ruleId":"332","severity":1,"message":"355","line":20,"column":50,"nodeType":"334","messageId":"335","endLine":20,"endColumn":60},{"ruleId":"332","severity":1,"message":"356","line":220,"column":10,"nodeType":"334","messageId":"335","endLine":220,"endColumn":19},{"ruleId":"332","severity":1,"message":"357","line":220,"column":21,"nodeType":"334","messageId":"335","endLine":220,"endColumn":33},{"ruleId":"337","severity":1,"message":"338","line":287,"column":142,"nodeType":"339","messageId":"340","endLine":287,"endColumn":144},{"ruleId":"332","severity":1,"message":"358","line":90,"column":12,"nodeType":"334","messageId":"335","endLine":90,"endColumn":25},{"ruleId":"332","severity":1,"message":"359","line":90,"column":27,"nodeType":"334","messageId":"335","endLine":90,"endColumn":43},{"ruleId":"332","severity":1,"message":"360","line":91,"column":12,"nodeType":"334","messageId":"335","endLine":91,"endColumn":23},{"ruleId":"332","severity":1,"message":"361","line":91,"column":25,"nodeType":"334","messageId":"335","endLine":91,"endColumn":39},{"ruleId":"343","severity":1,"message":"362","line":225,"column":8,"nodeType":"345","endLine":225,"endColumn":15,"suggestions":"363"},{"ruleId":"332","severity":1,"message":"364","line":2,"column":20,"nodeType":"334","messageId":"335","endLine":2,"endColumn":29},{"ruleId":"332","severity":1,"message":"365","line":4,"column":8,"nodeType":"334","messageId":"335","endLine":4,"endColumn":13},{"ruleId":"332","severity":1,"message":"366","line":8,"column":3,"nodeType":"334","messageId":"335","endLine":8,"endColumn":16},{"ruleId":"332","severity":1,"message":"367","line":11,"column":3,"nodeType":"334","messageId":"335","endLine":11,"endColumn":12},{"ruleId":"332","severity":1,"message":"368","line":16,"column":3,"nodeType":"334","messageId":"335","endLine":16,"endColumn":15},{"ruleId":"332","severity":1,"message":"369","line":17,"column":3,"nodeType":"334","messageId":"335","endLine":17,"endColumn":7},{"ruleId":"332","severity":1,"message":"370","line":68,"column":10,"nodeType":"334","messageId":"335","endLine":68,"endColumn":14},{"ruleId":"332","severity":1,"message":"371","line":73,"column":10,"nodeType":"334","messageId":"335","endLine":73,"endColumn":14},{"ruleId":"332","severity":1,"message":"372","line":74,"column":10,"nodeType":"334","messageId":"335","endLine":74,"endColumn":18},{"ruleId":"332","severity":1,"message":"373","line":74,"column":20,"nodeType":"334","messageId":"335","endLine":74,"endColumn":31},{"ruleId":"332","severity":1,"message":"374","line":299,"column":9,"nodeType":"334","messageId":"335","endLine":299,"endColumn":28},{"ruleId":"332","severity":1,"message":"375","line":3,"column":11,"nodeType":"334","messageId":"335","endLine":3,"endColumn":22},{"ruleId":"332","severity":1,"message":"376","line":3,"column":23,"nodeType":"334","messageId":"335","endLine":3,"endColumn":32},{"ruleId":"332","severity":1,"message":"333","line":4,"column":10,"nodeType":"334","messageId":"335","endLine":4,"endColumn":21},{"ruleId":"332","severity":1,"message":"365","line":8,"column":8,"nodeType":"334","messageId":"335","endLine":8,"endColumn":13},{"ruleId":"332","severity":1,"message":"377","line":11,"column":8,"nodeType":"334","messageId":"335","endLine":11,"endColumn":11},{"ruleId":"332","severity":1,"message":"378","line":9,"column":19,"nodeType":"334","messageId":"335","endLine":9,"endColumn":27},{"ruleId":"332","severity":1,"message":"379","line":1,"column":17,"nodeType":"334","messageId":"335","endLine":1,"endColumn":25},{"ruleId":"332","severity":1,"message":"355","line":2,"column":26,"nodeType":"334","messageId":"335","endLine":2,"endColumn":36},{"ruleId":"332","severity":1,"message":"342","line":7,"column":10,"nodeType":"334","messageId":"335","endLine":7,"endColumn":21},{"ruleId":"332","severity":1,"message":"380","line":13,"column":9,"nodeType":"334","messageId":"335","endLine":13,"endColumn":26},{"ruleId":"332","severity":1,"message":"381","line":2,"column":11,"nodeType":"334","messageId":"335","endLine":2,"endColumn":18},{"ruleId":"343","severity":1,"message":"382","line":19,"column":5,"nodeType":"345","endLine":19,"endColumn":24,"suggestions":"383"},{"ruleId":"343","severity":1,"message":"384","line":64,"column":6,"nodeType":"345","endLine":64,"endColumn":19,"suggestions":"385"},{"ruleId":"332","severity":1,"message":"386","line":5,"column":7,"nodeType":"334","messageId":"335","endLine":5,"endColumn":21},{"ruleId":"332","severity":1,"message":"379","line":83,"column":10,"nodeType":"334","messageId":"335","endLine":83,"endColumn":18},{"ruleId":"332","severity":1,"message":"376","line":85,"column":10,"nodeType":"334","messageId":"335","endLine":85,"endColumn":19},{"ruleId":"343","severity":1,"message":"387","line":56,"column":6,"nodeType":"345","endLine":56,"endColumn":12,"suggestions":"388"},{"ruleId":"332","severity":1,"message":"364","line":3,"column":20,"nodeType":"334","messageId":"335","endLine":3,"endColumn":29},{"ruleId":"332","severity":1,"message":"389","line":4,"column":26,"nodeType":"334","messageId":"335","endLine":4,"endColumn":32},{"ruleId":"332","severity":1,"message":"369","line":4,"column":39,"nodeType":"334","messageId":"335","endLine":4,"endColumn":43},{"ruleId":"332","severity":1,"message":"390","line":19,"column":8,"nodeType":"334","messageId":"335","endLine":19,"endColumn":13},{"ruleId":"332","severity":1,"message":"391","line":47,"column":10,"nodeType":"334","messageId":"335","endLine":47,"endColumn":14},{"ruleId":"332","severity":1,"message":"392","line":47,"column":16,"nodeType":"334","messageId":"335","endLine":47,"endColumn":23},{"ruleId":"332","severity":1,"message":"393","line":60,"column":5,"nodeType":"334","messageId":"335","endLine":60,"endColumn":13},{"ruleId":"332","severity":1,"message":"394","line":64,"column":5,"nodeType":"334","messageId":"335","endLine":64,"endColumn":17},{"ruleId":"343","severity":1,"message":"395","line":84,"column":6,"nodeType":"345","endLine":84,"endColumn":12,"suggestions":"396"},{"ruleId":"332","severity":1,"message":"397","line":15,"column":8,"nodeType":"334","messageId":"335","endLine":15,"endColumn":14},{"ruleId":"332","severity":1,"message":"398","line":50,"column":5,"nodeType":"334","messageId":"335","endLine":50,"endColumn":24},{"ruleId":"332","severity":1,"message":"397","line":14,"column":8,"nodeType":"334","messageId":"335","endLine":14,"endColumn":14},{"ruleId":"332","severity":1,"message":"398","line":49,"column":5,"nodeType":"334","messageId":"335","endLine":49,"endColumn":24},{"ruleId":"332","severity":1,"message":"399","line":9,"column":3,"nodeType":"334","messageId":"335","endLine":9,"endColumn":18},{"ruleId":"332","severity":1,"message":"400","line":43,"column":9,"nodeType":"334","messageId":"335","endLine":43,"endColumn":24},"no-unused-vars","'useDispatch' is defined but never used.","Identifier","unusedVar","'UserVouchersPage' is defined but never used.","eqeqeq","Expected '===' and instead saw '=='.","BinaryExpression","unexpected","'posts' is assigned a value but never used.","'isFollowing' is assigned a value but never used.","react-hooks/exhaustive-deps","React Hook useEffect has a missing dependency: 'fetchUser'. Either include it or remove the dependency array.","ArrayExpression",["401"],"array-callback-return","Array.prototype.filter() expects a value to be returned at the end of arrow function.","ArrowFunctionExpression","expectedAtEnd","'isFocused' is assigned a value but never used.","'rows' is assigned a value but never used.","'paginationModel' is assigned a value but never used.","'userData' is assigned a value but never used.","'Typography' is defined but never used.","'following' is assigned a value but never used.","'setFollowing' is assigned a value but never used.","'startLocation' is assigned a value but never used.","'setStartLocation' is assigned a value but never used.","'destination' is assigned a value but never used.","'setDestination' is assigned a value but never used.","React Hook useEffect has a missing dependency: 'map'. Either include it or remove the dependency array.",["402"],"'useEffect' is defined but never used.","'axios' is defined but never used.","'DialogActions' is defined but never used.","'TextField' is defined but never used.","'Autocomplete' is defined but never used.","'Chip' is defined but never used.","'file' is assigned a value but never used.","'tags' is assigned a value but never used.","'tagInput' is assigned a value but never used.","'setTagInput' is assigned a value but never used.","'hasRestaurantTagged' is assigned a value but never used.","'useNavigate' is defined but never used.","'useParams' is defined but never used.","'Box' is defined but never used.","'setPosts' is assigned a value but never used.","'useState' is defined but never used.","'handleFollowClick' is assigned a value but never used.","'address' is assigned a value but never used.","React Hook useMemo has a missing dependency: 'userFromRedux'. Either include it or remove the dependency array.",["403"],"React Hook useEffect has a missing dependency: 'fetchSuggestions'. Either include it or remove the dependency array.",["404"],"'getAuthHeaders' is assigned a value but never used.","React Hook useEffect has a missing dependency: 'currentUser._id'. Either include it or remove the dependency array.",["405"],"

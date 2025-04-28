@@ -181,7 +181,7 @@ function PostDetail({ canDelete }) {
         >
           <Box sx={{ width: "60%", height: "100%", overflow: "hidden", flexShrink: 0 }}>
             <img
-              src={postInfo.imageUrl}
+              src={postInfo.images}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
               alt={postInfo.content}
             />

@@ -25,6 +25,7 @@ const API_URL = "http://localhost:5000/api/vouchers";
 function VouchersPage( {restaurantId}) {
     const userStorage = useSelector(state => state.user.user);
     const [selectedVoucherType, setSelectedVoucherType] = useState(null);
+    const [voucherId, setVoucherId] = useState(null);
 
     const tabs  =  [
         { label: "List of vouchers", value: "lst_voucher" },
@@ -42,6 +43,7 @@ function VouchersPage( {restaurantId}) {
         expire_day: "",
         type: "",
         description: "",
+        restaurantId: "",
     });
     
     const handleChange = (e) => {
@@ -53,7 +55,7 @@ function VouchersPage( {restaurantId}) {
     useEffect(() => {
         const fetchVouchers = async () => {
             try {
-                const response = await axios.get(`${API_URL}/summary`);
+                const response = await axios.get(`${API_URL}/summary/${restaurantId}`);
 
                 setVoucher(response.data);
             } catch (error) {
@@ -62,7 +64,7 @@ function VouchersPage( {restaurantId}) {
         };
         
         fetchVouchers();
-    }, [restaurantId, type]);
+    }, [type]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -74,7 +76,7 @@ function VouchersPage( {restaurantId}) {
         formData.append("release_day", voucherData.release_day);
         formData.append("expire_day", voucherData.expire_day);
         formData.append("description", voucherData.description);
-        formData.append("restaurant_id", restaurantId);
+        formData.append("restaurantId", restaurantId); 
     
         // Append the image file if selected
         if (selectedImage) {
@@ -96,6 +98,7 @@ function VouchersPage( {restaurantId}) {
                     release_day: "",
                     expire_day: "",
                     description: "",
+                    restaurantId: "",
                 });
                 setSelectedImage(null); // Clear the selected image
             } else {
@@ -183,16 +186,16 @@ function VouchersPage( {restaurantId}) {
                                             <Stack direction="row" spacing={0}>
                                                 <Item>
                                                     <Button 
-                                                        variant="outlined" 
-                                                        color="dark" 
+                                                        variant="contained" 
+                                                        color="primary" 
                                                         style={{width: "50px", marginTop: "10px"}}
-                                                        onClick={() => setSelectedVoucherType(voucher.name)}>
+                                                        onClick={() => (setSelectedVoucherType(voucher.name) ,setVoucherId(voucher._id))}>
                                                             Details
                                                     </Button>
                                                 </Item>
                                                 <Item>
                                                     <Button 
-                                                        variant="outlined" 
+                                                        variant="contained" 
                                                         color="error" 
                                                         style={{width: "40px", marginTop: "10px"}}
                                                         onClick={() => handleDeleteVoucher(voucher._id)}>
@@ -214,7 +217,7 @@ function VouchersPage( {restaurantId}) {
                         </Grid2>
                     </div>
                 ) : (
-                    <VouchersPageDetail onBack={() => setSelectedVoucherType(null)} voucherType={selectedVoucherType}/>
+                    <VouchersPageDetail onBack={() => setSelectedVoucherType(null)} voucherType={selectedVoucherType} voucherId={voucherId}/>
                 )}
             </div>
         ) : (
@@ -256,7 +259,8 @@ function VouchersPage( {restaurantId}) {
             </div>
             <div style={{marginRight: "50px"}}>
             <form onSubmit={handleSubmit}>
-                <TextField style={{width: "300px", marginBottom: "15px"}} required id="name" label="Name of voucher (unique)" name="name" value={voucherData.name} onChange={handleChange} />
+                <div required id="restaurantId" name="restaurantId"></div>
+                <TextField style={{width: "300px", marginBottom: "15px"}} required id="name" label="Name of voucher" name="name" value={voucherData.name} onChange={handleChange} />
                 <br></br>
                 <TextField 
                     style={{width: "300px", marginBottom: "15px"}} 

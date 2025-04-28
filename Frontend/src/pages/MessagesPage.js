@@ -217,7 +217,7 @@ const handleMenuClick = (event) => {
   }, [messages]);
 
   const [followers, setFollowers] = useState([]);
-  const [following, setFollowing] = useState([]);
+  const [user, setUser] = useState([]);
 
   useEffect(() => {
     const fetchFollower = async () => {
@@ -243,6 +243,32 @@ const handleMenuClick = (event) => {
     
       if (sender) fetchFollower(); // Only fetch if sender is valid
   }, [sender]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+        try {
+          const token = localStorage.getItem("token"); // Retrieve stored token
+          if (!token) {
+            console.error("No token found! Redirecting to login...");
+            return;
+          }
+    
+          const { data } = await axios.get(`${USER_API_URL}/get-by-id/${sender}`, {
+            headers: {
+              Authorization: `Bearer ${token}`, // Attach token
+              "Content-Type": "application/json",
+            },
+          });
+    
+          setUser(data);
+        } catch (error) {
+          console.error("Error fetching followers:", error.response?.data?.message || error.message);
+        }
+      };
+    
+      if (sender) fetchUser(); // Only fetch if sender is valid
+  }, [sender]);
+  console.log("user:", user);
 
   return (
     <Box style={{width: "100%", height: "100%", border: "none", borderLeft: "2px solid #ebedf0"}}>
@@ -322,10 +348,10 @@ const handleMenuClick = (event) => {
                                     variant="dot"
                                     style={{marginLeft: "10px"}}
                                     >
-                                    <Avatar alt={account[0].name} src={account[0].img} />
+                                    <Avatar alt={user.username} src={user.img} />
                                 </StyledBadge>
                             <Stack >
-                                <Typography variant="subtitle1">{account[0].name}</Typography>
+                                <Typography variant="subtitle1">{user.username}</Typography>
                                 <Typography variant="caption" color="textSecondary">Online</Typography>
                             </Stack>
                         </Stack>
