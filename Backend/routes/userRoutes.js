@@ -1,6 +1,6 @@
 // routes/userRoutes.js
 const express = require("express")
-const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers,checkFollowStatus } = require("../controllers/userController.js")
+const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers,checkFollowStatus, removeFollower } = require("../controllers/userController.js")
 const userAuth = require("../middlewares/authMiddleware.js")
 
 const router = express.Router();
@@ -17,4 +17,5 @@ router.get("/follower/:userId", userAuth, getFollowers);
 router.post("/search", searchUser);
 router.get("/get-by-id/:userId", getUserById);
 router.get("/check-follow/:id",userAuth,checkFollowStatus);
+router.delete("/remove-follower/:followerId",userAuth,removeFollower);
 module.exports =  router;

@@ -5,8 +5,8 @@ import "./posts/Post";
 import Post from "./posts/Post";
 import MapUser from "./map/MapUser";
 import axios from "axios";
-function Timelinepostsaved({ currentUser }) {
-    // const [posts, setPosts] = useState([
+function Timelinepostsaved() {
+    const [posts, setPosts] = useState([
     //     {
     //         user: "_dangnguyen",
     //         postImage:"https://th.bing.com/th/id/R.b7f3d67f12f2336f8c8f0f14aba94cec?rik=TRAvKbxESFS4LQ&pid=ImgRaw&r=0",
@@ -31,9 +31,9 @@ function Timelinepostsaved({ currentUser }) {
     //         address:"85 10th Ave, New York NY 10011",
     //         timestamp: "3d"
     //     }
-    // ]);
+    ]);
     const [savedPosts, setSavedPosts] = useState([]); // State chứa danh sách bài post đã lưu
-
+    const [selectedPostId, setSelectedPostId] = useState(null);
     // useEffect(() => {
     //     const fetchSavedPosts = async () => {
     //         try {
@@ -48,12 +48,26 @@ function Timelinepostsaved({ currentUser }) {
 
     //     fetchSavedPosts();
     // }, []);
-
+    const userFromStorage = localStorage.getItem("user");
+    let user_
+    let userId_
+    if (userFromStorage) {
+        user_ = JSON.parse(userFromStorage); // Chuyển từ JSON string thành object
+        userId_ = user_._id; // Lấy id từ object
+        console.log("User ID:", userId_);
+    } else {
+        console.log("Không tìm thấy user trong localStorage");
+    }
     useEffect(() => {
-        axios.get(`http://localhost:5000/api/user/${currentUser}/savedPosts`)
-            .then(res => setSavedPosts(res.data.savedPosts))
+        axios.get(`http://localhost:5000/api/user/${userId_}/savedPosts/detail`)
+            .then(res => {
+                setSavedPosts(res.data.savedPosts);
+                if (res.data.savedPosts.length > 0) {
+                    setSelectedPostId(res.data.savedPosts[0]._id);
+                }
+            })
             .catch(err => console.error(err));
-    }, [currentUser]);
+    }, [userId_]);
 
     return(
         <div className="timeline">
@@ -65,20 +79,19 @@ function Timelinepostsaved({ currentUser }) {
                     <div className="timeline__posts">
                         {savedPosts.map((savedPosts,index) => (
                             <Post 
-                            // key={index}
-                            // user= {post.user}
-                            // postImage={post.postImage} 
-                            // likes={post.likes} 
-                            // caption={post.caption}
-                            // address={post.address}
-                            // timestamp={post.timestamp}
-                            key={savedPosts._id} 
-                            user={savedPosts.userId} 
-                            postImage={savedPosts.images[0]} 
-                            likes={savedPosts.likes.count} 
-                            caption={savedPosts.content}
-                            address={savedPosts.location.name}
-                            timestamp={new Date(savedPosts.createdAt).toLocaleDateString()} 
+                            key={index}
+
+                                user={savedPosts.userId}
+                                postID={savedPosts._id}
+                                postImage={savedPosts.imageUrl}
+                                likes={savedPosts.likes}
+                                caption={savedPosts.caption}
+                                address={savedPosts.address}
+                                timestamp={savedPosts.timestamp}
+                                is_voucher={savedPosts.is_voucher}
+                                is_ad={savedPosts.is_ad}
+                                isSelected={selectedPostId === savedPosts._id} // Chỉ bài post đang chọn có `isSelected = true`
+                                onSelect={() => setSelectedPostId(savedPosts._id)}
                             />
                         ))}
                     </div>
@@ -87,7 +100,7 @@ function Timelinepostsaved({ currentUser }) {
             </div>
             <div className="timeline__right">
                 <Sugesstions/>
-                <MapUser/>
+                <MapUser selectedPostId={selectedPostId} posts={posts}/>
             </div>
 
         </div>

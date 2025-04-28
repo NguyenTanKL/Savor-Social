@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { uploadVoucher } = require("../../config/cloudinary/cloudinaryConfig");
+const { uploadVoucher     } = require("../../config/cloudinary/cloudinaryConfig");
 const userAuth = require("../../middlewares/authMiddleware");
 
 const voucherController = require('../../controllers/user/VoucherController');
