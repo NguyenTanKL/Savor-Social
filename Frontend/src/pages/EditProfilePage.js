@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './EditProfilePage.css';
+import { styled } from '@mui/material/styles';
+import Button from '@mui/material/Button';
 import axios from 'axios';
 
+const USER_API_URL = "http://localhost:5000/api/user";
+
 function EditProfilePage({userId}) {
-  const USER_API_URL = "http://localhost:5000/api/user";
+  
+  const token = localStorage.getItem("token");
 
   const [formData, setFormData] = useState({
+    image: '',
     name: '',
     username: '',
     website: '',
@@ -15,6 +21,7 @@ function EditProfilePage({userId}) {
     gender: '',
     showSuggestions: false,
   });
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
       // Fetch user data
@@ -34,20 +41,33 @@ function EditProfilePage({userId}) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Không tìm thấy token!");
-        return;
+      const data = new FormData();
+
+  // Append the avatar file
+      if (selectedFile) {
+        data.append('image', selectedFile); // 'avatar' matches what your backend expects (req.file)
       }
 
-      await axios.put(`${USER_API_URL}/update-user`, formData,{
+      // Append other form fields (strings)
+      data.append('name', formData.name);
+      data.append('username', formData.username);
+      data.append('website', formData.website);
+      data.append('bio', formData.bio);
+      data.append('email', formData.email);
+      data.append('phoneNumber', formData.phoneNumber);
+      data.append('gender', formData.gender);   
+
+      await axios.put(`${USER_API_URL}/update-user`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert('Profile updated!');
     } catch (err) {
         alert('Update failed');
+        console.log(err);
     }
   };
+  console.log("form", formData);
+  console.log("selectedFile", selectedFile);
 
   return (
     <div className="edit-profile-page">
@@ -55,7 +75,32 @@ function EditProfilePage({userId}) {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Change Profile Photo</label>
-          <button type="button" className="change-photo-btn">Change Profile Photo</button>
+          <Button type="button" className="change-photo-btn" component="label"
+                role={undefined}
+                tabIndex={-1}>
+            Change Profile Photo
+            {selectedFile && (
+                <div>
+                    <img
+                        alt="not found"
+                        multiple
+                        width={"200px"}
+                        height={"200px"}
+                        src={URL.createObjectURL(selectedFile)}
+                    />
+                </div>
+            )}
+            <br></br>
+            <VisuallyHiddenInput
+                type="file"
+                onChange={(event) => {
+                    if (event.target.files.length > 0) {
+                        setSelectedFile(event.target.files[0]);
+                    }
+                }}
+            />
+          </Button>
+          <br></br>
         </div>
         <div className="form-group">
           <label>Name</label>
@@ -91,7 +136,7 @@ function EditProfilePage({userId}) {
             <option value="preferNotToSay">Prefer not to say</option>
           </select>
         </div>
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>
             <input
               type="checkbox"
@@ -101,12 +146,24 @@ function EditProfilePage({userId}) {
             />
             Show account suggestions on profiles
           </label>
-        </div>
-        <button type="submit" className="submit-btn">Submit</button>
-        <button type="button" className="deactivate-btn">Temporarily deactivate my account</button>
+        </div> */}
+        <button type="submit" className="submit-btn" style={{width: "20%"}}>Submit</button>
+        {/* <button type="button" className="deactivate-btn">Temporarily deactivate my account</button> */}
       </form>
     </div>
   );
 }
+
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
 
 export default EditProfilePage;

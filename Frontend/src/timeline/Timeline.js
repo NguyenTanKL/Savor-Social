@@ -95,7 +95,7 @@ function Timeline() {
                                 postID={post._id}
                                 images={post.images}
                                 likes={post.likes}
-                                caption={post.caption}
+                                caption={post.content}
                                 address={post.address}
                                 timestamp={post.timestamp}
                                 is_voucher={post.is_voucher}

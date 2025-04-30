@@ -20,7 +20,8 @@ import "./VouchersPage.css";
 import VouchersPageDetail from "./VouchersPageDetail";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/vouchers";
+const VOUCHER_API_URL = "http://localhost:5000/api/vouchers";
+const POST_API_URL = "http://localhost:5000/api/posts";
 
 function VouchersPage( {restaurantId}) {
     const userStorage = useSelector(state => state.user.user);
@@ -55,7 +56,7 @@ function VouchersPage( {restaurantId}) {
     useEffect(() => {
         const fetchVouchers = async () => {
             try {
-                const response = await axios.get(`${API_URL}/summary/${restaurantId}`);
+                const response = await axios.get(`${VOUCHER_API_URL}/summary/${restaurantId}`);
 
                 setVoucher(response.data);
             } catch (error) {
@@ -68,53 +69,87 @@ function VouchersPage( {restaurantId}) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
-        // Use FormData to send both text fields and image
+      
         const formData = new FormData();
         formData.append("name", voucherData.name);
         formData.append("quantity", voucherData.quantity);
         formData.append("release_day", voucherData.release_day);
         formData.append("expire_day", voucherData.expire_day);
         formData.append("description", voucherData.description);
-        formData.append("restaurantId", restaurantId); 
-    
-        // Append the image file if selected
+        formData.append("restaurantId", restaurantId);
+      
         if (selectedImage) {
-            formData.append("image", selectedImage);
+          formData.append("image", selectedImage);
         }
-
+      
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("No token found! Redirecting to login...");
+          return;
+        }
+      
         try {
-            const response = await fetch(`${API_URL}/create`, {
-                method: "POST",
-                body: formData, // Do NOT set Content-Type manually, FormData handles it
+          // First: Create voucher
+          const response = await fetch(`${VOUCHER_API_URL}/create`, {
+            method: "POST",
+            body: formData,
+          });
+      
+          const data = await response.json();
+
+          if (!response.ok) {
+            alert(`Error creating voucher: ${data.message}`);
+            return;
+          }
+      
+          const voucherId = data.voucher._id; // get the new voucher ID from server response
+      
+          // Now: Create post with voucherId
+          const form2 = new FormData();
+          if (selectedImage) {
+            form2.append("image", selectedImage);
+          }
+          form2.append("userId", restaurantId);
+          form2.append("content", voucherData.name);
+          form2.append("is_voucher", true);
+          form2.append("voucher_id", voucherId); // <<--- here is the key!
+      
+          const res = await fetch(`${POST_API_URL}/createpost`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            method: "POST",
+            body: form2,
+          });
+      
+          const data2 = await res.json();
+      
+          if (res.ok) {
+            alert("Voucher and Post created successfully!");
+            setVoucherData({
+              name: "",
+              quantity: "",
+              release_day: "",
+              expire_day: "",
+              description: "",
+              restaurantId: "",
             });
-    
-            const data = await response.json();
-            if (response.ok) {
-                alert("Voucher created successfully!");
-                setVoucherData({
-                    name: "",
-                    quantity: "",
-                    release_day: "",
-                    expire_day: "",
-                    description: "",
-                    restaurantId: "",
-                });
-                setSelectedImage(null); // Clear the selected image
-            } else {
-                alert(`Error: ${data.message}`);
-            }
+            setSelectedImage(null);
+          } else {
+            alert(`Error creating post: ${data2.message}`);
+          }
         } catch (error) {
-            console.error("Error creating voucher:", error);
-            alert("Failed to create voucher");
+          console.error("Error:", error);
+          alert("Failed to create voucher or post");
         }
-    };    
+      };
+      
 
     const handleDeleteVoucher = async (id) => {
         if (!window.confirm("Are you sure you want to delete this voucher?")) return;
     
         try {
-            const response = await axios.delete(`${API_URL}/delete/${id}`);
+            const response = await axios.delete(`${VOUCHER_API_URL}/delete/${id}`);
             if (response.status === 200) {
                 alert("Voucher deleted successfully!");
                 setVoucher((prevVouchers) => prevVouchers.filter(v => v._id !== id));
