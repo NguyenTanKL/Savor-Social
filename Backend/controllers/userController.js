@@ -1,6 +1,8 @@
 // controllers/userController.js
 const userAuth = require("../middlewares/authMiddleware");
 const User = require("../models/UserModel");
+const cloudinary = require("../config/cloudinary/cloudinaryConfig").cloudinary;
+
 
 const getAllUsers = async (req, res) => {
   try {
@@ -41,12 +43,17 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
     // Cập nhật các trường nếu có
+    const imageUrl = req.file ? req.file.path : null;
     // if (address !== undefined) user.address = address;
     // if (preferences !== undefined) user.preferences = preferences;
     // Dynamically update any valid fields
     Object.keys(updates).forEach(field => {
-      user[field] = updates[field];
+      if (field !== 'image') {
+        user[field] = updates[field];
+      }
     });
+
+    user.avatar = imageUrl;
     
     await user.save();
     res.json({ message: 'Cập nhật người dùng thành công', user });

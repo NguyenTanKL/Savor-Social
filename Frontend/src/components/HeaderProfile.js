@@ -137,12 +137,13 @@ function HeaderProfile({ user, userId }) {
   
     fetchFollowStatus();
   }, [userId, user._id]);
+  console.log(user.avatar);
   return (
     <div className="header__profile">
       <div className="header__left">
         <Avatar
           alt="Avatar"
-          src="https://th.bing.com/th/id/OIP.9ccjBmE32LmJ02sy28_xwAHaK-?rs=1&pid=ImgDetMain"
+          src={user.avatar}
           sx={{ width: 150, height: 152 }}
         />
       </div>

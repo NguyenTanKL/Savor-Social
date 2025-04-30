@@ -10,7 +10,9 @@ const {
   createComment,
   createReply,
   likeComment,
-  unlikeComment
+  unlikeComment,
+  createPostWithVoucher,
+  getPostById
 } =  require("../controllers/postController.js");
 const userAuth = require("../middlewares/authMiddleware.js")
 // Cấu hình multer để xử lý file upload
@@ -152,7 +154,9 @@ router.post("/:postID/like", async (req, res) => {
 // Routes
 // router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết
 router.post("/", userAuth,upload.single("image"), createPost);
+router.post("/createpost", userAuth,upload.single("image"), createPostWithVoucher); // Tạo bài viết
 router.get("/", getPosts); // Lấy danh sách bài viết
+router.get("/get/:postId", userAuth, getPostById); // Lấy bài viết theo ID
 router.delete("/:postId", userAuth, deletePost); // Xóa bài viết
 router.post("/like", userAuth, likePost); // Thích bài viết
 router.post("/unlike", userAuth, unlikePost); // Bỏ thích bài viết

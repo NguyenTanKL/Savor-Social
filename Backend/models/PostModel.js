@@ -4,7 +4,7 @@ const postSchema = new mongoose.Schema(
     {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         content: { type: String, required: true },
-        imageUrl: { type: String, default: "" },
+        images: { type: String, default: "" },
         videos: { type: [String], default: [] },
         location: {
             userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }, // Chủ sở hữu nhà hàng

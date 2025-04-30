@@ -85,12 +85,16 @@ class VoucherController{
                 img: imageUrl,
                 status: "available",
                 quantity: quantity,
+                in_stock: quantity,
                 restaurant_id: restaurantId,
             });
     
             // await newVoucher.save();
             await vouchers.save();
-            res.status(201).json({ message: "Voucher created successfully" });
+            res.status(201).json({ 
+                message: "Voucher created successfully",
+                voucher: vouchers
+            });
         } catch (error) {
             res.status(500).json({ message: "Server error", error: error.message });
         }
@@ -160,7 +164,7 @@ class VoucherController{
             await user.save();
     
             // Reduce voucher quantity, add information about the collector
-            voucher.quantity -= 1;
+            voucher.in_stock -= 1;
             voucher.collector.push(userId);
             voucher.by = user.username;
             await voucher.save();
@@ -175,13 +179,13 @@ class VoucherController{
     {
         try {
             const voucher = await Voucher.findById(req.params.voucher_id);
-            console.log("day la api router nhan duoc", req.params);
             if (!voucher) return res.status(404).json({ message: "Voucher không tồn tại" });
             res.json(voucher);
         } catch (err) {
             res.status(500).json({ message: "Lỗi server" });
         }
     }
+    
     async getCollector(req, res) {
         try {
             const { voucherId } = req.params;

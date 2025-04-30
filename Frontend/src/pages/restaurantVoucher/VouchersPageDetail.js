@@ -78,20 +78,18 @@ function VouchersPageDetail({ voucherType, voucherId, onBack }) {
     const theme = useTheme(THEME)
 
     const [details, setDetails] = useState([]);
-    const encodedType = encodeURIComponent(voucherType);
-        
-    const fetchDetails = async () => {
-        try {
-            const response = await fetch(`${API_URL}/${encodedType}`);
-            const data = await response.json();
-            setDetails(data);
-        } catch (error) {
-            console.error("Error fetching voucher details:", error);
-        }
-    };
     useEffect(() => {
-        fetchDetails();
-    });
+      const fetchDetails = async () => {
+          try {
+              const response = await axios.get(`${API_URL}/voucher_detail/${voucherId}`);
+              setDetails(Array.isArray(response.data) ? response.data : [response.data]);
+          } catch (error) {
+              console.error("Error fetching voucher details:", error);
+          }
+      };
+    
+      fetchDetails();
+    }, [voucherId]);
 
     const [vouchers, setVouchers] = useState([]);
     useEffect(() => {

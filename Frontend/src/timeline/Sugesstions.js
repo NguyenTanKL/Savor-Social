@@ -100,7 +100,7 @@ function Sugesstions() {
     <div className="sugesstions">
       <div className="account__username">
         <div className="account__left">
-          <Avatar style={{ width: "50px", height: "50px" }}>R</Avatar>
+          <Avatar alt={currentUser.username} src={currentUser.avatar} style={{ width: "50px", height: "50px" }}></Avatar>
           <div className="username__info">
             <span className="username__profile">{currentUser.username || "_username"}</span>
             <span className="profilename">{currentUser.name || "User Name"}</span>

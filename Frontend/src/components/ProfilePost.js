@@ -286,7 +286,7 @@ console.log("postInfo:",postInfo);
           </Sheet>
         </Box>
       </Modal>
-      <ShareModal open={shareModalOpen} onClose={handleCloseShareModal} />
+      <ShareModal postId={postInfo._id} open={shareModalOpen} onClose={handleCloseShareModal} />
       <PostOptionsDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

@@ -13,6 +13,10 @@ const VoucherSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    in_stock: {
+        type: Number,
+        required: true,
+    },
     img: {
         type: String,
         required: false

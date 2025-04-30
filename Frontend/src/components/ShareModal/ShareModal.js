@@ -10,13 +10,53 @@ import {
 import { Close } from "@mui/icons-material";
 import "./ShareModal.css";
 import {  useSelector } from "react-redux";
+import axios from "axios";
+import io from "socket.io-client";
+const socket = io("http://localhost:5000");
 
-const ShareModal = ({ open, onClose }) => {
+const CHAT_API_URL = "http://localhost:5000/api/chats";
+
+const ShareModal = ({ open, onClose, postId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [followingUsers, setFollowingUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const currentUser = useSelector((state) => state.user.user);
+
+  const [newMessage, setNewMessage] = useState("");
+
+  const handleSendMessage = async (sender, receiver) => {
+      if (!window.confirm("Are you sure you want to share this post?")) return;
+      setNewMessage("http://localhost:3000/post/" + postId);
+      if (!newMessage.trim()) return;
+
+      try {
+          const formData = new FormData();
+          formData.append("sender", sender);
+          formData.append("receiver", receiver);
+          formData.append("message", newMessage);
+
+          // Emit to socket (you can send a separate socket event or wait for server response)
+          socket.emit("sendMessage", {
+              sender,
+              receiver: receiver,
+              message: newMessage,
+          });
+
+          const response = await axios.post(`${CHAT_API_URL}/send`, formData, {
+              headers: {
+                  "Content-Type": "multipart/form-data"
+              }
+          });
+
+          if (response.data.success) {
+              alert("Đã chia sẻ bài viết thành công!");
+              setNewMessage(""); // Clear input after sending
+          }
+      } catch (error) {
+          console.error("Error sending message:", error);
+      }
+  };
 
   // Gọi API để lấy danh sách người dùng đang follow khi modal mở
   useEffect(() => {
@@ -89,7 +129,12 @@ const ShareModal = ({ open, onClose }) => {
             !error &&
             filteredUsers.map((user) => (
               <Box key={user._id} className="share-modal-user">
-                <Avatar src={user.avatar} className="share-modal-avatar" />
+                <Avatar 
+                  onClick={() => handleSendMessage(currentUser._id, user._id)} 
+                  src={user.avatar} 
+                  className="share-modal-avatar"
+                  style={{ cursor: "pointer" }}
+                />
                 <Typography variant="caption">{user.username}</Typography>
               </Box>
             ))}

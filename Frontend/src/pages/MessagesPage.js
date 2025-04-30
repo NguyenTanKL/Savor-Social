@@ -19,7 +19,7 @@ import {
   Divider,
   InputAdornment,
   Menu,
-  MenuItem
+  MenuItem,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -28,8 +28,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import AddReactionIcon from '@mui/icons-material/AddReaction';
 import ImageIcon from '@mui/icons-material/Image';
-import GifIcon from '@mui/icons-material/Gif';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import axios from "axios";
 import moment from "moment";
 import io from "socket.io-client";
@@ -71,55 +70,13 @@ const StyledBadge = styled(Badge)(({ theme }) => ({
         paddingBottom: "10px",
     }}))
 
-    // list of account
-const account = [
-    {
-        "id": "1",
-        "img": "https://i.pinimg.com/736x/a6/38/65/a6386559df29f3b87e63b3a45e644a35.jpg",
-        "name": "Lewis Hamilton",
-        "message": "Delicious",
-        "time": "05:10 PM",
-    },
-    {
-        "id": "2",
-        "img": "https://i.pinimg.com/236x/90/4b/3e/904b3e5afe3cd8dc0f3d77d25fd632d1.jpg",
-        "name": "Lionel Messi",
-        "message": "Delicious",
-        "time": "05:10 PM",
-    },
-    {
-        "id": "3",
-        "img": "https://i.pinimg.com/236x/48/49/ba/4849ba2ea6517f805785071120cccc08.jpg",
-        "name": "Cristiano Ronaldo",
-        "message": "Delicious",
-        "time": "05:10 PM",
-    },
-    {
-        "id": "4",
-        "img": "https://i.pinimg.com/236x/15/ee/25/15ee25561451d9b8ed1edf807dae9a46.jpg",
-        "name": "McDonald's",
-        "message": "Delicious",
-        "time": "05:10 PM",
-    }
-];
-
     // attach file: photo/video, image, gif
 const Actions = [
     {
         color: "#4da5fe",
-        icon: <CameraAltIcon />,
-        title: "Photo/Video"
-    },
-    {
-        color: "#4da5fe",
         icon: <ImageIcon />,
         title: "Image"
-    },
-    {
-        color: "#4da5fe",
-        icon: <GifIcon />,
-        title: "Gif"
-    },
+    }
 ]
 
 function MessagePage({ sender }) {
@@ -135,17 +92,28 @@ function MessagePage({ sender }) {
     }
   };
 
-  const [anchorEl, setAnchorEl] = useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
 
-const handleMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
-};
+    const handleMenuClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-};
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    const [anchorEl_1, setAnchorEl_1] = React.useState(null);
+    const open = Boolean(anchorEl_1);
+    const handleClick = (event) => {
+        setAnchorEl_1(event.currentTarget);
+    };
+    const handleClose = () => {
+        setAnchorEl_1(null);
+    };
+
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
+    const [selectedFile, setSelectedFile] = useState(null);
 
     // Fetch messages when component mounts
     useEffect(() => {
@@ -167,7 +135,9 @@ const handleMenuClick = (event) => {
     useEffect(() => {
         socket.on("receiveMessage", (message) => {
             // console.log("Received new message:", message);
-            setMessages((prevMessages) => [...prevMessages, message]);
+            if (message.sender !== sender) {
+                setMessages((prevMessages) => [...prevMessages, message]);
+            }
         });
 
         return () => {
@@ -177,34 +147,61 @@ const handleMenuClick = (event) => {
 
     // Handle sending message
     const handleSendMessage = async () => {
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() && !selectedFile) return;
 
         try {
-            const messageData = {
-                sender: sender,
+            const formData = new FormData();
+            formData.append("sender", sender);
+            formData.append("receiver", selectedReceiver);
+            formData.append("message", newMessage);
+            if (selectedFile) {
+                formData.append("file", selectedFile?.name); // Must match key in backend
+            }
+    
+            // Emit to socket (you can send a separate socket event or wait for server response)
+            socket.emit("sendMessage", {
+                sender,
                 receiver: selectedReceiver,
                 message: newMessage,
-            };
-
-            // Emit message to server using Socket.io
-            socket.emit("sendMessage", messageData);
-
-            const response = await axios.post(`${CHAT_API_URL}/send`, messageData);
-
+                file: selectedFile?.name, // Just info, not actual file
+            });
+    
+            const response = await axios.post(`${CHAT_API_URL}/send`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
             if (response.data.success) {
                 const newMsg = {
                     sender: { _id: sender },  // Set sender correctly
                     message: newMessage,
+                    fileUrl: selectedFile ? URL.createObjectURL(selectedFile) : null, // Use local URL for preview
                     createdAt: new Date().toISOString(),
                 };
     
                 setMessages((prevMessages) => [...prevMessages, newMsg]);
                 setNewMessage(""); // Clear input after sending
+                setSelectedFile(null); // Clear selected file after sending
             }
         } catch (error) {
             console.error("Error sending message:", error);
         }
     };
+
+    const handleDeleteMessage = async (chatId) => {
+        if (!window.confirm("Are you sure you want to delete this message?")) return;
+    
+        try {
+            const response = await axios.delete(`${CHAT_API_URL}/delete/${chatId}`);
+            if (response.status === 200) {
+                alert("Message deleted successfully!");
+                setMessages((prevMessages) => prevMessages.filter(v => v._id !== chatId));
+            }
+        } catch (error) {
+            console.error("Error deleting messge:", error);
+            alert("Failed to delete message");
+        }
+    }; 
 
     const [showPicker, setShowPicker] = useState(false);
 
@@ -215,6 +212,14 @@ const handleMenuClick = (event) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+    const handleFileSelect = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+        }
+        console.log("Selected file:", file);
+    };
 
   const [followers, setFollowers] = useState([]);
   const [user, setUser] = useState([]);
@@ -253,7 +258,7 @@ const handleMenuClick = (event) => {
             return;
           }
     
-          const { data } = await axios.get(`${USER_API_URL}/get-by-id/${sender}`, {
+          const { data } = await axios.get(`${USER_API_URL}/get-by-id/${selectedReceiver}`, {
             headers: {
               Authorization: `Bearer ${token}`, // Attach token
               "Content-Type": "application/json",
@@ -266,9 +271,50 @@ const handleMenuClick = (event) => {
         }
       };
     
-      if (sender) fetchUser(); // Only fetch if sender is valid
-  }, [sender]);
-  console.log("user:", user);
+      if (selectedReceiver) fetchUser(); // Only fetch if sender is valid
+  }, [selectedReceiver]);
+
+  const [unreadCount, setUnreadCount] = useState([]);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+        try {
+            const { data } = await axios.get(`${CHAT_API_URL}/unread/${sender}`);
+            setUnreadCount(data.following);
+        } catch (error) {
+            console.error("Failed to fetch unread messages", error);
+        }
+    };
+
+    fetchUnread();
+  }, []);
+
+  useEffect(() => {
+    const markAsRead = async () => {
+        try {
+            await axios.put(`${CHAT_API_URL}/mark-read`, {
+                sender: selectedReceiver,
+                receiver: sender,
+            });
+
+            setUnreadCount((prevFriends) =>
+                prevFriends.map((friend) =>
+                  friend._id === selectedReceiver
+                    ? { ...friend, unreadCount: 0 }
+                    : friend
+                )
+              );
+        } catch (error) {
+            console.error("Failed to mark messages as read:", error);
+
+        }
+        
+    };
+
+    if (selectedReceiver) {
+        markAsRead();
+    }
+}, [selectedReceiver]);
 
   return (
     <Box style={{width: "100%", height: "100%", border: "none", borderLeft: "2px solid #ebedf0"}}>
@@ -294,13 +340,13 @@ const handleMenuClick = (event) => {
                             Friends
                         </Typography>
                         <Stack spacing={3} direction="row">
-                        {followers.map((item) => (
+                        {unreadCount.map((item) => (
                             <StyledBadge
                                 overlap="circular"
                                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                 variant="dot"
                                 >
-                                <Avatar alt={item.name} src={item.img} />
+                                <Avatar alt={item.username} src={item.img} />
                             </StyledBadge>
                             ))}
                         </Stack>
@@ -308,12 +354,12 @@ const handleMenuClick = (event) => {
                         <Typography >
                             Messages
                         </Typography>
-                        {followers.map((item) => (
+                        {unreadCount.map((item) => (
                             <List sx={{ width: '100%', maxWidth: 350, bgcolor: 'background.paper' }}>
                                 <ListItem onClick={() => {setType(item._id); setSelectedReceiver(item._id);}} style={{ backgroundColor: type == item._id ? "rgb(173, 202, 246)" : "#f0f0f0", borderRadius: "15px"}}>
                                     <Stack width={"100%"} direction={"row"} alignItems={"center"} justifyContent={"space-between"} spacing={5}>
                                         <Stack direction={"row"} spacing={0.3}>
-                                            <ListItemAvatar>
+                                            {/* <ListItemAvatar>
                                                 <StyledBadge
                                                     overlap="circular"
                                                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -321,9 +367,20 @@ const handleMenuClick = (event) => {
                                                     >
                                                     <Avatar alt={item.username} src={item.img} />
                                                 </StyledBadge>
+                                            </ListItemAvatar> */}
+                                            <ListItemAvatar>
+                                                    <Avatar alt={item.username} src={item.img} />
                                             </ListItemAvatar>
                                             <Stack spacing={0.3}>
-                                                <ListItemText primary={item.username} secondary={item.message} />
+                                                {item.unreadCount > 0 ? (
+                                                    <Stack direction={"row"} spacing={3} alignItems={"center"} justifyContent={"space-between"}>
+                                                        <ListItemText primary={item.username}/>
+                                                        <Badge badgeContent={item.unreadCount} color="error">
+                                                        </Badge>
+                                                    </Stack>
+                                                ) : (
+                                                    <ListItemText primary={item.username} secondary={item.message} />
+                                                )}                                                
                                             </Stack>
                                         </Stack>
                                         <Stack spacing={1.5} alignItems={"center"}>
@@ -342,17 +399,21 @@ const handleMenuClick = (event) => {
                 <Box sx={{height: "64px", width: "100%", backgroundColor: "rgb(205, 224, 252)"}}>
                     <Stack direction={"row"} alignItems={"center"} justifyContent={"space-between"} sx={{height: "100%", width: "100%"}}>
                         <Stack direction={"row"} spacing={2} alignItems={"center"}>
+                            {type && (
                                 <StyledBadge
-                                    overlap="circular"
-                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                                    variant="dot"
-                                    style={{marginLeft: "10px"}}
-                                    >
-                                    <Avatar alt={user.username} src={user.img} />
+                                overlap="circular"
+                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                variant="dot"
+                                style={{marginLeft: "10px"}}
+                                >
+                                    <Avatar alt={user.username} src={user.avatar}/>
                                 </StyledBadge>
+                            )}
                             <Stack >
                                 <Typography variant="subtitle1">{user.username}</Typography>
-                                <Typography variant="caption" color="textSecondary">Online</Typography>
+                                {type && (
+                                    <Typography variant="caption" color="textSecondary">Online</Typography>
+                                )}
                             </Stack>
                         </Stack>
                         <Stack direction={"row"} spacing={2}>
@@ -379,10 +440,10 @@ const handleMenuClick = (event) => {
                                 margin: "8px 0",
                                 display: "flex",
                                 justifyContent: message.sender._id === sender ? "flex-end" : "flex-start",
-                                textAlign: message.sender._id === sender ? "right" : "left",
+                                // textAlign: message.sender._id === sender ? "right" : "left",
                             }}
                             >
-                                <Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent={"flex-end"}>
+                                <Stack direction={"row"} spacing={0.5} alignItems={"center"} justifyContent={"flex-end"}>
                                     <ListItemText
                                         secondary={
                                             <Typography variant="caption" color="textSecondary">
@@ -414,27 +475,44 @@ const handleMenuClick = (event) => {
                                             />
                                         )}
                                         {message.fileUrl && (
-                                            <>
-                                                {message.fileType.startsWith("image/") ? (
-                                                    <img
-                                                        src={message.fileUrl}
-                                                        alt="Uploaded file"
-                                                        style={{ maxWidth: "100%", borderRadius: "10px", marginTop: "5px" }}
-                                                    />
-                                                ) : message.fileType.startsWith("video/") ? (
-                                                    <video
-                                                        controls
-                                                        src={message.fileUrl}
-                                                        style={{ maxWidth: "100%", borderRadius: "10px", marginTop: "5px" }}
-                                                    />
-                                                ) : (
-                                                    <a href={message.fileUrl} download style={{ textDecoration: "none", color: "blue" }}>
-                                                        📄 Download File
-                                                    </a>
-                                                )}
-                                            </>
+                                            <img
+                                                src={message.fileUrl}
+                                                alt="uploaded"
+                                                style={{ maxWidth: "200px", borderRadius: "10px" }}
+                                            />
                                         )}
                                     </Paper>
+                                    <IconButton
+                                        aria-label="more"
+                                        id="long-button"
+                                        aria-controls={open ? 'long-menu' : undefined}
+                                        aria-expanded={open ? 'true' : undefined}
+                                        aria-haspopup="true"
+                                        onClick={handleClick}
+                                    >
+                                        <MoreVertIcon />
+                                    </IconButton>
+                                    <Menu
+                                        id="long-menu"
+                                        MenuListProps={{
+                                        'aria-labelledby': 'long-button',
+                                        }}
+                                        anchorEl={anchorEl_1}
+                                        open={open}
+                                        onClose={handleClose}
+                                        slotProps={{
+                                        paper: {
+                                            style: {
+                                            maxHeight: 48 * 4.5,
+                                            width: '20ch',
+                                            },
+                                        },
+                                        }}
+                                    >
+                                        <MenuItem onClick={handleClose}>
+                                            <Typography variant="body2" color="textSecondary" onClick={() => handleDeleteMessage(message._id)}>Delete</Typography>
+                                        </MenuItem>
+                                    </Menu>
                                 </Stack>
                             </ListItem>
                             ))}
@@ -450,6 +528,13 @@ const handleMenuClick = (event) => {
                             </Box>
                         )}
                     </Stack>
+                    <Box>
+                        {selectedFile && (
+                            <Typography variant="body2" color="textSecondary" mt={1}>
+                                Selected file: <img src={URL.createObjectURL(selectedFile)} alt="Selected" style={{ maxWidth: "200px", borderRadius: "10px" }} />
+                            </Typography>
+                        )}
+                    </Box>
                     <Box sx={{
                         width: "100%",
                         display: "flex",
@@ -464,9 +549,26 @@ const handleMenuClick = (event) => {
                                 open={Boolean(anchorEl)}
                                 onClose={handleMenuClose}
                             >
-                                {Actions.map((ele) => (
-                                    <MenuItem>
+                                {/* {Actions.map((ele) => (
+                                    <MenuItem onChange={handleFileSelect}>
                                         {ele.icon}{ele.title}
+                                    </MenuItem>
+                                ))} */}
+                                {Actions.map((ele, index) => (
+                                    <MenuItem key={index}>
+                                    <label htmlFor={`file-upload-${index}`} style={{ display: "flex", alignItems: "center", cursor: "pointer", width: "100%" }}>
+                                        {ele.icon} {ele.title}
+                                        <input
+                                        id={`file-upload-${index}`}
+                                        type="file"
+                                        accept="image/*,video/*"
+                                        onChange={(e) => {
+                                            handleFileSelect(e);
+                                            handleMenuClose(); // Only close menu after file is selected
+                                        }}
+                                        style={{ display: "none" }}
+                                        />
+                                    </label>
                                     </MenuItem>
                                 ))}
                             </Menu>

@@ -36,6 +36,43 @@ const createPost = async (req, res) => {
   }
 };
 
+// Tạo bài viết khi tạo voucher
+const createPostWithVoucher = async (req, res) => {
+  try {
+      const { userId, content, is_voucher, voucher_id } = req.body;
+      let imageUrl = "";
+
+      // Nếu có file ảnh được gửi lên, lấy URL từ req.file.path
+      if (req.file) {
+          console.log("File uploaded to Cloudinary:", req.file);
+          imageUrl = req.file.path; // req.file.path chính là secure_url từ Cloudinary
+      }
+
+      // Tạo bài viết mới
+      const newPost = await Post.create({
+          userId,
+          content: content,
+          imageUrl,
+          voucher_id: voucher_id,
+          is_voucher: is_voucher,
+      });
+      console.log("New Post Created:", newPost);
+
+      // Lấy danh sách bài viết mới nhất
+      const posts = await Post.find()
+          .populate({
+              path: "userId",
+              select: "username profileUrl -password",
+          })
+          .sort({ createdAt: -1 });
+
+      res.status(200).json(posts);
+  } catch (err) {
+      console.error("Error in createPost:", err);
+      res.status(500).json({ message: "Create Post Failed", error: err.message });
+  }
+};
+
 // Xóa bài viết
 const deletePost = async (req, res) => {
   try {
@@ -90,6 +127,18 @@ const getPosts = async (req, res) => {
       res.status(500).json({ message: "Get Posts Failed", error: err.message });
     }
   };
+
+// Lấy danh sách bài viết theo id bài viết
+const getPostById = async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const post = await Post.findById(postId);
+    res.status(200).json(post);
+  } catch (error) {
+    console.error("Error in getPostById:", error);
+    res.status(500).json({ message: "Get Post Failed", error: error.message });
+  }  
+}
   
   // Thích bài viết
 const likePost = async (req, res) => {
@@ -336,7 +385,9 @@ const unlikeComment = async (req, res) => {
 };
   module.exports ={
     createPost,
+    createPostWithVoucher,
     getPosts,
+    getPostById,
     deletePost,
     likePost,
     unlikePost,

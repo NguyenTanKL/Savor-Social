@@ -19,6 +19,8 @@ import Modal from "../../components/Modal";
 import RoomIcon from "@mui/icons-material/Room"; // Icon đậm
 import { Telegram } from "@mui/icons-material";
 
+const VOUCHER_API_URL = "http://localhost:5000/api/vouchers";
+
 function Post({ user, postID, images = [], likes, caption, address, timestamp, is_voucher, is_ad, isSelected, onSelect, ad_id, voucher_id }) {
     const [open, setOpen] = React.useState(false);
     const [isSaved, setIsSaved] = useState(false);
@@ -133,6 +135,39 @@ function Post({ user, postID, images = [], likes, caption, address, timestamp, i
     };
     //  console.log("User data:", user);
     //  console.log("User data img:", user.avatar);
+    const [voucherSelected, setVoucherSelected] = useState(null);
+    const token = localStorage.getItem("token");
+    useEffect(() => {
+        const fetchPost = async () => {
+            try {
+                // const response = await axios.get(`http://localhost:5000/api/posts/get/${postID}`);
+                const response = await axios.get(`http://localhost:5000/api/posts/get/${postID}`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  });
+                setVoucherSelected(response.data);
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+            }
+        };
+        
+        fetchPost();
+    }, [postID]);
+    
+    const handleSelect = async () => {
+        try {
+            console.log("Voucher selected:", voucherSelected.voucher_id);
+            const response = await axios.post(`${VOUCHER_API_URL}/${userId_}/collect/${voucherSelected.voucher_id}`);
+            if (response.status === 200) {
+                alert("Voucher selected successfully!");
+            }
+        } catch (error) {
+            console.error("Error collected voucher:", error);
+            alert("Failed to collect voucher");
+        }
+    }
+
     if (is_voucher && is_ad) {
         return (
             <div className="post">
@@ -191,7 +226,7 @@ function Post({ user, postID, images = [], likes, caption, address, timestamp, i
                                 </Typography>
                                 <Typography variant="body1">{voucherData?.description}</Typography>
                                 <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
-                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
+                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span></Typography>
                             </Grid>
 
                             {/* Right Section */}
@@ -213,6 +248,7 @@ function Post({ user, postID, images = [], likes, caption, address, timestamp, i
                                         fontWeight: 'bold',
                                         fontSize: '20px',
                                     }}
+                                    onClick={handleSelect} // Gọi hàm handleSelect khi nhấn nút
                                 >
                                     Nhận
                                 </Button>
@@ -331,7 +367,7 @@ function Post({ user, postID, images = [], likes, caption, address, timestamp, i
                                 </Typography>
                                 <Typography variant="body1">{voucherData?.description}</Typography>
                                 <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
-                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
+                                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span></Typography>
                             </Grid>
 
                             {/* Right Section */}
@@ -355,6 +391,7 @@ function Post({ user, postID, images = [], likes, caption, address, timestamp, i
                                         width: "100%",
                                         height: "100%"
                                     }}
+                                    onClick={handleSelect} // Gọi hàm handleSelect khi nhấn nút
                                 >
                                     Nhận
                                 </Button>
