@@ -13,8 +13,6 @@ import {
   Typography,
   Avatar,
   Stack,
-  Autocomplete,
-  Chip,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
@@ -25,7 +23,6 @@ import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { MentionsInput, Mention } from 'react-mentions';
 
-// CSS mặc định của react-mentions
 const mentionStyle = {
   control: {
     fontSize: '1rem',
@@ -64,29 +61,24 @@ const mentionStyle = {
 
 const CreatePost = ({ open, onClose }) => {
   const [step, setStep] = useState(1);
-  const [image, setImage] = useState(null);
-  const [file, setFile] = useState(null);
+  const [images, setImages] = useState([]);
+  const [files, setFiles] = useState([]);
   const [crop, setCrop] = useState({ aspect: 1, unit: '%', width: 100, height: 100 });
-  const [croppedImageUrl, setCroppedImageUrl] = useState(null);
-  const [croppedFile, setCroppedFile] = useState(null);
+  const [croppedImages, setCroppedImages] = useState([]);
+  const [croppedFiles, setCroppedFiles] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageRef, setImageRef] = useState(null);
-  const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState('');
   const [rating, setRating] = useState(0);
   const [taggedUsers, setTaggedUsers] = useState([]);
+  const [errorMessage, setErrorMessage] = useState(''); // Thêm state để hiển thị lỗi
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.user);
   const { loading, error } = useSelector((state) => state.posts);
 
-  // Lấy danh sách bạn bè từ Redux store
-  const following = user.following;
-  const followers = user.followers;
+  const following = Array.isArray(user?.following) ? user.following : [];
+  const followers = Array.isArray(user?.followers) ? user.followers : [];
   const friends = [...new Set([...following, ...followers].map(f => JSON.stringify(f)))].map(f => JSON.parse(f));
 
-  // Debug dữ liệu friends
-  console.log("Friends:", following);
-
-  // Danh sách bạn bè để gợi ý cho @, chỉ bao gồm các friend có username hợp lệ
   const mentionUsers = friends
     .filter(friend => friend && friend._id && friend.username)
     .map(friend => ({
@@ -94,10 +86,6 @@ const CreatePost = ({ open, onClose }) => {
       display: friend.username,
     }));
 
-  // Debug dữ liệu mentionUsers
-  console.log("Mention Users:", mentionUsers);
-
-  // Danh sách hashtag gợi ý
   const suggestedTags = [
     'donhat',
     'monan',
@@ -123,14 +111,13 @@ const CreatePost = ({ open, onClose }) => {
     mode: "onChange",
   });
 
-  // Hàm phân tích nội dung caption để cập nhật taggedUsers
   const updateTaggedUsersFromContent = (content) => {
     const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
     const mentionedIds = [];
     let match;
 
     while ((match = mentionRegex.exec(content)) !== null) {
-      const id = match[2]; // ID của người dùng được mention
+      const id = match[2];
       mentionedIds.push(id);
     }
 
@@ -138,21 +125,29 @@ const CreatePost = ({ open, onClose }) => {
       mentionedIds.includes(friend._id)
     );
     setTaggedUsers(updatedTaggedUsers);
+
+    // Kiểm tra số lượng tài khoản restaurant trong taggedUsers
+    const restaurantCount = updatedTaggedUsers.filter(user => user.userType === 'restaurant').length;
+    if (restaurantCount > 1) {
+      setErrorMessage('You can only tag at most one restaurant in a post.');
+    } else {
+      setErrorMessage('');
+    }
   };
 
   useEffect(() => {
     return () => {
-      if (image) URL.revokeObjectURL(image);
-      if (croppedImageUrl) URL.revokeObjectURL(croppedImageUrl);
+      images.forEach(img => URL.revokeObjectURL(img));
+      croppedImages.forEach(img => URL.revokeObjectURL(img));
     };
-  }, [image, croppedImageUrl]);
+  }, [images, croppedImages]);
 
   const handleImageChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      const previewUrl = URL.createObjectURL(selectedFile);
-      setImage(previewUrl);
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length > 0) {
+      setFiles(selectedFiles);
+      const previewUrls = selectedFiles.map(file => URL.createObjectURL(file));
+      setImages(previewUrls);
       setStep(2);
       e.target.value = null;
     }
@@ -191,9 +186,20 @@ const CreatePost = ({ open, onClose }) => {
   const handleCropComplete = async () => {
     if (imageRef && crop.width && crop.height) {
       const { croppedFile, croppedUrl } = await getCroppedImg(imageRef, crop);
-      setCroppedFile(croppedFile);
-      setCroppedImageUrl(croppedUrl);
-      setStep(3);
+      const newCroppedFiles = [...croppedFiles];
+      const newCroppedImages = [...croppedImages];
+
+      newCroppedFiles[currentImageIndex] = croppedFile;
+      newCroppedImages[currentImageIndex] = croppedUrl;
+
+      setCroppedFiles(newCroppedFiles);
+      setCroppedImages(newCroppedImages);
+
+      if (currentImageIndex < images.length - 1) {
+        setCurrentImageIndex(currentImageIndex + 1);
+      } else {
+        setStep(3);
+      }
     }
   };
 
@@ -203,62 +209,66 @@ const CreatePost = ({ open, onClose }) => {
 
   const handleBackFromCrop = () => {
     setStep(1);
-    if (image) URL.revokeObjectURL(image);
-    setImage(null);
-    setFile(null);
+    images.forEach(img => URL.revokeObjectURL(img));
+    setImages([]);
+    setFiles([]);
+    setCurrentImageIndex(0);
   };
 
   const handleBackFromContent = () => {
     setStep(2);
-    if (croppedImageUrl) URL.revokeObjectURL(croppedImageUrl);
-    setCroppedImageUrl(null);
-    setCroppedFile(null);
+    croppedImages.forEach(img => URL.revokeObjectURL(img));
+    setCroppedImages([]);
+    setCroppedFiles([]);
     setValue("content", "");
+    setCurrentImageIndex(0);
+    setErrorMessage(''); // Xóa thông báo lỗi khi quay lại
   };
 
   const handleCancelImage = () => {
-    if (image) URL.revokeObjectURL(image);
-    if (croppedImageUrl) URL.revokeObjectURL(croppedImageUrl);
-    setImage(null);
-    setFile(null);
-    setCroppedImageUrl(null);
-    setCroppedFile(null);
-    setTags([]);
+    images.forEach(img => URL.revokeObjectURL(img));
+    croppedImages.forEach(img => URL.revokeObjectURL(img));
+    setImages([]);
+    setFiles([]);
+    setCroppedImages([]);
+    setCroppedFiles([]);
     setRating(0);
     setTaggedUsers([]);
     setStep(1);
+    setCurrentImageIndex(0);
+    setErrorMessage(''); // Xóa thông báo lỗi khi hủy
   };
 
   const onSubmit = async (data) => {
-    if (!user?._id) {
-      alert("User not found. Please log in again.");
+    // Kiểm tra lại taggedUsers trước khi gửi
+    const restaurantCount = taggedUsers.filter(user => user.userType === 'restaurant').length;
+    if (restaurantCount > 1) {
+      setErrorMessage('You can only tag at most one restaurant in a post.');
       return;
     }
 
-    const hasRestaurant = taggedUsers.some(u => u.accountType === "restaurant");
-    if (hasRestaurant && rating === 0) {
-      alert("Please rate the restaurant before posting.");
+    if (!user?._id) {
+      alert("User not found. Please log in again.");
       return;
     }
 
     const formData = new FormData();
     formData.append('content', data.content);
     formData.append('userId', user._id);
-    formData.append('rating', rating);
-    if (hasRestaurant) {
-      const restaurantId = taggedUsers.find(u => u.accountType === "restaurant")._id;
-      formData.append('restaurantId', restaurantId);
+    if (rating > 0) {
+      formData.append('rating', rating);
     }
 
     formData.append('taggedUsers', JSON.stringify(taggedUsers.map(u => ({ id: u._id, username: u.username }))));
-    if (croppedFile) {
+
+    croppedFiles.forEach((file, index) => {
       const renamedFile = new File(
-        [croppedFile],
-        `image_${Date.now()}.${croppedFile.name.split('.').pop()}`,
-        { type: croppedFile.type }
+        [file],
+        `image_${Date.now()}_${index}.${file.name.split('.').pop()}`,
+        { type: file.type }
       );
-      formData.append("image", renamedFile);
-    }
+      formData.append("images", renamedFile);
+    });
 
     try {
       const timeoutPromise = new Promise((_, reject) => {
@@ -270,20 +280,22 @@ const CreatePost = ({ open, onClose }) => {
       ]);
       await dispatch(getPostsAsync()).unwrap();
       setValue("content", "");
-      setImage(null);
-      setFile(null);
-      setCroppedImageUrl(null);
-      setCroppedFile(null);
-      setTags([]);
+      setImages([]);
+      setFiles([]);
+      setCroppedImages([]);
+      setCroppedFiles([]);
       setRating(0);
       setTaggedUsers([]);
       setStep(1);
+      setCurrentImageIndex(0);
+      setErrorMessage('');
       onClose();
     } catch (err) {
       console.error("Error creating post:", err);
       alert("Failed to create post. Please try again.");
     }
   };
+
   const handleRatingChange = (newRating) => {
     setRating(newRating);
   };
@@ -291,12 +303,18 @@ const CreatePost = ({ open, onClose }) => {
   const handleAddMention = (id, display) => {
     const selectedUser = friends.find(friend => friend._id === id);
     if (selectedUser && !taggedUsers.some(u => u._id === id)) {
-      setTaggedUsers([...taggedUsers, selectedUser]);
-      console.log("Tagged:",taggedUsers);
+      const newTaggedUsers = [...taggedUsers, selectedUser];
+      setTaggedUsers(newTaggedUsers);
+
+      // Kiểm tra sau khi thêm
+      const restaurantCount = newTaggedUsers.filter(user => user.userType === 'restaurant').length;
+      if (restaurantCount > 1) {
+        setErrorMessage('You can only tag at most one restaurant in a post.');
+      } else {
+        setErrorMessage('');
+      }
     }
   };
-
-  const hasRestaurantTagged = taggedUsers.some(user => user.accountType === "restaurant");
 
   return (
     <Dialog
@@ -322,7 +340,13 @@ const CreatePost = ({ open, onClose }) => {
               </Typography>
               <Button variant="contained" component="label" disabled={loading}>
                 Select from computer
-                <input type="file" accept="image/*" hidden onChange={handleImageChange} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={handleImageChange}
+                />
               </Button>
             </Box>
           </DialogContent>
@@ -333,21 +357,25 @@ const CreatePost = ({ open, onClose }) => {
             <IconButton onClick={handleBackFromCrop} disabled={loading}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography>Crop your image</Typography>
+            <Typography>Crop image {currentImageIndex + 1} of {images.length}</Typography>
             <Button onClick={handleCropComplete} color="primary" disabled={loading}>
-              Next
+              {currentImageIndex < images.length - 1 ? 'Next Image' : 'Finish Cropping'}
             </Button>
           </DialogTitle>
           <DialogContent sx={{ display: 'flex', justifyContent: 'center', p: 0 }}>
             <Box sx={{ width: '100%', height: '500px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              {image && (
+              {images[currentImageIndex] && (
                 <ReactCrop
                   crop={crop}
                   onChange={(newCrop) => setCrop(newCrop)}
                   aspect={1}
                   style={{ maxWidth: '100%', maxHeight: '100%' }}
                 >
-                  <img src={image} alt="Crop" onLoad={(e) => onImageLoaded(e.currentTarget)} />
+                  <img
+                    src={images[currentImageIndex]}
+                    alt={`Crop ${currentImageIndex}`}
+                    onLoad={(e) => onImageLoaded(e.currentTarget)}
+                  />
                 </ReactCrop>
               )}
             </Box>
@@ -360,7 +388,7 @@ const CreatePost = ({ open, onClose }) => {
               <ArrowBackIcon />
             </IconButton>
             <Typography>Create new post</Typography>
-            <Button type="submit" color="primary" disabled={loading}>
+            <Button type="submit" color="primary" disabled={loading || errorMessage}>
               {loading ? "Sharing..." : "Share"}
             </Button>
           </DialogTitle>
@@ -385,9 +413,9 @@ const CreatePost = ({ open, onClose }) => {
                 overflow: 'hidden',
               }}
             >
-              {croppedImageUrl && (
+              {croppedImages.length > 0 && (
                 <img
-                  src={croppedImageUrl}
+                  src={croppedImages[0]}
                   alt="Cropped"
                   style={{
                     width: '100%',
@@ -396,7 +424,7 @@ const CreatePost = ({ open, onClose }) => {
                   }}
                 />
               )}
-              {croppedImageUrl && (
+              {croppedImages.length > 0 && (
                 <Button
                   variant="outlined"
                   color="error"
@@ -404,7 +432,7 @@ const CreatePost = ({ open, onClose }) => {
                   sx={{ position: 'absolute', top: 10, right: 10 }}
                   disabled={loading}
                 >
-                  Cancel Image
+                  Cancel Images
                 </Button>
               )}
             </Box>
@@ -465,27 +493,30 @@ const CreatePost = ({ open, onClose }) => {
                     {errors.content.message}
                   </Typography>
                 )}
-               
-                  <Box sx={{ mb: 2 }}>
-                    <Typography gutterBottom>Rate this restaurant</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <IconButton
-                          key={star}
-                          onClick={() => handleRatingChange(star)}
-                          sx={{ p: 0, mr: 1 }}
-                        >
-                          {rating >= star ? (
-                            <StarIcon sx={{ color: '#f5c518' }} />
-                          ) : (
-                            <StarBorderIcon sx={{ color: '#f5c518' }} />
-                          )}
-                        </IconButton>
-                      ))}
-                      <Typography sx={{ ml: 1 }}>{rating}/5</Typography>
-                    </Box>
+                {errorMessage && (
+                  <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                    {errorMessage}
+                  </Typography>
+                )}
+                <Box sx={{ mb: 2 }}>
+                  <Typography gutterBottom>Rate this post</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <IconButton
+                        key={star}
+                        onClick={() => handleRatingChange(star)}
+                        sx={{ p: 0, mr: 1 }}
+                      >
+                        {rating >= star ? (
+                          <StarIcon sx={{ color: '#f5c518' }} />
+                        ) : (
+                          <StarBorderIcon sx={{ color: '#f5c518' }} />
+                        )}
+                      </IconButton>
+                    ))}
+                    <Typography sx={{ ml: 1 }}>{rating}/5</Typography>
                   </Box>
-   
+                </Box>
                 <Box sx={{ display: 'flex', flexDirection: "column" }}>
                   <Button variant="text" color="primary" disabled={loading}>
                     Add location

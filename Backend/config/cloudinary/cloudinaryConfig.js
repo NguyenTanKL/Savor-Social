@@ -26,5 +26,5 @@ const postStorage = new CloudinaryStorage({
     },
 });
 const uploadVoucher = multer({ storage: voucherStorage });
-const uploadPost = multer({storage:postStorage})
+const uploadPost = multer({ storage: postStorage }).array('images', 10); // Xử lý nhiều file với field 'images', tối đa 10 file
 module.exports = { cloudinary, uploadPost, uploadVoucher };

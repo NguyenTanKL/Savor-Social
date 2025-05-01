@@ -96,7 +96,7 @@ router.post("/savePost", async (req, res) => {
 
 // Routes
 // router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết
-router.post("/", userAuth,uploadPost.single("image"), createPost);
+router.post("/", userAuth,uploadPost, createPost);
 router.get("/", getPosts); // Lấy danh sách bài viết
 router.delete("/:postId", userAuth, deletePost); // Xóa bài viết
 router.post("/like", userAuth, likePost); // Thích bài viết

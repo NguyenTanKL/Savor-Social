@@ -70,7 +70,25 @@ const UserSchema = new mongoose.Schema({
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Danh sách user follow người này
     followerCount: { type: Number, default: 0 }, // Thêm trường followerCount
     followingCount: { type: Number, default: 0 }, // Thêm trường followingCount
-    savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }] // Thêm danh sách bài post đã lưu
+    savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // Thêm danh sách bài post đã lưu
+    point: {
+        type: Number,
+        default: 0, // Chỉ áp dụng cho userType: normal
+      },
+    avgRating: {
+        type: Number,
+        default: 0, // Chỉ áp dụng cho userType: restaurant
+        min: 0,
+        max: 5,
+    },
+    openHour: {
+        type: String, // Ví dụ: "09:00"
+        default: null, // Chỉ áp dụng cho userType: restaurant
+    },
+    closeHour: {
+        type: String, // Ví dụ: "21:00"
+        default: null, // Chỉ áp dụng cho userType: restaurant
+    },
 });
 
 const UserModel = mongoose.model('User',UserSchema);
