@@ -1,6 +1,6 @@
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
-import { useSelector } from "react-redux"; // Thêm để dùng Redux state
+import { useSelector, useDispatch } from "react-redux"; // Thêm để dùng Redux state
 import Sidenav from './navigation/Sidenav';
 import HomePage from './Homepage';
 import ProfilePage from './pages/ProfilePage';
@@ -21,6 +21,8 @@ import { useState } from 'react';
 import Grid from '@mui/material/Grid';
 import SetupPage from './pages/SetupPage/SetupPage';
 import RecommendationsPage from './pages/RecommendationsPage/RecommendationsPage';
+import PostDetail from './components/post/PostDetail';
+import TagPage from './pages/ListPostByTag/TagPage';
 function App() {
   const userStorage = useSelector(state => state.user.user);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -64,10 +66,12 @@ function App() {
                 <Route path="/messages" element={<MessagesPage sender={userStorage._id}/>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/create" element={<CreatePost />} />
-                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />     
+                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />  
+                <Route path="/post/:postId" element={<PostDetail />} />   
                 <Route path="/profile/:userId" element={<ProfilePage />} />
                 <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id}/>} />
                 <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
+                <Route path="/explore/:tagName" element={<TagPage />} />
               </>
             ) : isLoggedIn && userStorage.usertype == "restaurant" ? (
               <>
@@ -85,6 +89,7 @@ function App() {
 
                 <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />     
                 <Route path="/profile/:userId" element={<ProfilePage />} />
+              
                 <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id}/>} />
                 <Route path="/search" element={<SearchPage />} /> {/* Thêm SearchPage vào Routes */}
               </>

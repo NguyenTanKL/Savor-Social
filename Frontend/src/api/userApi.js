@@ -39,3 +39,22 @@ export const toggleFollow = async (targetUserId, isFollowing) => {
     return isFollowing; // Giữ nguyên trạng thái nếu lỗi xảy ra
   }
 };
+  export const removeFollower = async (followerId) => {
+    const url = `${API_URL}/remove-follower/${followerId}`;
+    try {
+      const response = await axios({
+        method: "DELETE",
+        url,
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      return {
+        followers: response.data.followers,
+        followerCount: response.data.followerCount,
+      };
+    } catch (error) {
+      console.error("Lỗi khi xóa follower:", error);
+      throw error;
+    }
+  };
+  
+  

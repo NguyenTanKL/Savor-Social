@@ -89,6 +89,7 @@ const nodemon = require('nodemon');
 const cors = require('cors');
 const router = require('./routes/index')
 const route = require('./routes/user/index')
+
 const path = require("path");
 // const authRoutes = require("./routes/authRoutes");
 require('./models/UserModel'); 
@@ -137,7 +138,6 @@ db.connect();
 
 route(app);
 router(app);
-
 // Create a middleware to allow CORS to create voucher
 
 

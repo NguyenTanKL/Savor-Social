@@ -5,12 +5,21 @@ import SearchIcon from "@mui/icons-material/Search";
 import CancelIcon from "@mui/icons-material/Cancel";
 import FriendCard from "../components/friend/FriendCard";
 import { useNavigate } from "react-router-dom";
+import {
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
+  Box,
+} from "@mui/material";
 
 function SearchPage() {
   const navigate = useNavigate();
   const [isFocused, setIsFocused] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState({ users: [], tags: [], posts: [] });
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef(null);
 
   const handleFocus = () => setIsFocused(true);
@@ -18,36 +27,67 @@ function SearchPage() {
     if (e.target.value === "") setIsFocused(false);
   };
 
-  const handleClearAll = () => setSearchResults([]);
+  const handleClearAll = () => {
+    setSearchResults({ users: [], tags: [], posts: [] });
+    setIsLoading(false);
+  };
 
   const handleSearch = async (e) => {
     const keyword = e.target.value;
     setSearchTerm(keyword);
 
     if (keyword.trim() === "") {
-      setSearchResults([]);
+      setSearchResults({ users: [], tags: [], posts: [] });
+      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     try {
       console.log("Fetching data...");
-      const response = await axios.post("http://localhost:5000/api/user/search", { keyword });
+      const response = await axios.post(
+        "http://localhost:5000/api/user/search",
+        { query: keyword },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
       console.log("Search result:", response.data);
       setSearchResults(response.data);
     } catch (error) {
       console.error("Search error:", error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleTagClick = (tag) => {
+    const cleanTag = tag.startsWith("#") ? tag.slice(1) : tag;
+    // Điều hướng sang trang mới với tag
+    navigate(`/explore/${cleanTag}`);
   };
 
   const handleClearInput = () => {
     setSearchTerm("");
-    setSearchResults([]);
+    setSearchResults({ users: [], tags: [], posts: [] });
+    setIsLoading(false);
     inputRef.current.focus();
   };
 
   const handleUserClick = (userId) => {
     navigate(`/profile/${userId}`);
     setSearchTerm("");
+    setSearchResults({ users: [], tags: [], posts: [] });
+    setIsLoading(false);
+  };
+
+  const formatPostCount = (count) => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`;
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
   };
 
   return (
@@ -82,15 +122,44 @@ function SearchPage() {
               Clear all
             </button>
           </div>
-          {searchResults.length > 0 ? (
-            searchResults.map((user, index) => (
-              <FriendCard
-                key={index}
-                friendInfo={user}
-                isSearchList={true}
-                onUserClick={handleUserClick} // Truyền handleUserClick vào FriendCard
-              />
-            ))
+          {isLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <CircularProgress />
+            </Box>
+          ) : searchResults.users.length > 0 || searchResults.tags.length > 0 ? (
+            <>
+              {searchResults.users.length > 0 && (
+                <>
+                  {searchResults.users.map((user, index) => (
+                    <FriendCard
+                      key={index}
+                      friendInfo={user}
+                      isSearchList={true}
+                      onUserClick={handleUserClick}
+                    />
+                  ))}
+                </>
+              )}
+              {searchResults.tags.length > 0 && (
+                <>
+                  <List dense>
+                    {searchResults.tags.map((tagInfo, index) => (
+                      <ListItem
+                        key={index}
+                        button
+                        onClick={() => handleTagClick(tagInfo.tag)}
+                        sx={{ display: "flex", justifyContent: "space-between" }}
+                      >
+                        <ListItemText primary={tagInfo.tag} />
+                        <Typography variant="body2" color="textSecondary">
+                          {formatPostCount(tagInfo.postCount)} posts
+                        </Typography>
+                      </ListItem>
+                    ))}
+                  </List>
+                </>
+              )}
+            </>
           ) : (
             <p>No results found.</p>
           )}

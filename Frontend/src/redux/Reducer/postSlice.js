@@ -202,20 +202,38 @@ const postSlice = createSlice({
         state.posts = state.posts.filter((post) => post._id !== action.payload);
       })
       // Thích bài viết
+      .addCase(likePostAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(likePostAsync.fulfilled, (state, action) => {
+        state.loading = false;
         const updatedPost = action.payload;
         const index = state.posts.findIndex((post) => post._id === updatedPost._id);
         if (index !== -1) {
           state.posts[index] = updatedPost;
         }
       })
+      .addCase(likePostAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // Bỏ thích bài viết
+      .addCase(unlikePostAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(unlikePostAsync.fulfilled, (state, action) => {
-        const { postId, userId } = action.meta.arg; // dùng lại tham số truyền vào
-        const index = state.posts.findIndex((post) => post._id === postId);
-      if (index !== -1) {
-        state.posts[index].likes = state.posts[index].likes.filter((id) => id !== userId);
-  }
+        state.loading = false;
+        const updatedPost = action.payload;
+        const index = state.posts.findIndex((post) => post._id === updatedPost._id);
+        if (index !== -1) {
+          state.posts[index] = updatedPost;
+        }
+      })
+      .addCase(unlikePostAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
       // Lấy danh sách bình luận
       .addCase(getCommentsAsync.fulfilled, (state, action) => {

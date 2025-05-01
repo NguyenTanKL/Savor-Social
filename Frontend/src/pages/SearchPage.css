@@ -92,3 +92,20 @@ hr {
     font-weight: 600;
     line-height: 20px;
 }
+/* Grid layout cho bài viết */
+.grid-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px; /* Khoảng cách nhỏ giữa các ảnh */
+  }
+  
+  .grid-item {
+    flex: 1 1 calc(33.333% - 3px); /* 3 cột, trừ khoảng cách */
+    box-sizing: border-box;
+  }
+  
+  .grid-item img {
+    width: 100%;
+    aspect-ratio: 1/1; /* Ảnh vuông */
+    object-fit: cover;
+  }

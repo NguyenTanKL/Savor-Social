@@ -25,43 +25,58 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Tạo user mới với các giá trị mặc định
-    const newUser = new User({
+    // Tạo user mới với các giá trị mặc định chung
+    const newUserData = {
       email,
       username,
       password: hashedPassword,
       usertype: usertype || "normal", // Nếu usertype không có, đặt mặc định là "normal"
-      darkmode: false, // Mặc định là false
-      preferences: [], // Danh sách sở thích rỗng
-      foodTypes: [], // Danh sách loại đồ ăn rỗng
+      darkmode: false,
+      phone: "",
+      bio: "",
+      website: "",
+      gender: "",
+      avatar: "",
+      address: "",
+      foodTypes: [],
       following: [],
-      followers:[],
-    });
+      followers: [],
+    };
 
+    // Thêm các thuộc tính riêng biệt tùy theo usertype
+    if (usertype === "normal") {
+      newUserData.point = 0;
+    } else {
+      newUserData.avgRating = 0;
+      newUserData.openHour = "";
+      newUserData.closeHour = "";
+    }
+
+    // Tạo và lưu user
+    const newUser = new User(newUserData);
     const savedUser = await newUser.save();
 
     // Tạo JWT Token
     const token = jwt.sign(
-      { userId: newUser._id },
+      { userId: savedUser._id },
       process.env.SECRET_KEY || "my_secret_key",
       { expiresIn: "24h" }
     );
 
-    // **Trả về thông tin user đầy đủ**
+    // Trả về thông tin user đầy đủ
     res.status(201).json({
       token,
       user: {
         _id: savedUser._id,
         email: savedUser.email,
         username: savedUser.username,
-        usertype: savedUser.usertype, 
+        usertype: savedUser.usertype,
         darkmode: savedUser.darkmode,
         preferences: savedUser.preferences,
         foodTypes: savedUser.foodTypes,
       },
       message: "Đăng ký thành công",
     });
-
   } catch (error) {
     console.error("Lỗi đăng ký:", error);
     res.status(500).json({ message: "Lỗi server" });
@@ -85,7 +100,7 @@ const loginUser = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id },
       process.env.SECRET_KEY || "my_secret_key",
-      { expiresIn: "1h" }
+      { expiresIn: "10h" }
     );
     res.json({ token, userId: user._id, user });
   } catch (error) {

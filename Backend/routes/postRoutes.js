@@ -3,20 +3,22 @@ const express = require("express")
 const {
     createPost,
     getPosts,
-  deletePost,
-  likePost,
-  unlikePost,
-  getComments,
-  createComment,
-  createReply,
-  likeComment,
-  unlikeComment,
-  createPostWithVoucher,
-  getPostById
+    deletePost,
+    likePost,
+    unlikePost,
+    getComments,
+    createComment,
+    createReply,
+    likeComment,
+    unlikeComment,
+    createPostWithVoucher,
+    getPostById,
+    getAverageRating,
+    getByTag,
 } =  require("../controllers/postController.js");
 const userAuth = require("../middlewares/authMiddleware.js")
 // Cấu hình multer để xử lý file upload
-const {upload} = require("../config/cloudinary/cloudinaryConfig.js")
+const {uploadPost} = require("../config/cloudinary/cloudinaryConfig.js")
 const router = express.Router();
 const Post = require('../models/PostModel'); // Model bài post của bạn
 const User = require("../models/UserModel");
@@ -91,70 +93,13 @@ router.post("/savePost", async (req, res) => {
         res.status(500).json({ message: "Lỗi server" });
     }
 });
-router.post("/:postID/like", async (req, res) => {
-    try {
-        // const { userId } = req.body;
-        // const post = await Post.findById(req.params.postID);
-        // console.log("like:",userId )
-        // if (!post) {
-        //     return res.status(404).json({ message: "Post not found" });
-        // }
 
-        // if (post.likes.users.includes(userId)) {
-        //     // Nếu user đã like => bỏ like
-        //     post.likes.users = post.likes.users.filter(id => id !== userId);
-        //     post.likes.count -= 1;
-        // } else {
-        //     // Nếu user chưa like => thêm vào danh sách
-        //     post.likes.users.push(userId);
-        //     post.likes.count += 1;
-        // }
-
-        // await post.save();
-        // res.status(200).json({ success: true, likes: post.likes });
-        console.log("Headers:", req.headers);
-        console.log("Body nhận được:", req.body);
-        if (!req.body) {
-            return res.status(400).json({ error: "Body không có dữ liệu" });
-        }
-        const { userId } = req.body;
-        if (!userId) {
-            return res.status(400).json({ error: "Thiếu userId trong request body" });
-        }
-
-        const post = await Post.findById(req.params.postID);
-        if (!post) {
-            return res.status(404).json({ message: "Bài post không tồn tại" });
-        }
-       
-        console.log("Bài post tìm thấy:", post);
-        const userObjectId = new mongoose.Types.ObjectId(userId);
-        let liked = post.likes.users.includes(userId);
-        if (liked) {
-            post.likes.users = post.likes.users.filter(user => !user.equals(userObjectId));
-            post.likes.count = Math.max(0, post.likes.count - 1);
-            console.log("da xoa thanh cong");
-        } else {
-            post.likes.users.push(userId);
-            post.likes.count += 1;
-        }
-
-        console.log("Cập nhật like:", post.likes);
-
-        const updatedPost = await post.save();
-        res.status(200).json({ success: true, likes: updatedPost.likes });
-    } catch (err) {
-        console.error("Lỗi trong server:", err); // Log lỗi cụ thể ra terminal
-        res.status(500).json({ error: "Lỗi server", message: err.message });
-    }
-
-});
 
 
 // Routes
 // router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết
-router.post("/", userAuth,upload.single("image"), createPost);
 router.post("/createpost", userAuth,upload.single("image"), createPostWithVoucher); // Tạo bài viết
+router.post("/", userAuth,uploadPost, createPost);
 router.get("/", getPosts); // Lấy danh sách bài viết
 router.get("/get/:postId", userAuth, getPostById); // Lấy bài viết theo ID
 router.delete("/:postId", userAuth, deletePost); // Xóa bài viết
@@ -165,5 +110,8 @@ router.post("/comments", userAuth, createComment); // Tạo bình luận
 router.post("/comments/replies", userAuth,createReply);
 router.post("/likeComment",userAuth, likeComment);
 router.post("/unlikeComment",userAuth, unlikeComment);
-
+router.get("/:postId/rating/average", userAuth, getAverageRating);
+// router.get("/:postId/rating/user/:userId", userAuth, getUserRatingPost);
+// router.post("/:postId/rating",userAuth, userRatingPost);
+router.get("/getPostBytag",userAuth,getByTag);
 module.exports =  router;

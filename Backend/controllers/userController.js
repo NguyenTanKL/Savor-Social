@@ -4,6 +4,7 @@ const User = require("../models/UserModel");
 const cloudinary = require("../config/cloudinary/cloudinaryConfig").cloudinary;
 
 
+const Post = require("../models/PostModel");
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -211,26 +212,71 @@ const getFollowers = async (req, res) => {
 
 const searchUser = async (req,res) => {
   try {
-    let { keyword } = req.body; 
+    const { query, tag } = req.body;
+    const response = {};
 
-    if (!keyword) {
-      return res.json([]);
+    // Nếu có tag, trả về danh sách bài viết có tag đó
+    if (tag) {
+      const posts = await Post.find({
+        tags: tag.toLowerCase(),
+      })
+        .populate("userId", "username")
+        .limit(20);
+      return res.json({ posts });
     }
 
+    // Nếu không có tag, trả về danh sách user và tag liên quan
+    if (!query) {
+      return res.json({ users: [], tags: [], posts: [] });
+    }
+
+    // Tìm kiếm tất cả user (bao gồm cả normal và restaurant)
     const users = await User.find({
-      "$or": [
-        {"username": {"$regex": keyword, "$options": "i" }},
-        { "tag": { "$regex": keyword, "$options": "i" } }
-      ]
+      username: { $regex: query, $options: "i" },
     })
-    .select("_id username tag avatar") 
-    .limit(10)  
-    .lean();
-    res.json(users);
-  }
-  catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi server" });
+      .select("username accountType")
+      .limit(5);
+
+    // Tìm kiếm tag liên quan và số lượng bài viết
+    const tagQuery = query.startsWith("#") ? query.slice(1) : query;
+    const postsWithTags = await Post.find({
+      tags: { $in: [new RegExp(tagQuery, "i")] },
+    });
+
+    // Tạo danh sách tag kèm số lượng bài viết
+    const tagCounts = {};
+    postsWithTags.forEach((post) => {
+      post.tags.forEach((t) => {
+        const normalizedTag = t.toLowerCase();
+        if (normalizedTag.includes(tagQuery.toLowerCase())) {
+          tagCounts[normalizedTag] = (tagCounts[normalizedTag] || 0) + 1;
+        }
+      });
+    });
+
+    const tags = Object.entries(tagCounts)
+      .map(([tag, count]) => ({ tag: `#${tag}`, postCount: count }))
+      .sort((a, b) => b.postCount - a.postCount) // Sắp xếp theo số lượng bài viết giảm dần
+      .slice(0, 5); // Giới hạn 5 tag
+
+    // Tìm kiếm bài post (theo content hoặc tags)
+    const posts = await Post.find({
+      $or: [
+        { content: { $regex: query, $options: "i" } },
+        { tags: { $in: [new RegExp(query, "i")] } },
+      ],
+    })
+      .populate("userId", "username")
+      .limit(5);
+
+    res.json({
+      users,
+      tags,
+      posts,
+    });
+  } catch (error) {
+    console.error("Error searching:", error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
 const getUserById = async(req,res) => {
@@ -242,7 +288,7 @@ const getUserById = async(req,res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
+    console.log("userbyId:",user);
     res.status(200).json(user);
 
   }
@@ -272,6 +318,47 @@ const checkFollowStatus = async (req, res) => {
     res.status(500).json({ message: "Lỗi server nội bộ" });
   }
 };
+const removeFollower = async (req, res) => {
+  try {
+    const userId = req.user.id; // Lấy từ token
+    const followerId = req.params.followerId;
+
+    // Tìm user hiện tại
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Xóa followerId khỏi danh sách followers
+    user.followers = user.followers.filter((id) => id.toString() !== followerId);
+    
+    // Giảm followerCount
+    user.followerCount = user.followers.length; // Cập nhật followerCount dựa trên độ dài mảng followers
+
+    // Lưu thay đổi
+    await user.save();
+
+    // Tìm follower và xóa userId khỏi danh sách following của họ
+    const follower = await User.findById(followerId);
+    if (!follower) {
+      return res.status(404).json({ message: "Follower not found" });
+    }
+    follower.following = follower.following.filter((id) => id.toString() !== userId);
+    
+    // Giảm followingCount của follower
+    follower.followingCount = follower.following.length; // Cập nhật followingCount
+    await follower.save();
+
+    // Trả về phản hồi với thông tin cập nhật
+    res.status(200).json({ 
+      message: "Follower removed", 
+      followers: user.followers, 
+      followerCount: user.followerCount 
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error removing follower", error });
+  }
+}
 const getVouchers = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -345,6 +432,7 @@ module.exports = {
   getUserById,
   getFollowers,
   checkFollowStatus,
+  removeFollower,
   getVouchers,
   removeVoucherFromUser,
 };

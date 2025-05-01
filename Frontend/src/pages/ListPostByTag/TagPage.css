@@ -1,0 +1,24 @@
+/* TagPage.css */
+.tag-page {
+    width: 100%;
+    max-width: 935px; /* Chiều rộng tối đa giống Instagram */
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* Grid layout cho bài viết */
+  .tag-page .MuiGrid2-root {
+    gap: 3px; /* Khoảng cách nhỏ giữa các ảnh */
+  }
+  
+  .tag-page img {
+    width: 100%;
+    aspect-ratio: 1/1; /* Ảnh vuông */
+    object-fit: cover;
+  }
+  
+  /* Hiệu ứng hover cho ảnh */
+  .tag-page img:hover {
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+  }

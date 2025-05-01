@@ -1,38 +1,105 @@
 const Post = require("../models/PostModel");
 const Comment = require("../models/CommentModel");
+const User = require("../models/UserModel")
 const cloudinary = require("../config/cloudinary/cloudinaryConfig");
-  // Tạo bài viết
 const createPost = async (req, res) => {
   try {
-      const { userId, content } = req.body;
-      let imageUrl = "";
+    const { userId, content, rating } = req.body;
+    let images = [];
 
-      // Nếu có file ảnh được gửi lên, lấy URL từ req.file.path
-      if (req.file) {
-          console.log("File uploaded to Cloudinary:", req.file);
-          imageUrl = req.file.path; // req.file.path chính là secure_url từ Cloudinary
+    // Nếu có nhiều file ảnh được gửi lên, lấy URL từ req.files
+    if (req.files && req.files.length > 0) {
+      console.log("Files uploaded to Cloudinary:", req.files);
+      images = req.files.map((file) => file.path); // Lấy secure_url từ Cloudinary
+    }
+
+    // Thay thế #[hashtag](id) thành #hashtag trong content
+    let modifiedContent = content;
+    const hashtagFormatRegex = /#\[([^\]]+)\]\(([^)]+)\)/g;
+    modifiedContent = modifiedContent.replace(hashtagFormatRegex, (match, hashtag) => `#${hashtag}`);
+
+    // Phân tích nội dung để lấy hashtag và mention
+    const hashtags = [];
+    const taggedUserIds = [];
+    const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g; // Regex cho mention: @[username](id)
+    const hashtagRegex = /#[^\s#]+/g; // Regex cho hashtag: #tag
+    let match;
+
+    // Tìm tất cả các hashtag từ modifiedContent
+    while ((match = hashtagRegex.exec(modifiedContent)) !== null) {
+      const tag = match[0].slice(1).toLowerCase(); // Bỏ dấu # và chuyển thành chữ thường
+      if (!hashtags.includes(tag)) {
+        hashtags.push(tag);
       }
+    }
 
-      // Tạo bài viết mới
-      const newPost = await Post.create({
-          userId,
-          content: content,
-          imageUrl,
-      });
-      console.log("New Post Created:", newPost);
+    // Tìm tất cả các mention và lấy id
+    while ((match = mentionRegex.exec(modifiedContent)) !== null) {
+      const userId = match[2]; // ID của người dùng được mention
+      if (!taggedUserIds.includes(userId)) {
+        taggedUserIds.push(userId);
+      }
+    }
 
-      // Lấy danh sách bài viết mới nhất
-      const posts = await Post.find()
-          .populate({
-              path: "userId",
-              select: "username profileUrl -password",
-          })
-          .sort({ createdAt: -1 });
+    // Kiểm tra danh sách taggedUsers để đảm bảo chỉ có tối đa 1 tài khoản restaurant
+    const taggedUsersData = await User.find({ _id: { $in: taggedUserIds } });
+    const restaurantCount = taggedUsersData.filter(user => user.userType === 'restaurant').length;
 
-      res.status(200).json(posts);
+    if (restaurantCount > 1) {
+      return res.status(400).json({ message: "Cannot tag more than one restaurant in a post." });
+    }
+
+    // Tạo bài post mới
+    const newPost = new Post({
+      userId,
+      content: modifiedContent,
+      images,
+      tags: hashtags,
+      taggedUsers: taggedUserIds,
+      rating: rating ? Number(rating) : null,
+      timestamp: new Date().toISOString(),
+    });
+
+    await newPost.save();
+
+    // Nếu bài post có tag tài khoản restaurant và có rating, cập nhật điểm trung bình của nhà hàng
+    if (taggedUsersData.length > 0 && rating) {
+      const restaurantUser = taggedUsersData.find(user => user.usertype === 'restaurant');
+      console.log("restaurant:",restaurantUser);
+      if (restaurantUser) {
+        // Lấy tất cả bài post có tag tài khoản restaurant này và có rating
+        const posts = await Post.find({
+          taggedUsers: restaurantUser._id,
+          rating: { $exists: true },
+        });
+
+        const totalRating = posts.reduce((sum, post) => sum + post.rating, 0);
+        const averageRating = totalRating / posts.length;
+        console.log("averageRating",averageRating);
+        // Cập nhật avgRating của tài khoản restaurant
+        await User.findByIdAndUpdate(restaurantUser._id, {
+          
+          $set: { avgRating: Number(averageRating.toFixed(1)) },
+        });
+      }
+    }
+
+    // Lấy tất cả bài post và populate thông tin người dùng
+    const posts = await Post.find()
+      .populate({
+        path: "userId",
+        select: "username profileUrl -password",
+      })
+      .populate({
+        path: "taggedUsers",
+        select: "username profileUrl -password",
+      })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(posts);
   } catch (err) {
-      console.error("Error in createPost:", err);
-      res.status(500).json({ message: "Create Post Failed", error: err.message });
+    console.error("Error in createPost:", err);
+    res.status(500).json({ message: "Create Post Failed", error: err.message });
   }
 };
 
@@ -115,11 +182,6 @@ const deletePost = async (req, res) => {
 const getPosts = async (req, res) => {
     try {
       const posts = await Post.find()
-        .populate({
-          path: "userId",
-          select: "username profileUrl -password",
-        })
-        .sort({ createdAt: -1 });
       console.log("post:",posts )
       res.status(200).json(posts);
     } catch (err) {
@@ -141,23 +203,18 @@ const getPostById = async (req, res) => {
 }
   
   // Thích bài viết
-const likePost = async (req, res) => {
+  const likePost = async (req, res) => {
     try {
       const { postId, userId } = req.body;
-  
       const likedPost = await Post.findByIdAndUpdate(
         postId,
-        { $addToSet: { likes: userId } }, // Sử dụng $addToSet để tránh trùng lặp
+        { $addToSet: { likes: userId } },
         { new: true }
-      ).populate({
-        path: "userId",
-        select: "username profileUrl -password",
-      });
-  
+      )
       if (!likedPost) {
         return res.status(400).json({ message: "You can't like this post" });
       }
-  
+      console.log("likedPost:", likedPost);
       res.status(200).json(likedPost);
     } catch (err) {
       console.error(err);
@@ -165,28 +222,23 @@ const likePost = async (req, res) => {
     }
   };
   
-  // Bỏ thích bài viết
-const unlikePost = async (req, res) => {
+  const unlikePost = async (req, res) => {
     try {
       const { postId, userId } = req.body;
-  
       const unlikedPost = await Post.findByIdAndUpdate(
         postId,
         { $pull: { likes: userId } },
         { new: true }
       );
-  
       if (!unlikedPost) {
         return res.status(400).json({ message: "You can't unlike this post" });
       }
-  
       res.status(200).json(unlikedPost);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Unlike Post Failed", error: err.message });
     }
   };
-  
   // Tạo bình luận
 const createComment = async (req, res) => {
     try {
@@ -222,20 +274,6 @@ const createComment = async (req, res) => {
       res.status(500).json({ message: "Create Comment Failed", error: err.message });
     }
   };
-  // Hàm phụ để thêm reply vào cây replies
-// const addReplyToPath = (replies, path, newReply) => {
-//   if (path.length === 0) {
-//     replies.push(newReply);
-//     return;
-//   }
-
-//   const [index, ...rest] = path;
-//   if (!replies[index]) {
-//     throw new Error('Invalid reply path');
-//   }
-
-//   addReplyToPath(replies[index].replies, rest, newReply);
-// };
  // Tạo reply
 const createReply = async (req, res) => {
   try {
@@ -383,6 +421,71 @@ const unlikeComment = async (req, res) => {
     res.status(500).json({ message: "Unlike Comment Failed", error: err.message });
   }
 };
+const getAverageRating = async (req, res) => {
+  try {
+    const restaurantId = req.params.id;
+    const posts = await Post.find({ restaurantId, rating: { $exists: true } });
+
+    if (posts.length === 0) {
+      return res.json({ averageRating: null, totalReviews: 0 });
+    }
+
+    const totalRating = posts.reduce((sum, post) => sum + post.rating, 0);
+    const averageRating = totalRating / posts.length;
+
+    res.json({
+      averageRating: Number(averageRating.toFixed(1)), // Làm tròn 1 chữ số thập phân
+      totalReviews: posts.length,
+    });
+  } catch (error) {
+    console.error("Error calculating restaurant rating:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+// const userRatingPost = async (req, res) => {
+//   try {
+//     const { rating } = req.body;
+//     const userId = req.user.id; // Giả sử bạn có middleware để lấy user từ token
+//     console.log("ratingpost");
+//     const post = await Post.findById(req.params.postId);
+//     if (!post) return res.status(404).json({ message: "Post not found" });
+
+//     // Kiểm tra xem user đã rating chưa
+//     const existingRatingIndex = post.ratings.findIndex(
+//       (r) => r.user.toString() === userId
+//     );
+
+//     if (existingRatingIndex !== -1) {
+//       // Cập nhật rating nếu đã tồn tại
+//       post.ratings[existingRatingIndex].rating = rating;
+//     } else {
+//       // Thêm rating mới
+//       post.ratings.push({ user: userId, rating });
+//     }
+
+//     await post.save();
+//     return res.json({ message: "Rating submitted successfully" });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error submitting rating", error });
+//   }
+// }
+const getByTag = async (req, res) => {
+  try {
+    const { tag } = req.query;
+    if (!tag) {
+      const posts = await Post.find().populate("userId");
+      return res.json(posts);
+    }
+
+    // Chuẩn hóa tag để tìm kiếm
+    const normalizedTag = tag.startsWith('#') ? tag.slice(1).toLowerCase() : tag.toLowerCase();
+    const posts = await Post.find({ tags: normalizedTag }).populate("userId");
+    res.json(posts);
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
   module.exports ={
     createPost,
     createPostWithVoucher,
@@ -396,4 +499,7 @@ const unlikeComment = async (req, res) => {
     createReply,
     likeComment,
     unlikeComment,
+    getAverageRating,
+
+   getByTag,
   }
