@@ -50,9 +50,6 @@ const VoucherSchema = new mongoose.Schema({
     collector: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }],
-    by: [{
-        type: String
     }]
 });
 

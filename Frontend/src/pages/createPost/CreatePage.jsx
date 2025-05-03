@@ -14,6 +14,8 @@ import {
   Avatar,
   Stack,
 } from '@mui/material';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
@@ -96,6 +98,8 @@ const CreatePost = ({ open, onClose }) => {
     'monchay',
     'haisan',
   ];
+
+  const [adsEnabled, setAdsEnabled] = useState(false);
 
   const mentionTags = suggestedTags.map(tag => ({
     id: tag,
@@ -255,6 +259,9 @@ const CreatePost = ({ open, onClose }) => {
     const formData = new FormData();
     formData.append('content', data.content);
     formData.append('userId', user._id);
+    if (adsEnabled) {
+      formData.append('is_ad', true); // or any relevant value
+    }
     if (rating > 0) {
       formData.append('rating', rating);
     }
@@ -448,7 +455,7 @@ const CreatePost = ({ open, onClose }) => {
             >
               <Box>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar />
+                  <Avatar src={user?.avatar} alt={user?.username}/>
                   <Typography variant="subtitle1">
                     {user?.username}
                   </Typography>
@@ -517,7 +524,7 @@ const CreatePost = ({ open, onClose }) => {
                     <Typography sx={{ ml: 1 }}>{rating}/5</Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: "column" }}>
+                <Box sx={{ display: 'flex', flexDirection: "column", alignItems: "flex-start" }}>
                   <Button variant="text" color="primary" disabled={loading}>
                     Add location
                   </Button>
@@ -527,6 +534,12 @@ const CreatePost = ({ open, onClose }) => {
                   <Button variant="text" color="primary" disabled={loading}>
                     Share to
                   </Button>
+                  {user.usertype === 'restaurant' && (
+                    <FormControlLabel
+                      control={<Switch checked={adsEnabled} onChange={(e) => setAdsEnabled(e.target.checked)} />}
+                      label="Turn on ads"
+                    />
+                  )}
                 </Box>
               </Box>
               {error && (

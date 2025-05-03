@@ -18,6 +18,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
+import { format } from 'date-fns';
 
 const API_URL = "http://localhost:5000/api/vouchers";
 
@@ -139,10 +140,10 @@ function VouchersPageDetail({ voucherType, voucherId, onBack }) {
                                     <Row key={data.id} data={data}>
                                     <Cell>{data.code}</Cell>
                                     <Cell>{data.name}</Cell>
-                                    <Cell>{data.quantity}</Cell>
+                                    <Cell>{data.in_stock}</Cell>
                                     <Cell>{data.description}</Cell>
-                                    <Cell>{data.release_day}</Cell>
-                                    <Cell>{data.expire_day}</Cell>
+                                    <Cell>{format(new Date(data.release_day), 'dd/MM/yyyy')}</Cell>
+                                    <Cell>{format(new Date(data.expire_day), 'dd/MM/yyyy')}</Cell>
                                     <Cell>
                                         {data.status === "available" ? (
                                             <Chip label={data.status} color="success" />
