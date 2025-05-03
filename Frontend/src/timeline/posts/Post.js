@@ -22,6 +22,9 @@ import usePostInteractions from "../../components/hooks/usePostInteractions"; //
 import axios from "axios";
 import ShareModal from "../../components/ShareModal/ShareModal";
 import parseContent from "../../components/post/ParsedContent";
+
+const VOUCHER_API_URL = "http://localhost:5000/api/vouchers";
+
 function Post({
   user,
   postID,
@@ -119,13 +122,46 @@ function Post({
     navigate(`/post/${postID}`);
   };
 
+    const [voucherSelected, setVoucherSelected] = useState(null);
+    const userId = currentUserId;
+    const token = localStorage.getItem("token");
+    useEffect(() => {
+        const fetchPost = async () => {
+            try {
+                // const response = await axios.get(`http://localhost:5000/api/posts/get/${postID}`);
+                const response = await axios.get(`http://localhost:5000/api/posts/get/${postID}`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  });
+                setVoucherSelected(response.data);
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+            }
+        };
+        
+        fetchPost();
+    }, [postID]);
+    const handleSelect = async () => {
+        try {
+            console.log("Voucher selected:", voucherSelected.voucher_id);
+            const response = await axios.post(`${VOUCHER_API_URL}/${userId}/collect/${voucherSelected.voucher_id}`);
+            if (response.status === 200) {
+                alert("Voucher selected successfully!");
+            }
+        } catch (error) {
+            console.error("Error collected voucher:", error);
+            alert("Failed to collect voucher");
+        }
+    }
+
   if (is_voucher && is_ad) {
     return (
         <div className="post">
             <div className="post__header">
                 <div className="post__headerAuthor">
                     <Avatar src={userData?.avatar}>?</Avatar>
-                    {user}  <span> • {timestamp}  • Advertisement</span>
+                    {usernameOfPost}  <span> • {timestamp}  • Advertisement</span>
                 </div>
                 <MoreHorizIcon />
             </div>
@@ -175,9 +211,9 @@ function Post({
                             >
                                 Voucher
                             </Typography>
-                            <Typography variant="body1">{voucherData?.description}</Typography>
+                            <Typography variant="body1">{voucherData?.name}</Typography>
                             <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
-                            <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
+                            <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span></Typography>
                         </Grid>
 
                         {/* Right Section */}
@@ -199,6 +235,7 @@ function Post({
                                     fontWeight: 'bold',
                                     fontSize: '20px',
                                 }}
+                                onClick={handleSelect}
                             >
                                 Nhận
                             </Button>
@@ -237,7 +274,7 @@ function Post({
                 <span className="post_likes">{likeCount} likes</span>
                 <br />
                 <div className="post__caption">
-                    <span>{user} </span> {content}
+                    <span>{usernameOfPost} </span> {content}
                 </div>
                 <div className="post__comment">
                     <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
@@ -266,7 +303,7 @@ function Post({
             <div className="post__header">
                 <div className="post__headerAuthor">
                     <Avatar src={userData?.avatar}>?</Avatar>
-                    {user}  <span> • {timestamp}</span>
+                    {usernameOfPost}  <span> • {timestamp}</span>
                 </div>
                 <MoreHorizIcon />
             </div>
@@ -315,9 +352,9 @@ function Post({
                             >
                                 Voucher
                             </Typography>
-                            <Typography variant="body1">{voucherData?.description}</Typography>
+                            <Typography variant="body1">{voucherData?.name}</Typography>
                             <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
-                            <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.quantity}</span></Typography>
+                            <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span></Typography>
                         </Grid>
 
                         {/* Right Section */}
@@ -341,6 +378,7 @@ function Post({
                                     width: "100%",
                                     height: "100%"
                                 }}
+                                onClick={handleSelect}
                             >
                                 Nhận
                             </Button>
@@ -379,7 +417,7 @@ function Post({
                 <span className="post_likes">{likeCount} likes</span>
                 <br />
                 <div className="post__caption">
-                    <span>{user} </span> {content}
+                    <span>{usernameOfPost} </span> {content}
                 </div>
                 <div className="post__comment">
                     <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
@@ -408,7 +446,7 @@ function Post({
             <div className="post__header">
                 <div className="post__headerAuthor">
                     <Avatar src={userData?.avatar}>?</Avatar>
-                    {user}  <span> • {timestamp} • Advertisement</span>
+                    {usernameOfPost}  <span> • {timestamp} • Advertisement</span>
                     <br></br>
                 </div>
                 <MoreHorizIcon />
@@ -476,7 +514,7 @@ function Post({
                 <span className="post_likes">{likeCount} likes</span>
                 <br />
                 <div className="post__caption">
-                    <span>{user} </span> {content}
+                    <span>{usernameOfPost} </span> {content}
                 </div>
                 <div className="post__comment">
                     <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
@@ -600,7 +638,7 @@ function Post({
             </div>
           </div>
         </div>
-        <ShareModal open = {shareModalOpen} onClose={handleCloseShareModal} />
+        <ShareModal postId={postID} open = {shareModalOpen} onClose={handleCloseShareModal} />
       </div>
     );
   }

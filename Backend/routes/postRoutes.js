@@ -18,7 +18,7 @@ const {
 } =  require("../controllers/postController.js");
 const userAuth = require("../middlewares/authMiddleware.js")
 // Cấu hình multer để xử lý file upload
-const {uploadPost} = require("../config/cloudinary/cloudinaryConfig.js")
+const {uploadPost, uploadVouPost} = require("../config/cloudinary/cloudinaryConfig.js")
 const router = express.Router();
 const Post = require('../models/PostModel'); // Model bài post của bạn
 const User = require("../models/UserModel");
@@ -98,7 +98,7 @@ router.post("/savePost", async (req, res) => {
 
 // Routes
 // router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết
-router.post("/createpost", userAuth,upload.single("image"), createPostWithVoucher); // Tạo bài viết
+router.post("/createpost", userAuth, uploadVouPost.single("image"), createPostWithVoucher); // Tạo bài viết
 router.post("/", userAuth,uploadPost, createPost);
 router.get("/", getPosts); // Lấy danh sách bài viết
 router.get("/get/:postId", userAuth, getPostById); // Lấy bài viết theo ID

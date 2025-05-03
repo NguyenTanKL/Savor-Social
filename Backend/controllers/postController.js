@@ -4,7 +4,7 @@ const User = require("../models/UserModel")
 const cloudinary = require("../config/cloudinary/cloudinaryConfig");
 const createPost = async (req, res) => {
   try {
-    const { userId, content, rating } = req.body;
+    const { userId, content, rating, is_ad} = req.body;
     let images = [];
 
     // Nếu có nhiều file ảnh được gửi lên, lấy URL từ req.files
@@ -54,6 +54,7 @@ const createPost = async (req, res) => {
       userId,
       content: modifiedContent,
       images,
+      is_ad: is_ad,
       tags: hashtags,
       taggedUsers: taggedUserIds,
       rating: rating ? Number(rating) : null,
@@ -107,19 +108,15 @@ const createPost = async (req, res) => {
 const createPostWithVoucher = async (req, res) => {
   try {
       const { userId, content, is_voucher, voucher_id } = req.body;
-      let imageUrl = "";
 
       // Nếu có file ảnh được gửi lên, lấy URL từ req.file.path
-      if (req.file) {
-          console.log("File uploaded to Cloudinary:", req.file);
-          imageUrl = req.file.path; // req.file.path chính là secure_url từ Cloudinary
-      }
+      const images = req.file ? req.file.path : null;
 
       // Tạo bài viết mới
       const newPost = await Post.create({
           userId,
           content: content,
-          imageUrl,
+          images,
           voucher_id: voucher_id,
           is_voucher: is_voucher,
       });

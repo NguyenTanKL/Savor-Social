@@ -6,6 +6,7 @@ import {
   createCommentAsync,
   likePostAsync,
   unlikePostAsync,
+  getPostsAsync,
   deletePostAsync, // Thêm import
 } from "../../redux/Reducer/postSlice";
 import Stack from "@mui/joy/Stack";
@@ -31,11 +32,13 @@ function PostDetail({ canDelete }) {
   const { postId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  dispatch(getPostsAsync());
   const posts = useSelector((state) => state.posts.posts || []);
   const postInfo = posts.find((p) => p._id === postId);
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
   const userId = postInfo?.userId;
+  console.log("Info:", userId);
   const [user, setUser] = useState({});
   const usernamePost = user?.username || "Unknown";
   const isLiked = postInfo?.likes?.includes(currentUserId) || false;
@@ -198,7 +201,7 @@ function PostDetail({ canDelete }) {
               }}
             >
               <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
-                <Avatar src={user?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
+                <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32 }} />
                 <Typography fontWeight="bold" fontSize={14}>
                   {usernamePost}
                 </Typography>
@@ -215,7 +218,7 @@ function PostDetail({ canDelete }) {
               }}
             >
               <Stack direction="row" sx={{ gap: 1, mb: 2 }}>
-                <Avatar src={user?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
+                <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32 }} />
                 <Stack direction="column">
                   <Stack direction="row">
                     <Typography fontWeight="bold" fontSize={14}>
@@ -305,7 +308,7 @@ function PostDetail({ canDelete }) {
           </Stack>
         </Sheet>
       </Box>
-      <ShareModal open={shareModalOpen} onClose={handleCloseShareModal} />
+      <ShareModal postId={postId} open={shareModalOpen} onClose={handleCloseShareModal} />
       <PostOptionsDialog
         user={user}
         open={dialogOpen}

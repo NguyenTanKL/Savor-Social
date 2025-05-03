@@ -166,7 +166,6 @@ class VoucherController{
             // Reduce voucher quantity, add information about the collector
             voucher.in_stock -= 1;
             voucher.collector.push(userId);
-            voucher.by = user.username;
             await voucher.save();
     
             return res.status(200).json({ message: "Voucher collected successfully", voucher });
