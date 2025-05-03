@@ -98,10 +98,10 @@ router.post("/savePost", async (req, res) => {
 
 // Routes
 // router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết
-router.post("/createpost", userAuth,upload.single("image"), createPostWithVoucher); // Tạo bài viết
+// router.post("/createpost", userAuth,upload.single("image"), createPostWithVoucher); // Tạo bài viết
 router.post("/", userAuth,uploadPost, createPost);
 router.get("/", getPosts); // Lấy danh sách bài viết
-router.get("/get/:postId", userAuth, getPostById); // Lấy bài viết theo ID
+router.get("/info/:postId", userAuth, getPostById); // Lấy bài viết theo ID
 router.delete("/:postId", userAuth, deletePost); // Xóa bài viết
 router.post("/like", userAuth, likePost); // Thích bài viết
 router.post("/unlike", userAuth, unlikePost); // Bỏ thích bài viết

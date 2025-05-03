@@ -93,8 +93,6 @@ function Post({
 }, [user]);
   // Lấy thông tin user của bài post
   useEffect(() => {
-
-    console.log("bài post:", posts);
     if (user) {
       axios
         .get(`http://localhost:5000/api/user/get-by-id/${user}`)

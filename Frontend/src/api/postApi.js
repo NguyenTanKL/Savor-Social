@@ -61,3 +61,5 @@ export const likeComment = (data) =>
   api.post('/posts/likeComment', data);
 export const unlikeComment = (data) => 
   api.post('/posts/unlikeComment', data);
+export const getPostById = (postId) =>
+  api.get(`/posts/info/${postId}`);

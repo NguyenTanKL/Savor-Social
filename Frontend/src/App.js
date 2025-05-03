@@ -61,7 +61,7 @@ function App() {
                 <Route path="/" element={<Navigate to="/home" />} /> {/* Điều hướng mặc định */}
                 <Route path="/favouriteMap" element={<FavouriteMapPage />} />
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
-                <Route path="/post/:postId" element={<SharePost />} />
+                <Route path="/sharepost/:postId" element={<SharePost />} />
                 <Route path="/vouchers" element={<UserVouchersPage userId={userStorage._id}/>} />
                 <Route path="/messages" element={<MessagesPage sender={userStorage._id}/>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
@@ -81,7 +81,8 @@ function App() {
                 <Route path="/" element={<Navigate to="/home" />} /> {/* Điều hướng mặc định */}
                 <Route path="/favouriteMap" element={<FavouriteMapPage />} />
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
-                <Route path="/post/:postId" element={<SharePost />} />
+                <Route path="/post/:postId" element={<PostDetail />} />
+                <Route path="/sharepost/:postId" element={<SharePost />} />
                 <Route path="/vouchers" element={<VouchersPage restaurantId={userStorage._id}/>} />
                 <Route path="/messages" element={<MessagesPage sender={userStorage._id}/>} />
                 <Route path="/notifications" element={<NotificationsPage />} />

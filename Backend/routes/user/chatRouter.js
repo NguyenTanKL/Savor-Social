@@ -6,7 +6,7 @@ const userAuth = require("../../middlewares/authMiddleware.js")
 
 router.get('/messages', chatController.getMessage)
 
-router.post('/send', upload.single("file"), chatController.sendMessage)
+// router.post('/send', upload.single("file"), chatController.sendMessage)
 
 router.delete('/delete/:chatId', chatController.deleteMessage)
 

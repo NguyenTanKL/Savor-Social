@@ -18,11 +18,12 @@ function SharePost() {
     useEffect(() => {
         const fetchPost = async () => {
             try {
-                const response = await axios.get(`${POST_API_URL}/get/${postId}`, {
+                const response = await axios.get(`${POST_API_URL}/info/${postId}`, {
                     headers: {
                       Authorization: `Bearer ${token}`
                     }
                   });
+                  console.log("fetchPosst:",response.data)
                 setPost(response.data);
             } catch (error) {
                 console.error("Error fetching messages:", error);

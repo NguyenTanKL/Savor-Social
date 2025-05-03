@@ -10,7 +10,7 @@ const router = express.Router();
 router.get("/", getAllUsers);
 router.get("/restaurants", getRestaurants);
 router.get("/normal-users", getNormalUsers);
-router.put("/update-user", upload.single("image"), userAuth, updateUser);
+// router.put("/update-user", upload.single("image"), userAuth, updateUser);
 router.post("/follow/:id", userAuth, followUser);
 router.get("/followed",userAuth,getFollowedUsers);
 router.delete("/unfollow/:id",userAuth,unfollowUser);

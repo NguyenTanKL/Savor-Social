@@ -192,15 +192,30 @@ const getPosts = async (req, res) => {
 
 // Lấy danh sách bài viết theo id bài viết
 const getPostById = async (req, res) => {
-  const { postId } = req.params;
   try {
-    const post = await Post.findById(postId);
+    const { postId } = req.params;
+
+    // Tìm bài viết theo ID và populate các trường liên quan
+    const post = await Post.findById(postId)
+      // .populate({
+      //   path: "userId",
+      //   select: "username profileUrl -password",
+      // })
+      // .populate({
+      //   path: "taggedUsers",
+      //   select: "username profileUrl -password",
+      // });
+
+    if (!post) {
+      return res.status(404).json({ message: "Bài viết không tồn tại" });
+    }
+
     res.status(200).json(post);
   } catch (error) {
-    console.error("Error in getPostById:", error);
-    res.status(500).json({ message: "Get Post Failed", error: error.message });
-  }  
-}
+    console.error("Lỗi lấy bài viết:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
   
   // Thích bài viết
   const likePost = async (req, res) => {

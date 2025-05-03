@@ -11,6 +11,7 @@ import {
   createReply,
   likeComment as likeCommentApi,
   unlikeComment as unlikeCommentApi,
+  getPostById,
 } from '../../api';
 
 const initialState = {
@@ -43,7 +44,14 @@ export const getPostsAsync = createAsyncThunk('posts/getPosts', async (_, { reje
     return rejectWithValue(error.response?.data || { message: 'Failed to get posts' });
   }
 });
-
+export const getPostByIdAsync = createAsyncThunk('posts/getPostById', async (postId, { rejectWithValue }) => {
+  try {
+    const res = await getPostById(postId);
+    return res.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || { message: 'Failed to get post by ID' });
+  }
+});
 // Action bất đồng bộ: Xóa bài viết
 export const deletePostAsync = createAsyncThunk('posts/deletePost', async ({ postId, userId }, { rejectWithValue }) => {
   try {
@@ -194,6 +202,19 @@ const postSlice = createSlice({
         state.posts = action.payload;
       })
       .addCase(getPostsAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Lấy bài viết theo ID
+      .addCase(getPostByIdAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getPostByIdAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentPost = action.payload; // Lưu bài viết chi tiết vào trạng thái
+      })
+      .addCase(getPostByIdAsync.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

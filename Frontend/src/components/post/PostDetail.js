@@ -7,6 +7,8 @@ import {
   likePostAsync,
   unlikePostAsync,
   deletePostAsync, // Thêm import
+  getPostsAsync,
+  getPostByIdAsync
 } from "../../redux/Reducer/postSlice";
 import Stack from "@mui/joy/Stack";
 import Box from "@mui/joy/Box";
@@ -31,8 +33,13 @@ function PostDetail({ canDelete }) {
   const { postId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const posts = useSelector((state) => state.posts.posts || []);
-  const postInfo = posts.find((p) => p._id === postId);
+  useEffect(() => {
+    // dispatch(getPostsAsync());
+    dispatch(getPostByIdAsync(postId)); 
+  }, [dispatch,postId]);
+  // const posts = useSelector((state) => state.posts.posts || []);
+  // console.log("postsDetail:",posts);
+  const postInfo = useSelector((state) => state.posts.currentPost|| []);
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
   const userId = postInfo?.userId;
