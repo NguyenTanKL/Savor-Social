@@ -94,7 +94,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
           <span>Create</span>
         </div>
         <NavLink to= {`/profile/${userId._id}`} className="sidenav__button" onClick={onCloseSearch}>
-          <Avatar />
+          <Avatar src={userId.avatar} alt={userId.username} />
           <span>Profile</span>
         </NavLink>
       </div>

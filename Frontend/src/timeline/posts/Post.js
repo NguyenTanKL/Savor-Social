@@ -102,7 +102,7 @@ function Post({
       axios
         .get(`http://localhost:5000/api/user/get-by-id/${user}`)
         .then((res) => {
-          console.log("Dữ liệu user nhận được:", res.data);
+        //   console.log("Dữ liệu user nhận được:", res.data);
           setUserData(res.data);
         })
         .catch((err) => {

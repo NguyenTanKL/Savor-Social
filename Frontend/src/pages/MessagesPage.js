@@ -145,6 +145,14 @@ function MessagePage({ sender }) {
         };
     }, []);
 
+    const handleFileSelect = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+        }
+        console.log("Selected file:", file);
+    };
+
     // Handle sending message
     const handleSendMessage = async () => {
         if (!newMessage.trim() && !selectedFile) return;
@@ -154,8 +162,9 @@ function MessagePage({ sender }) {
             formData.append("sender", sender);
             formData.append("receiver", selectedReceiver);
             formData.append("message", newMessage);
+            formData.append("file", selectedFile?.name);
             if (selectedFile) {
-                formData.append("file", selectedFile?.name); // Must match key in backend
+                formData.append("image", selectedFile); // Must match key in backend
             }
     
             // Emit to socket (you can send a separate socket event or wait for server response)
@@ -212,14 +221,6 @@ function MessagePage({ sender }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-    const handleFileSelect = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            setSelectedFile(file);
-        }
-        console.log("Selected file:", file);
-    };
 
   const [followers, setFollowers] = useState([]);
   const [user, setUser] = useState([]);

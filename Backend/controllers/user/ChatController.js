@@ -32,18 +32,21 @@ class ChatController{
 
     // POST /:chatId
     async sendMessage(req, res) {   
-        const { sender, receiver, message, file} = req.body;
+        const { sender, receiver, message, file } = req.body;
         
         // Check if sender, receiver, and message are provided
         if (!sender || !receiver || (!message && !file)) {
             return res.status(400).json({ error: "Sender, receiver, and message are required" });
         }
+
+        const imageUrl = req.file ? req.file.path : null;
+
         try {
             const chat = new Chat({ 
                 sender, 
                 receiver, 
                 message: message || "",
-                fileUrl: req.file ? req.file.path : null,
+                fileUrl: imageUrl || null,
                 isRead: false,
             });
             await chat.save();
@@ -120,7 +123,7 @@ class ChatController{
             // Delete images from Cloudinary
             if (message.fileUrl) {
                 const publicId = message.fileUrl.split('/').pop().split('.')[0]; // Extract public_id
-                await cloudinary.uploader.destroy(`vouchers/${publicId}`);
+                await cloudinary.uploader.destroy(`chats/${publicId}`);
             }
     
             // Delete message from the database

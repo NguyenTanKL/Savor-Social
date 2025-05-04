@@ -98,7 +98,7 @@ router.post("/savePost", async (req, res) => {
 
 // Routes
 // router.post("/", userAuth,uploadPost.single("image"), createPost); // Tạo bài viết
-router.post("/createpost", userAuth, uploadVouPost.single("image"), createPostWithVoucher); // Tạo bài viết
+router.post("/voucher/createpost", userAuth, uploadVouPost.single("image"), createPostWithVoucher); // Tạo bài viết
 router.post("/", userAuth,uploadPost, createPost);
 router.get("/", getPosts); // Lấy danh sách bài viết
 router.get("/get/:postId", userAuth, getPostById); // Lấy bài viết theo ID
