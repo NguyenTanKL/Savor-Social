@@ -35,7 +35,6 @@ const getNormalUsers = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    console.log("body:", req.body);
     const updates = req.body;
     // Lấy userId từ middleware userAuth (được gán vào req.user)
     const userId = req.user.id;
@@ -54,7 +53,9 @@ const updateUser = async (req, res) => {
       }
     });
 
-    user.avatar = imageUrl;
+    if (imageUrl) {
+      user.avatar = imageUrl;
+    }
     
     await user.save();
     res.json({ message: 'Cập nhật người dùng thành công', user });

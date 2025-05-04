@@ -114,7 +114,7 @@ function VouchersPage( {restaurantId}) {
           form2.append("is_voucher", true);
           form2.append("voucher_id", voucherId); // <<--- here is the key!
       
-          const res = await fetch(`${POST_API_URL}/createpost`, {
+          const res = await fetch(`${POST_API_URL}/voucher/createpost`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },

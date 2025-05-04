@@ -248,7 +248,7 @@ console.log("filteredFollower:",filteredFollower.length);
         </div>
         <div className="header__2">
           <div className="header2__content">
-            <span>9 </span> posts
+            <span>1 </span> post
           </div>
           <div className="header2__content" onClick={handleShowFollower} style={{ cursor: "pointer" }}>
             <span>{user.followerCount} </span> followers

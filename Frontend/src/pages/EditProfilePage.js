@@ -11,7 +11,7 @@ function EditProfilePage({userId}) {
   const token = localStorage.getItem("token");
 
   const [formData, setFormData] = useState({
-    image: '',
+    avatar: '',
     name: '',
     username: '',
     website: '',
@@ -46,6 +46,8 @@ function EditProfilePage({userId}) {
   // Append the avatar file
       if (selectedFile) {
         data.append('image', selectedFile); // 'avatar' matches what your backend expects (req.file)
+      } else {
+        data.append('avatar', formData.avatar); // Use existing avatar if no new file is selected
       }
 
       // Append other form fields (strings)
@@ -66,8 +68,7 @@ function EditProfilePage({userId}) {
         console.log(err);
     }
   };
-  console.log("form", formData);
-  console.log("selectedFile", selectedFile);
+  console.log("form", selectedFile);
 
   return (
     <div className="edit-profile-page">
@@ -79,17 +80,28 @@ function EditProfilePage({userId}) {
                 role={undefined}
                 tabIndex={-1}>
             Change Profile Photo
-            {selectedFile && (
-                <div>
-                    <img
-                        alt="not found"
-                        multiple
-                        width={"200px"}
-                        height={"200px"}
-                        src={URL.createObjectURL(selectedFile)}
-                    />
-                </div>
-            )}
+            {/* {selectedFile && (
+              <div>
+                <img
+                  alt="Preview"
+                  width="200px"
+                  height="200px"
+                  src={formData?.avatar || URL.createObjectURL(selectedFile)}
+                />
+              </div>
+            )} */}
+            <div>
+              <img
+                alt="Preview"
+                width="200px"
+                height="200px"
+                src={
+                  selectedFile
+                    ? URL.createObjectURL(selectedFile) // Local preview
+                    : formData?.avatar || ""            // Cloudinary image
+                }
+              />
+            </div>
             <br></br>
             <VisuallyHiddenInput
                 type="file"

@@ -38,7 +38,6 @@ function PostDetail({ canDelete }) {
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
   const userId = postInfo?.userId;
-  console.log("Info:", userId);
   const [user, setUser] = useState({});
   const usernamePost = user?.username || "Unknown";
   const isLiked = postInfo?.likes?.includes(currentUserId) || false;

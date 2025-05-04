@@ -1,5 +1,6 @@
 const Voucher = require('../../models/voucherModel');
 const User = require('../../models/UserModel');
+const Post = require('../../models/PostModel');
 const { bucket } = require("../../config/cloudinary/cloudinaryConfig");
 const multer = require("multer");
 const cloudinary = require("../../config/cloudinary/cloudinaryConfig").cloudinary;
@@ -116,6 +117,18 @@ class VoucherController{
                 const publicId = voucher.img.split('/').pop().split('.')[0]; // Extract public_id
                 await cloudinary.uploader.destroy(`vouchers/${publicId}`);
             }
+
+            await User.updateMany(
+                { my_vouchers: id },
+                { $pull: { my_vouchers: id } }
+            );
+
+            await Post.deleteMany({ voucher_id: id });
+        
+            await User.updateMany(
+                { collector: id },
+                { $pull: { collector: id } }
+            );
     
             // Delete vouchers from the database
             await Voucher.findByIdAndDelete(id);
@@ -152,6 +165,10 @@ class VoucherController{
             const user = await User.findById(userId);
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
+            }
+
+            if (user.usertype == "restaurant") {
+                return res.status(400).json({ message: "You are a restaurant account, cannot collect voucher" });
             }
     
             // Check if the user already collected this voucher
