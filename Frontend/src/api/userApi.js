@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const API_URL = "http://localhost:5000/api/user";
-
+const api = axios.create({
+  baseURL: "http://localhost:5000/api/user", // Base URL cho các API user
+});
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -13,7 +15,6 @@ export const toggleFollow = async (targetUserId, isFollowing) => {
     if (userFromStorage) {
         user_ = JSON.parse(userFromStorage); // Chuyển từ JSON string thành object
         userId_ = user_._id; // Lấy id từ object
-        console.log("User ID:", userId_);
     } else {
         console.log("Không tìm thấy user trong localStorage");
     }
@@ -56,5 +57,19 @@ export const toggleFollow = async (targetUserId, isFollowing) => {
       throw error;
     }
   };
+  export const checkFollow = async (targetUserId) => {
+    const url = `${API_URL}/check-follow/${targetUserId}`;
+    try {
+      const response = await axios.get(url, {
+        headers: getAuthHeaders(),
+      });
+      return response.data.isFollowing;
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra trạng thái follow:", error);
+      throw error;
+    }
+  };
+  export const getFriends = () => api.get("/friends");
+  export const updatePreferences = (preferences) => api.put('/preferences', { preferences });
   
   

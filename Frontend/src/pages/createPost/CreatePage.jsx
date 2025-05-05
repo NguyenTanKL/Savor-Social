@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useDispatch, useSelector } from 'react-redux';
+
 import {
   Dialog,
   DialogTitle,
@@ -13,7 +14,10 @@ import {
   Typography,
   Avatar,
   Stack,
+  Popover
 } from '@mui/material';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
@@ -22,7 +26,10 @@ import { createPostAsync, getPostsAsync } from '../../redux/Reducer/postSlice';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { MentionsInput, Mention } from 'react-mentions';
-
+import { getTags } from '../../api'; // Import getTags để lấy danh sách tag
+import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
 const mentionStyle = {
   control: {
     fontSize: '1rem',
@@ -70,7 +77,8 @@ const CreatePost = ({ open, onClose }) => {
   const [imageRef, setImageRef] = useState(null);
   const [rating, setRating] = useState(0);
   const [taggedUsers, setTaggedUsers] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(''); // Thêm state để hiển thị lỗi
+  const [errorMessage, setErrorMessage] = useState('');
+  const [adsEnabled, setAdsEnabled] = useState(false);
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.user);
   const { loading, error } = useSelector((state) => state.posts);
@@ -86,21 +94,24 @@ const CreatePost = ({ open, onClose }) => {
       display: friend.username,
     }));
 
-  const suggestedTags = [
-    'donhat',
-    'monan',
-    'pho',
-    'banhmi',
-    'anvat',
-    'doauong',
-    'monchay',
-    'haisan',
-  ];
-
-  const mentionTags = suggestedTags.map(tag => ({
-    id: tag,
-    display: tag,
-  }));
+  const [availableTags, setAvailableTags] = useState([]); // State để lưu danh sách tag từ server
+  const [anchorEl, setAnchorEl] = useState(null);
+  // Lấy danh sách tag từ server khi component mount
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await getTags();
+        setAvailableTags(res.data.map(tag => ({
+          id: tag,
+          display: tag,
+        })));
+      } catch (err) {
+        console.error('Failed to load tags:', err);
+        setAvailableTags([]); // Dùng danh sách trống nếu lỗi
+      }
+    };
+    fetchTags();
+  }, []);
 
   const {
     control,
@@ -126,7 +137,6 @@ const CreatePost = ({ open, onClose }) => {
     );
     setTaggedUsers(updatedTaggedUsers);
 
-    // Kiểm tra số lượng tài khoản restaurant trong taggedUsers
     const restaurantCount = updatedTaggedUsers.filter(user => user.userType === 'restaurant').length;
     if (restaurantCount > 1) {
       setErrorMessage('You can only tag at most one restaurant in a post.');
@@ -222,7 +232,7 @@ const CreatePost = ({ open, onClose }) => {
     setCroppedFiles([]);
     setValue("content", "");
     setCurrentImageIndex(0);
-    setErrorMessage(''); // Xóa thông báo lỗi khi quay lại
+    setErrorMessage('');
   };
 
   const handleCancelImage = () => {
@@ -236,11 +246,10 @@ const CreatePost = ({ open, onClose }) => {
     setTaggedUsers([]);
     setStep(1);
     setCurrentImageIndex(0);
-    setErrorMessage(''); // Xóa thông báo lỗi khi hủy
+    setErrorMessage('');
   };
 
   const onSubmit = async (data) => {
-    // Kiểm tra lại taggedUsers trước khi gửi
     const restaurantCount = taggedUsers.filter(user => user.userType === 'restaurant').length;
     if (restaurantCount > 1) {
       setErrorMessage('You can only tag at most one restaurant in a post.');
@@ -255,6 +264,9 @@ const CreatePost = ({ open, onClose }) => {
     const formData = new FormData();
     formData.append('content', data.content);
     formData.append('userId', user._id);
+    if (adsEnabled) {
+      formData.append('is_ad', true);
+    }
     if (rating > 0) {
       formData.append('rating', rating);
     }
@@ -306,7 +318,6 @@ const CreatePost = ({ open, onClose }) => {
       const newTaggedUsers = [...taggedUsers, selectedUser];
       setTaggedUsers(newTaggedUsers);
 
-      // Kiểm tra sau khi thêm
       const restaurantCount = newTaggedUsers.filter(user => user.userType === 'restaurant').length;
       if (restaurantCount > 1) {
         setErrorMessage('You can only tag at most one restaurant in a post.');
@@ -315,6 +326,24 @@ const CreatePost = ({ open, onClose }) => {
       }
     }
   };
+
+  // Xử lý emoji picker
+  const handleOpenEmojiPicker = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseEmojiPicker = () => {
+    setAnchorEl(null);
+  };
+
+  const handleEmojiSelect = (emoji, field) => {
+    setValue("content", field.value + emoji.native);
+    updateTaggedUsersFromContent(field.value + emoji.native);
+    handleCloseEmojiPicker();
+  };
+
+  const openEmojiPicker = Boolean(anchorEl);
+
 
   return (
     <Dialog
@@ -448,7 +477,7 @@ const CreatePost = ({ open, onClose }) => {
             >
               <Box>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar />
+                  <Avatar src={user?.avatar} alt={user?.username} />
                   <Typography variant="subtitle1">
                     {user?.username}
                   </Typography>
@@ -459,6 +488,7 @@ const CreatePost = ({ open, onClose }) => {
                   defaultValue=""
                   rules={{ required: "Content is required" }}
                   render={({ field }) => (
+                    <>
                     <MentionsInput
                       value={field.value}
                       onChange={(e) => {
@@ -480,12 +510,33 @@ const CreatePost = ({ open, onClose }) => {
                       />
                       <Mention
                         trigger="#"
-                        data={mentionTags}
+                        data={availableTags}
                         markup="#[__display__](__id__)"
                         displayTransform={(id, display) => `#${display}`}
                         style={{ backgroundColor: '#d1eaff' }}
                       />
                     </MentionsInput>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <IconButton onClick={handleOpenEmojiPicker} sx={{ color: 'grey.500' }}>
+                          <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
+                        </IconButton>
+                      </Box>
+                      <Popover
+                        open={openEmojiPicker}
+                        anchorEl={anchorEl}
+                        onClose={handleCloseEmojiPicker}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'right',
+                        }}
+                      >
+                        <Picker data={data} onEmojiSelect={(emoji) => handleEmojiSelect(emoji, field)} />
+                      </Popover>
+                    </>
                   )}
                 />
                 {errors.content && (
@@ -517,7 +568,7 @@ const CreatePost = ({ open, onClose }) => {
                     <Typography sx={{ ml: 1 }}>{rating}/5</Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: "column" }}>
+                <Box sx={{ display: 'flex', flexDirection: "column", alignItems: "flex-start" }}>
                   <Button variant="text" color="primary" disabled={loading}>
                     Add location
                   </Button>
@@ -527,6 +578,12 @@ const CreatePost = ({ open, onClose }) => {
                   <Button variant="text" color="primary" disabled={loading}>
                     Share to
                   </Button>
+                  {user.usertype === 'restaurant' && (
+                    <FormControlLabel
+                      control={<Switch checked={adsEnabled} onChange={(e) => setAdsEnabled(e.target.checked)} />}
+                      label="Turn on ads"
+                    />
+                  )}
                 </Box>
               </Box>
               {error && (
@@ -541,5 +598,4 @@ const CreatePost = ({ open, onClose }) => {
     </Dialog>
   );
 };
-
 export default CreatePost;

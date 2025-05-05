@@ -110,7 +110,7 @@ function VouchersPage( {restaurantId}) {
             form2.append("image", selectedImage);
           }
           form2.append("userId", restaurantId);
-          form2.append("content", voucherData.name);
+          form2.append("content", voucherData.description);
           form2.append("is_voucher", true);
           form2.append("voucher_id", voucherId); // <<--- here is the key!
       

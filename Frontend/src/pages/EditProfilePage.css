@@ -60,4 +60,9 @@
   .deactivate-btn:hover {
     opacity: 0.8;
   }
-  
+  .form-group .MuiAutocomplete-root {
+    width: 100%;
+  }
+  .form-group .MuiChip-root {
+    margin: 4px;
+  }

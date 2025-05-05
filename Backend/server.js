@@ -80,6 +80,7 @@ const express = require("express");
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
 const user = require('./routes/user');
+const tagRoutes = require("./routes/tagRoutes");
 const multer = require('multer');
 // const postRoutes = require('./routes/postRoutes');
 // const userRoutes = require('./routes/userRoutes');
@@ -126,7 +127,7 @@ app.use("/api/notifications", notificationRouter);
 app.use('/api/user', user);
 app.use('/api', postRoutes);
 app.use('/api/userRoutes', userRoutes);
-
+app.use('/api/tags',tagRoutes);
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -134,6 +135,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 const db  = require('./config/db');
+const TagsModel = require("./models/TagsModel");
 
 db.connect();
 

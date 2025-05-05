@@ -2,13 +2,10 @@ import React, { useState } from "react";
 import { Tabs, Tab, Box, Typography } from "@mui/material";
 import GridViewIcon from "@mui/icons-material/GridView";
 import MapIcon from "@mui/icons-material/Map";
-
-// Component hiển thị nội dung theo tab được chọn
-
-
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import TagIcon from "@mui/icons-material/Tag";
 
 function ProfileTabs({ type, setType }) {
-
   const handleChange = (event, newValue) => {
     setType(newValue);
   };
@@ -38,8 +35,6 @@ function ProfileTabs({ type, setType }) {
           icon={<GridViewIcon />}
           sx={{
             color: "rgb(115, 115, 115)",
-       
-            marginRight: "60px",
             "&.Mui-selected": {
               color: "black",
             },
@@ -51,8 +46,8 @@ function ProfileTabs({ type, setType }) {
         <Tab
           icon={<MapIcon />}
           sx={{
-            color: "rgb(115, 115, 115)",
-          
+            color: "rgb(115, 115, 115",
+            marginRight: "60px",
             "&.Mui-selected": {
               color: "black",
             },
@@ -60,6 +55,31 @@ function ProfileTabs({ type, setType }) {
           iconPosition="start"
           label="MAP"
           value="map"
+        />
+        <Tab
+          icon={<BookmarkIcon />}
+          sx={{
+            color: "rgb(115, 115, 115",
+            marginRight: "60px",
+            "&.Mui-selected": {
+              color: "black",
+            },
+          }}
+          iconPosition="start"
+          label="SAVED"
+          value="saved"
+        />
+        <Tab
+          icon={<TagIcon />}
+          sx={{
+            color: "rgb(115, 115, 115",
+            "&.Mui-selected": {
+              color: "black",
+            },
+          }}
+          iconPosition="start"
+          label="TAGGED"
+          value="tagged"
         />
       </Tabs>
     </Box>

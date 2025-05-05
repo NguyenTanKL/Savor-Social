@@ -1,6 +1,6 @@
 .post{
     width: 550px;
-    margin: 30px 40px 50px 40px;
+    margin: 10px 40px 50px 40px;
     border: none;
     border-bottom: 2px solid #ebedf0;
     
@@ -49,34 +49,30 @@
     cursor: pointer;
 }
 .post_likes{
-    margin-left: 10px;
+   
     font-size: 15px;
     font-weight: bolder;
 }
 .post__caption > span{
     font-weight: bold;
 }
-.post__comment > span{
+.post__comment > span {
     color: grey;
-}
-.post__comment > span:hover{
+  }
+  
+  .post__comment > span:hover {
     cursor: pointer;
-}
-.comment{
+  }
+  
+  .comment {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-}
-.comment > input {
-    width: 100%;
-    border: none;
-    outline: none;
-    font-size: 16px;
-    background-color: white;
-}
+   /* Thêm khoảng cách giữa các phần tử */
+  }
 
-.nav-button {
+  
+  .nav-button {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -86,20 +82,19 @@
     border-radius: 50%;
     padding: 5px 10px;
     cursor: pointer;
-}
-
-.nav-button.left {
+  }
+  
+  .nav-button.left {
     left: 10px;
-}
-
-.nav-button.right {
+  }
+  
+  .nav-button.right {
     right: 10px;
-}
-
-
-/* src/index.css or App.css */
-@import url('https://fonts.googleapis.com/css2?family=Rochester&display=swap');
-
-.rochester {
+  }
+  
+  /* src/index.css or App.css */
+  @import url('https://fonts.googleapis.com/css2?family=Rochester&display=swap');
+  
+  .rochester {
     text-shadow: #FC0 1px 0 10px;
-}
+  }

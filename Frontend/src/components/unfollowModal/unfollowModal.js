@@ -9,9 +9,7 @@ const UnfollowDialog = ({ open, handleClose, user, onUnfollowSuccess }) => {
         if (!user) return;
       
         try {
-          const token = localStorage.getItem("token");
-          console.log("Token gửi đi:", token); // Debug token
-      
+          const token = localStorage.getItem("token");      
           const response = await axios.delete(
             `http://localhost:5000/api/user/unfollow/${user._id}`,
             {
@@ -20,7 +18,6 @@ const UnfollowDialog = ({ open, handleClose, user, onUnfollowSuccess }) => {
           );
       
           if (response.status === 200 && response.data.user) {
-            console.log("User sau khi unfollow:", response.data.user);
             onUnfollowSuccess(user._id);
             // ✅ Cập nhật Redux bằng updateUser
             dispatch(updateUser(response.data.user));

@@ -41,7 +41,6 @@ function CreatePage() {
 
             const response = await axios.post("http://localhost:5000/api/a", postData);
             alert("Bài viết đã được đăng!");
-            console.log("Post created:", response.data);
         } catch (error) {
             console.error("Lỗi đăng bài:", error);
         }

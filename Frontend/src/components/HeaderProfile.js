@@ -58,7 +58,6 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
   const filteredFollower = followerList.filter((user) =>
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
-console.log("filteredFollower:",filteredFollower.length);
   const handleEditProfile = () => {
     navigate("/editProfile");
   };

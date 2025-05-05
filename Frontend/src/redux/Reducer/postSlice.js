@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   createPost,
   getPosts,
+  getRecommendedPosts,
   deletePost as deletePostApi,
   likePost as likePostApi,
   unlikePost as unlikePostApi,
@@ -12,17 +13,22 @@ import {
   likeComment as likeCommentApi,
   unlikeComment as unlikeCommentApi,
   getPostById,
+  updatePost as updatePostApi,
 } from '../../api';
 
 const initialState = {
   posts: [],
+  recommendedPosts: [], 
   comments: {
     openComments: false,
     postId: '',
     commentList: [],
   },
+  currentPost: null,
   loading: false,
   error: null,
+  page: 1,
+  hasMore: true,
 };
 
 // Action bất đồng bộ: Tạo bài viết
@@ -34,7 +40,25 @@ export const createPostAsync = createAsyncThunk('posts/createPost', async (formD
     return rejectWithValue(error.response?.data || { message: 'Failed to create post' });
   }
 });
-
+export const updatePostAsync = createAsyncThunk('posts/updatePost', async ({ postId, content }, { rejectWithValue }) => {
+  try {
+    const res = await updatePostApi(postId, { content });
+    return res.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || { message: 'Failed to update post' });
+  }
+});
+export const getRecommendedPostsAsync = createAsyncThunk(
+  'posts/getRecommendedPosts',
+  async (page, { rejectWithValue }) => {
+    try {
+      const res = await getRecommendedPosts({ params: { page } });
+      return { data: res.data, page };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: 'Failed to get recommended posts' });
+    }
+  }
+);
 // Action bất đồng bộ: Lấy danh sách bài viết
 export const getPostsAsync = createAsyncThunk('posts/getPosts', async (_, { rejectWithValue }) => {
   try {
@@ -145,7 +169,13 @@ const postSlice = createSlice({
       state.posts = action.payload;
     },
     updatePost: (state, action) => {
-      // Có thể triển khai sau nếu cần
+      const index = state.posts.findIndex((post) => post._id === action.payload._id);
+      if (index !== -1) {
+        state.posts[index] = action.payload;
+      }
+      if (state.currentPost && state.currentPost._id === action.payload._id) {
+        state.currentPost = action.payload;
+      }
     },
     deletePost: (state, action) => {
       state.posts = state.posts.filter((post) => post._id !== action.payload);
@@ -176,6 +206,9 @@ const postSlice = createSlice({
     setComments: (state, action) => {
       state.comments.commentList = action.payload;
     },
+    loadMorePosts: (state) => {
+      state.page += 1;
+    },
   },
   extraReducers: (builder) => {
     // Tạo bài viết
@@ -202,6 +235,24 @@ const postSlice = createSlice({
         state.posts = action.payload;
       })
       .addCase(getPostsAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(getRecommendedPostsAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getRecommendedPostsAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        const { data, page } = action.payload;
+        if (page === 1) {
+          state.recommendedPosts = data;
+        } else {
+          state.recommendedPosts = [...state.recommendedPosts, ...data];
+        }
+        if (data.length < 20) state.hasMore = false;
+      })
+      .addCase(getRecommendedPostsAsync.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -305,9 +356,17 @@ const postSlice = createSlice({
         if (commentIndex !== -1) {
           state.comments.commentList[commentIndex] = updatedComment;
         }
+      })
+      .addCase(updatePostAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentPost = action.payload; // Cập nhật currentPost với dữ liệu mới
+        const index = state.posts.findIndex((post) => post._id === action.payload._id);
+        if (index !== -1) {
+          state.posts[index] = action.payload;
+        }
       });
   },
 });
 
-export const { setPost, deletePost, likePost, unlikePost, toggleComments, setComments } = postSlice.actions;
+export const { setPost, deletePost, likePost, unlikePost, toggleComments, setComments, loadMorePosts } = postSlice.actions;
 export default postSlice.reducer;

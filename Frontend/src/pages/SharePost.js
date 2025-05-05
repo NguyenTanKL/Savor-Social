@@ -32,7 +32,6 @@ function SharePost() {
         
         fetchPost();
     }, [postId]); // Chỉ gọi lại khi postId thay đổi
-    console.log("Dữ liệu từ API:", post);
 
     if (!post) {
         return <div>Loading...</div>;  // Display loading if post is not yet available

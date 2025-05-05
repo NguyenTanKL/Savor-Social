@@ -16,6 +16,7 @@ const postSchema = new mongoose.Schema(
       },
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    restaurantId:{ type: mongoose.Schema.Types.ObjectId, ref: "User",default:null },
     voucher_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Voucher',

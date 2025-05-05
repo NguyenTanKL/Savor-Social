@@ -28,7 +28,6 @@ function RecommendationsPage() {
       await axios.post(`http://localhost:5000/api/follow/${accountId}`, {}, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
       });
-      console.log(`Đã follow ${type} với ID ${accountId}`);
     } catch (error) {
       console.error('Follow thất bại:', error);
     }

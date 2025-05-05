@@ -23,7 +23,7 @@ import axios from "axios";
 const API_USER = "http://localhost:5000/api/user";
 
 function VouchersPage( {userId} ) {
-    const userStorage = useSelector(state => state.user.user);
+    const user = useSelector(state => state.user.user);
 
     const [vouchers, setVouchers] = useState([]);
 
@@ -69,7 +69,7 @@ function VouchersPage( {userId} ) {
     return (
         <div className="vouchers-page">
             <div className="voucherpage">
-                <HeaderProfile user={userStorage}/>
+                <HeaderProfile user={user} userId={user._id}/>
             </div>
             <Divider style={{ marginTop: "10px", marginBottom: "10px" }} />
             <div style={{marginLeft: "20px"}}>

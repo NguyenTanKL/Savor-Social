@@ -6,14 +6,14 @@ import {
   createCommentAsync,
   likePostAsync,
   unlikePostAsync,
-  deletePostAsync, // Thêm import
-  getPostsAsync,
-  getPostByIdAsync
+  getPostByIdAsync,
+  updatePostAsync,
 } from "../../redux/Reducer/postSlice";
+import { getFriendsAsync } from "../../redux/Reducer/userSlice";
 import Stack from "@mui/joy/Stack";
 import Box from "@mui/joy/Box";
 import Sheet from "@mui/joy/Sheet";
-import { Avatar } from "@mui/material";
+import { Avatar ,Popover} from "@mui/material";
 import Typography from "@mui/joy/Typography";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -21,6 +21,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SendIcon from "@mui/icons-material/Send";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
 import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
@@ -29,66 +30,142 @@ import Comment from "../Comment";
 import PostOptionsDialog from "./PostOptionsDialog";
 import moment from "moment/moment";
 import parseContent from "./ParsedContent";
+import usePostInteractions from "../hooks/usePostInteractions";
+import { MentionsInput, Mention } from "react-mentions";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
+import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
+
+// Tái sử dụng style từ CreatePost
+const mentionStyle = {
+  control: {
+    fontSize: "1rem",
+    fontWeight: "normal",
+    lineHeight: "1.5",
+    minHeight: "100px",
+  },
+  highlighter: {
+    padding: "9px 12px",
+    boxSizing: "border-box",
+  },
+  input: {
+    padding: "9px 12px",
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+    outline: "none",
+  },
+  suggestions: {
+    list: {
+      backgroundColor: "white",
+      border: "1px solid #ccc",
+      borderRadius: "4px",
+      maxHeight: "150px",
+      overflowY: "auto",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    },
+    item: {
+      padding: "5px 10px",
+      borderBottom: "1px solid #eee",
+      "&focused": {
+        backgroundColor: "#f0f0f0",
+      },
+    },
+  },
+};
+
 function PostDetail({ canDelete }) {
   const { postId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [taggedUsers, setTaggedUsers] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+
   useEffect(() => {
-    // dispatch(getPostsAsync());
-    dispatch(getPostByIdAsync(postId)); 
-  }, [dispatch,postId]);
-  // const posts = useSelector((state) => state.posts.posts || []);
-  // console.log("postsDetail:",posts);
-  const postInfo = useSelector((state) => state.posts.currentPost|| []);
+    dispatch(getPostByIdAsync(postId));
+    dispatch(getFriendsAsync());
+  }, [dispatch, postId]);
+
+  const postInfo = useSelector((state) => state.posts.currentPost || {});
+  const loading = useSelector((state) => state.posts.loading);
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
-  const userId = postInfo?.userId;
+  const { comments } = useSelector((state) => ({
+    comments: state.posts?.comments || { commentList: [] },
+  }));
+  const userId = postInfo && postInfo.userId ? (postInfo.userId._id || postInfo.userId) : null;
+
   const [user, setUser] = useState({});
   const usernamePost = user?.username || "Unknown";
-  const isLiked = postInfo?.likes?.includes(currentUserId) || false;
-  const { comments, loading } = useSelector((state) => ({
-    comments: state.posts?.comments || { commentList: [] },
-    loading: state.posts?.loading || false,
-  }));
+
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [editAnchorEl, setEditAnchorEl] = useState(null);
   const commentInputRef = useRef(null);
 
-  // Lấy thông tin user
+  // Lấy danh sách bạn bè để tag (tương tự CreatePost)
+  const following = Array.isArray(currentUser?.following) ? currentUser.following : [];
+  const followers = Array.isArray(currentUser?.followers) ? currentUser.followers : [];
+  const friends = [...new Set([...following, ...followers].map(f => JSON.stringify(f)))].map(f => JSON.parse(f));
+  const mentionUsers = friends
+    .filter(friend => friend && friend._id && friend.username)
+    .map(friend => ({
+      id: friend._id,
+      display: friend.username,
+    }));
+  const suggestedTags = ["donhat", "monan", "pho", "banhmi", "anvat", "doauong", "monchay", "haisan"];
+  const mentionTags = suggestedTags.map(tag => ({
+    id: tag,
+    display: tag,
+  }));
+
   useEffect(() => {
-    if (userId !== currentUser._id) {
+    if (userId && userId !== currentUser._id) {
       fetch(`http://localhost:5000/api/user/get-by-id/${userId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch user");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setUser(data);
-        })
-        .catch((error) => {
-          console.error("Error fetching user:", error);
-        });
-    } else {
+        .then((response) => response.json())
+        .then((data) => setUser(data))
+        .catch((error) => console.error("Error fetching user:", error));
+    } else if (userId) {
       setUser(currentUser);
     }
   }, [userId, currentUser]);
 
-  // Tải bình luận khi vào trang
   useEffect(() => {
-    if (postInfo?._id) {
+    if (postInfo?._id && !isEditing) {
       dispatch(getCommentsAsync(postInfo._id));
     }
-  }, [postInfo, dispatch]);
+  }, [postInfo, dispatch, isEditing]);
+
+  const updateTaggedUsersFromContent = (content) => {
+    const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+    const mentionedIds = [];
+    let match;
+
+    while ((match = mentionRegex.exec(content)) !== null) {
+      const id = match[2];
+      mentionedIds.push(id);
+    }
+
+    const updatedTaggedUsers = friends.filter(friend => mentionedIds.includes(friend._id));
+    setTaggedUsers(updatedTaggedUsers);
+
+    const restaurantCount = updatedTaggedUsers.filter(user => user.userType === "restaurant").length;
+    if (restaurantCount > 1) {
+      setErrorMessage("You can only tag at most one restaurant in a post.");
+    } else {
+      setErrorMessage("");
+    }
+  };
 
   const handleCreateComment = () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || isEditing) return;
 
     const commentData = {
       postId: postInfo._id,
@@ -111,35 +188,111 @@ function PostDetail({ canDelete }) {
     setShareModalOpen(false);
   };
 
-  const handleLike = () => {
-    if (!postInfo?._id || !currentUserId) {
-      console.error("Missing required fields for liking post", {
-        postId: postInfo?._id,
-        userId: currentUserId,
-      });
-      return;
-    }
+  const { liked, likeCount, isSaved, handleSavePost, handleLike } = usePostInteractions(postId, postInfo.likes, currentUserId);
 
-    if (isLiked) {
-      dispatch(unlikePostAsync({ postId: postInfo._id, userId: currentUserId }));
-    } else {
-      dispatch(likePostAsync({ postId: postInfo._id, userId: currentUserId }));
-    }
-  };
   const handleClose = () => {
     navigate(-1);
   };
 
   const handleFocusCommentInput = () => {
-    if (commentInputRef.current) {
+    if (commentInputRef.current && !isEditing) {
       commentInputRef.current.focus();
     }
   };
 
+  const handleEditPost = () => {
+    setIsEditing(true);
+    setEditContent(postInfo.content || "");
+    updateTaggedUsersFromContent(postInfo.content || "");
+  };
+
+  const handleSaveEdit = () => {
+    const restaurantCount = taggedUsers.filter(user => user.userType === "restaurant").length;
+    if (restaurantCount > 1) {
+      setErrorMessage("You can only tag at most one restaurant in a post.");
+      return;
+    }
+
+    dispatch(updatePostAsync({ postId, content: editContent, taggedUsers })).then((action) => {
+      if (action.meta.requestStatus === "fulfilled") {
+        // Cập nhật postInfo ngay lập tức với nội dung mới
+        const updatedPost = { ...postInfo, content: editContent, taggedUsers };
+        dispatch({
+          type: "posts/updatePost/fulfilled",
+          payload: updatedPost,
+        });
+        setIsEditing(false);
+        setErrorMessage("");
+      }
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(postInfo.content || "");
+    setTaggedUsers(postInfo.taggedUsers || []);
+    setErrorMessage("");
+  };
+
+  const handleAddMention = (id, display) => {
+    const selectedUser = friends.find(friend => friend._id === id);
+    if (selectedUser && !taggedUsers.some(u => u._id === id)) {
+      const newTaggedUsers = [...taggedUsers, selectedUser];
+      setTaggedUsers(newTaggedUsers);
+
+      const restaurantCount = newTaggedUsers.filter(user => user.userType === "restaurant").length;
+      if (restaurantCount > 1) {
+        setErrorMessage("You can only tag at most one restaurant in a post.");
+      } else {
+        setErrorMessage("");
+      }
+    }
+  };
+
+  if (!postInfo._id) {
+    return <Typography>Loading...</Typography>;
+  }
+
   if (!postInfo) {
     return <div>Post not found</div>;
   }
+// Xử lý emoji picker cho bình luận
+const handleOpenEmojiPicker = (event) => {
+  setAnchorEl(event.currentTarget);
+};
 
+const handleCloseEmojiPicker = () => {
+  setAnchorEl(null);
+};
+
+const handleEmojiSelect = (emoji) => {
+  setCommentText((prev) => prev + emoji.native);
+  handleCloseEmojiPicker();
+};
+
+// Xử lý emoji picker cho chỉnh sửa nội dung
+const handleOpenEditEmojiPicker = (event) => {
+  setEditAnchorEl(event.currentTarget);
+};
+
+const handleCloseEditEmojiPicker = () => {
+  setEditAnchorEl(null);
+};
+
+const handleEditEmojiSelect = (emoji) => {
+  setEditContent((prev) => prev + emoji.native);
+  updateTaggedUsersFromContent(editContent + emoji.native);
+  handleCloseEditEmojiPicker();
+};
+
+const openEmojiPicker = Boolean(anchorEl);
+const openEditEmojiPicker = Boolean(editAnchorEl);
+
+  const handleUsernameClick = () => {
+    if (userId) {
+      navigate(`/profile/${userId}`);
+    }
+  };
   return (
     <Box
       sx={{
@@ -205,12 +358,25 @@ function PostDetail({ canDelete }) {
               }}
             >
               <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
-                <Avatar src={user?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
+                <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32 }} />
                 <Typography fontWeight="bold" fontSize={14}>
                   {usernamePost}
                 </Typography>
               </Stack>
-              <MoreHorizIcon sx={{ cursor: "pointer" }} onClick={() => setDialogOpen(true)} />
+              {currentUserId === userId && (
+                isEditing ? (
+                  <IconButton
+                    onClick={handleSaveEdit}
+                    color="primary"
+                  >
+                    <Typography variant="button" sx={{ color: "inherit" }}>
+                      Done
+                    </Typography>
+                  </IconButton>
+                ) : (
+                  <MoreHorizIcon sx={{ cursor: "pointer" }} onClick={() => setDialogOpen(true)} />
+                )
+              )}
             </Stack>
 
             <Stack
@@ -221,32 +387,95 @@ function PostDetail({ canDelete }) {
                 height: "calc(100% - 130px)",
               }}
             >
-              <Stack direction="row" sx={{ gap: 1, mb: 2 }}>
-                <Avatar src={user?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
-                <Stack direction="column">
-                  <Stack direction="row">
-                    <Typography fontWeight="bold" fontSize={14}>
-                      {usernamePost}
+              {isEditing ? (
+                <Stack direction="column" sx={{ gap: 1 }}>
+                  <Typography fontSize={14} sx={{ mb: 2 }}>
+                    Preview: {parseContent(postInfo.content, postInfo.taggedUsers) || ""}
+                  </Typography>
+                  <MentionsInput
+                    value={editContent}
+                    onChange={(e) => {
+                      setEditContent(e.target.value);
+                      updateTaggedUsersFromContent(e.target.value);
+                    }}
+                    style={mentionStyle}
+                    placeholder="Edit your content..."
+                    className="mentions-input"
+                  >
+                    <Mention
+                      trigger="@"
+                      data={mentionUsers}
+                      onAdd={handleAddMention}
+                      markup="@[__display__](__id__)"
+                      displayTransform={(id, display) => `@${display}`}
+                      style={{ backgroundColor: "#d1eaff" }}
+                    />
+                    <Mention
+                      trigger="#"
+                      data={mentionTags}
+                      markup="#[__display__](__id__)"
+                      displayTransform={(id, display) => `#${display}`}
+                      style={{ backgroundColor: "#d1eaff" }}
+                    />
+                  </MentionsInput>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <IconButton onClick={handleOpenEditEmojiPicker} sx={{ color: 'grey.500' }}>
+                      <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
+                    </IconButton>
+                  </Box>
+                  <Popover
+                    open={openEditEmojiPicker}
+                    anchorEl={editAnchorEl}
+                    onClose={handleCloseEditEmojiPicker}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                  >
+                    <Picker data={data} onEmojiSelect={handleEditEmojiSelect} />
+                  </Popover>
+                  {errorMessage && (
+                    <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                      {errorMessage}
                     </Typography>
-                    <Typography fontSize={12} color="text.secondary">
-                      {moment(postInfo.createdAt).fromNow()}
-                    </Typography>
-                  </Stack>
-                  <Typography fontSize={14}>{parseContent(postInfo.content,postInfo.taggedUsers) || ""}</Typography>
+                  )}
                 </Stack>
-              </Stack>
-              {comments.commentList.length > 0 ? (
-                comments.commentList.map((comment) => (
-                  <Comment
-                    key={comment._id}
-                    commentInfo={comment}
-                    replies={comment.replies || []}
-                  />
-                ))
               ) : (
-                <Typography fontSize={14} sx={{ p: 2, textAlign: "center" }}>
-                  No comments yet.
-                </Typography>
+                <Stack direction="column" sx={{ gap: 1 }}>
+                  <Stack direction="row" sx={{ gap: 1, mb: 2 }}>
+                    <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32 }} />
+                    <Stack direction="column">
+                      <Stack direction="row">
+                        <Typography fontWeight="bold" fontSize={14}>
+                          {usernamePost}
+                        </Typography>
+                        <Typography fontSize={12} color="text.secondary">
+                          {moment(postInfo.createdAt).fromNow()}
+                        </Typography>
+                      </Stack>
+                      <Typography fontSize={14}>
+                        {parseContent(postInfo.content, postInfo.taggedUsers) || ""}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                  {comments.commentList.length > 0 ? (
+                    comments.commentList.map((comment) => (
+                      <Comment
+                        key={comment._id}
+                        commentInfo={comment}
+                        replies={comment.replies || []}
+                      />
+                    ))
+                  ) : (
+                    <Typography fontSize={14} sx={{ p: 2, textAlign: "center" }}>
+                      No comments yet.
+                    </Typography>
+                  )}
+                </Stack>
               )}
             </Stack>
 
@@ -260,65 +489,90 @@ function PostDetail({ canDelete }) {
             >
               <Stack direction="row" sx={{ gap: 2, alignItems: "center", mb: 1 }}>
                 <IconButton onClick={handleLike}>
-                  {isLiked ? (
+                  {liked ? (
                     <FavoriteIcon sx={{ fontSize: 24, color: "red" }} />
                   ) : (
                     <FavoriteBorderIcon sx={{ fontSize: 24 }} />
                   )}
                 </IconButton>
-                <IconButton onClick={handleFocusCommentInput}>
+                <IconButton onClick={handleFocusCommentInput} disabled={isEditing}>
                   <ChatBubbleOutlineIcon sx={{ fontSize: 24 }} />
                 </IconButton>
                 <IconButton onClick={handleOpenShareModal}>
                   <SendIcon sx={{ fontSize: 24 }} />
                 </IconButton>
-                <IconButton sx={{ marginLeft: "auto" }}>
-                  <BookmarkBorderIcon sx={{ fontSize: 24 }} />
+                <IconButton onClick={handleSavePost} sx={{ marginLeft: "auto" }}>
+                  {isSaved ? (
+                    <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+                  ) : (
+                    <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                  )}
                 </IconButton>
               </Stack>
 
               <Typography fontSize={14} fontWeight="bold" sx={{ mb: 1 }}>
-                {postInfo.likes?.length || 0} likes
+                {likeCount || 0} likes
               </Typography>
 
-              <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
-                <Avatar src={user?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
-                <TextField
-                  inputRef={commentInputRef}
-                  fullWidth
-                  variant="standard"
-                  placeholder="Add a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  InputProps={{
-                    disableUnderline: true,
-                    style: { fontSize: 14 },
-                  }}
-                  sx={{
-                    "& .MuiInputBase-root": {
-                      padding: "0 8px",
-                    },
-                  }}
-                />
-                <IconButton
-                  onClick={handleCreateComment}
-                  disabled={loading || !commentText.trim()}
-                  sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
-                >
-                  <SendIcon sx={{ fontSize: 20 }} />
-                </IconButton>
-              </Stack>
+              {!isEditing && (
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+                  <IconButton onClick={handleOpenEmojiPicker} sx={{ color: "#rgb(0, 0, 0)" }}>
+                    <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
+                  <TextField
+                    inputRef={commentInputRef}
+                    fullWidth
+                    variant="standard"
+                    placeholder="Add a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    InputProps={{
+                      disableUnderline: true,
+                      style: { fontSize: 14 },
+                    }}
+                    sx={{
+                      "& .MuiInputBase-root": {
+                        padding: "0 8px",
+                      },
+                    }}
+                  />
+                  
+                  <IconButton
+                    onClick={handleCreateComment}
+                    disabled={loading || !commentText.trim()}
+                    sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
+                  >
+                    <SendIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
+                  <Popover
+                    open={openEmojiPicker}
+                    anchorEl={anchorEl}
+                    onClose={handleCloseEmojiPicker}
+                    anchorOrigin={{
+                      vertical: "bottom",
+                      horizontal: "left",
+                    }}
+                    transformOrigin={{
+                      vertical: "top",
+                      horizontal: "left",
+                    }}
+                  >
+                    <Picker data={data} onEmojiSelect={handleEmojiSelect} />
+                  </Popover>
+                </Stack>
+              )}
             </Stack>
           </Stack>
         </Sheet>
       </Box>
-      <ShareModal open={shareModalOpen} onClose={handleCloseShareModal} />
+      <ShareModal postId={postId} open={shareModalOpen} onClose={handleCloseShareModal} />
       <PostOptionsDialog
         user={user}
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         postInfo={postInfo}
-        canDelete={canDelete}
+        onDelete={() => navigate(-1)}
+        onEdit={handleEditPost}
       />
     </Box>
   );
