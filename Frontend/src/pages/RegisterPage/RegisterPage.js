@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { BACKENDURL } from "../../utils/const";
 import { useDispatch } from "react-redux";
 import {
   Box,
@@ -45,7 +46,7 @@ const RegisterPage = () => {
     };
     
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/register", dataToSend);
+      const response = await axios.post(`${BACKENDURL}/api/auth/register`, dataToSend);
       const { token, user } = response.data; // Nhận user đầy đủ từ API
     
       // Lưu vào localStorage

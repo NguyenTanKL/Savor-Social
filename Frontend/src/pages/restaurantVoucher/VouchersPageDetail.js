@@ -19,8 +19,8 @@ import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import { format } from 'date-fns';
-
-const API_URL = "http://localhost:5000/api/vouchers";
+import { BACKENDURL } from "../../utils/const";
+const API_URL = `${BACKENDURL}/api/vouchers`;
 
 function VouchersPageDetail({ voucherType, voucherId, onBack }) {
 

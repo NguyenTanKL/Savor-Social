@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { BACKENDURL } from "../../utils/const";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -22,7 +23,7 @@ function TagPage() {
       setError(null);
       try {
         const response = await axios.post(
-          "http://localhost:5000/api/user/search",
+          `${BACKENDURL}/api/user/search`,
           { tag: tagName },
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

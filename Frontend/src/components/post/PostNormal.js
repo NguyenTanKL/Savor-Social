@@ -16,6 +16,7 @@ import usePostInteractions from "../hooks/usePostInteractions";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import SendIcon from "@mui/icons-material/Send";
+import { BACKENDURL } from "../../utils/const";
 function PostNormal({
   user,
   postID,
@@ -53,7 +54,7 @@ function PostNormal({
   useEffect(() => {
     if (user) {
       axios
-        .get(`http://localhost:5000/api/userRoutes/${user}`)
+        .get(`${BACKENDURL}/api/userRoutes/${user}`)
         .then((res) => {
           setUserData(res.data);
         })

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BACKENDURL } from '../../utils/const';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUser } from '../../redux/Reducer/userSlice';
@@ -110,7 +111,7 @@ function SetupPage() {
       }
 
       // Cập nhật preferences/foodTypes lên server
-      await fetch("http://localhost:5000/api/user/update-user", {
+      await fetch(`${BACKENDURL}/api/user/update-user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

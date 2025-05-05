@@ -4,7 +4,6 @@
 // import Button from '@mui/material/Button';
 // import axios from 'axios';
 
-// const USER_API_URL = "http://localhost:5000/api/user";
 
 // function EditProfilePage({userId}) {
   
@@ -170,8 +169,8 @@ import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import { TextField, Box, Chip, Autocomplete, Typography } from '@mui/material';
 import axios from 'axios';
-
-const USER_API_URL = "http://localhost:5000/api/user";
+import { BACKENDURL } from '../utils/const';
+const USER_API_URL = `${BACKENDURL}/api/user`;
 
 function EditProfilePage({ userId }) {
   const token = localStorage.getItem("token");
@@ -205,7 +204,7 @@ function EditProfilePage({ userId }) {
     });
 
     // Fetch available tags
-    axios.get('http://localhost:5000/api/tags', {
+    axios.get(`${BACKENDURL}/api/tags`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(res => {
       setAvailableTags(res.data.map(tag => tag.toLowerCase().trim()));
@@ -265,7 +264,7 @@ function EditProfilePage({ userId }) {
         // Thêm các tag mới vào database
         const newTags = formData.preferences.filter(tag => !availableTags.includes(tag));
         for (const tag of newTags) {
-          await axios.post('http://localhost:5000/api/tags', { name: tag }, {
+          await axios.post(`${BACKENDURL}/api/tags`, { name: tag }, {
             headers: { Authorization: `Bearer ${token}` },
           });
         }
@@ -274,7 +273,7 @@ function EditProfilePage({ userId }) {
         // Thêm các tag mới vào database
         const newTags = formData.foodTypes.filter(tag => !availableTags.includes(tag));
         for (const tag of newTags) {
-          await axios.post('http://localhost:5000/api/tags', { name: tag }, {
+          await axios.post(`${BACKENDURL}/api/tags`, { name: tag }, {
             headers: { Authorization: `Bearer ${token}` },
           });
         }

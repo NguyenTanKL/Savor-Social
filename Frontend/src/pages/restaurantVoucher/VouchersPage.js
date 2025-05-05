@@ -19,9 +19,9 @@ import { styled } from '@mui/material/styles';
 import "./VouchersPage.css";
 import VouchersPageDetail from "./VouchersPageDetail";
 import axios from "axios";
-
-const VOUCHER_API_URL = "http://localhost:5000/api/vouchers";
-const POST_API_URL = "http://localhost:5000/api/posts";
+import { BACKENDURL } from "../../utils/const";
+const VOUCHER_API_URL = `${BACKENDURL}/api/vouchers`;
+const POST_API_URL = `${BACKENDURL}/api/posts`;
 
 function VouchersPage( {restaurantId}) {
     const userStorage = useSelector(state => state.user.user);

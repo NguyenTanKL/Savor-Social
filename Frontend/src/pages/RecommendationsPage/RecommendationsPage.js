@@ -13,7 +13,7 @@
     CardActions,
     CircularProgress
   } from '@mui/material';
-
+import { BACKENDURL } from '../../utils/const';
   function RecommendationsPage() {
     const user = useSelector((state) => state.user.user);
     console.log("🔍 Redux user state:", user);
@@ -24,7 +24,7 @@
     const [followedAccounts, setFollowedAccounts] = useState(new Set()); // ⚡ Set lưu danh sách đã follow
     const fetchFollowedUsers = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/user/followed", {
+        const response = await fetch(`${BACKENDURL}/api/user/followed`, {
           method: "GET",
           headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
         });
@@ -47,7 +47,7 @@
     useEffect(() => {
       const fetchFollowedUsers = async () => {
         try {
-          const response = await fetch("http://localhost:5000/api/user/followed", {
+          const response = await fetch(`${BACKENDURL}/api/user/followed`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
           });
@@ -87,7 +87,7 @@
     
     const handleFollow = async (accountId) => {
       try {
-        const response = await fetch(`http://localhost:5000/api/user/follow/${accountId}`, {
+        const response = await fetch(`${BACKENDURL}/api/user/follow/${accountId}`, {
           method: "POST",
           headers: { 
             "Authorization": `Bearer ${localStorage.getItem("token")}`,

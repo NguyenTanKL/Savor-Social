@@ -1,8 +1,8 @@
 import axios from "axios";
-
-const API_URL = "http://localhost:5000/api/user";
+import { BACKENDURL } from "../utils/const";
+const API_URL = `${BACKENDURL}/api/user`;
 const api = axios.create({
-  baseURL: "http://localhost:5000/api/user", // Base URL cho các API user
+  baseURL: `${BACKENDURL}/api/user`, // Base URL cho các API user
 });
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
@@ -18,7 +18,7 @@ export const toggleFollow = async (targetUserId, isFollowing) => {
     } else {
         console.log("Không tìm thấy user trong localStorage");
     }
-  await axios.post("http://localhost:5000/api/notifications/create", {
+  await axios.post(`${BACKENDURL}/api/notifications/create`, {
     senderId: userId_,
     receiverId: targetUserId,
     type: "follow",

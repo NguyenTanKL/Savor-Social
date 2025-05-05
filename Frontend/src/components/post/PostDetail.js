@@ -35,7 +35,7 @@ import { MentionsInput, Mention } from "react-mentions";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
-
+import { BACKENDURL } from "../../utils/const";
 // Tái sử dụng style từ CreatePost
 const mentionStyle = {
   control: {
@@ -124,7 +124,7 @@ function PostDetail({ canDelete }) {
 
   useEffect(() => {
     if (userId && userId !== currentUser._id) {
-      fetch(`http://localhost:5000/api/user/get-by-id/${userId}`, {
+      fetch(`${BACKENDURL}/api/user/get-by-id/${userId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

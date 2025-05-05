@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { likePostAsync, unlikePostAsync, getCommentsAsync, createCommentAsync } from "../../redux/Reducer/postSlice";
 import axios from "axios";
-
+import { BACKENDURL } from "../../utils/const";
 function usePostInteractions(postId, initialLikes, currentUserId) {
   const dispatch = useDispatch();
   const [liked, setLiked] = useState(initialLikes?.includes(currentUserId) || false);
@@ -24,7 +24,7 @@ function usePostInteractions(postId, initialLikes, currentUserId) {
   useEffect(() => {
     if (currentUserId && postId) {
       axios
-        .get(`http://localhost:5000/api/user/${currentUserId}/savedPosts`)
+        .get(`${BACKENDURL}/api/user/${currentUserId}/savedPosts`)
         .then((res) => {
           if (res.data.savedPosts.includes(postId)) {
             setIsSaved(true);
@@ -60,7 +60,7 @@ function usePostInteractions(postId, initialLikes, currentUserId) {
   // Xử lý Save/Unsave
   const handleSavePost = async () => {
     try {
-      await axios.put(`http://localhost:5000/api/user/${currentUserId}/savePost/${postId}`, {
+      await axios.put(`${BACKENDURL}/api/user/${currentUserId}/savePost/${postId}`, {
         userId: currentUserId,
         postId,
       });

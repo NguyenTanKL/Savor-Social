@@ -6,7 +6,7 @@ import { getRecommendations } from "../utils/recommendations";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { updateUser } from "../redux/Reducer/userSlice";
-
+import { BACKENDURL } from "../utils/const";
 function Sugesstions() {
   const dispatch = useDispatch();
   const userFromRedux = useSelector((state) => state.user.user) || {};
@@ -26,7 +26,7 @@ function Sugesstions() {
   // Lấy danh sách đã follow từ API
   const fetchFollowedUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/user/followed", {
+      const response = await axios.get(`${BACKENDURL}/api/user/followed`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setFollowedAccounts(new Set(response.data.following));
@@ -66,7 +66,7 @@ function Sugesstions() {
   // Xử lý Follow/Unfollow
   const toggleFollow = async (accountId) => {
     const isFollowing = followedAccounts.has(accountId.toString());
-    const url = `http://localhost:5000/api/user/${isFollowing ? "unfollow" : "follow"}/${accountId}`;
+    const url = `${BACKENDURL}/api/user/${isFollowing ? "unfollow" : "follow"}/${accountId}`;
   
     try {
       const response = await axios({

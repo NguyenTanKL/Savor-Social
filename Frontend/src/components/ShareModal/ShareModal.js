@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { BACKENDURL, FRONTENDURL } from "../../utils/const";
 import {
   Modal,
   Box,
@@ -12,9 +13,9 @@ import "./ShareModal.css";
 import {  useSelector } from "react-redux";
 import axios from "axios";
 import io from "socket.io-client";
-const socket = io("http://localhost:5000");
+const socket = io(BACKENDURL);
 
-const CHAT_API_URL = "http://localhost:5000/api/chats";
+const CHAT_API_URL = `${BACKENDURL}/api/chats`;
 
 const ShareModal = ({ open, onClose, postId }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,7 +28,7 @@ const ShareModal = ({ open, onClose, postId }) => {
 
   const handleSendMessage = async (sender, receiver) => {
       if (!window.confirm("Are you sure you want to share this post?")) return;
-      setNewMessage("http://localhost:3000/sharepost/" + postId);
+      setNewMessage(`${FRONTENDURL}/sharepost/` + postId);
       if (!newMessage.trim()) return;
 
       try {
@@ -70,7 +71,7 @@ const ShareModal = ({ open, onClose, postId }) => {
             throw new Error("Token không tồn tại");
           }
 
-          const response = await fetch(`http://localhost:5000/api/user/following/${currentUser._id}`, {
+          const response = await fetch(`${BACKENDURL}/api/user/following/${currentUser._id}`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`,

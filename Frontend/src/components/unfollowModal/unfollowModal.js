@@ -1,5 +1,6 @@
 import React from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
+import { BACKENDURL } from "../../utils/const";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { updateUser } from "../../redux/Reducer/userSlice";
@@ -11,7 +12,7 @@ const UnfollowDialog = ({ open, handleClose, user, onUnfollowSuccess }) => {
         try {
           const token = localStorage.getItem("token");      
           const response = await axios.delete(
-            `http://localhost:5000/api/user/unfollow/${user._id}`,
+            `${BACKENDURL}/api/user/unfollow/${user._id}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }

@@ -6,8 +6,8 @@ import Post from "../timeline/posts/Post";
 import axios from "axios";
 import Grid from "@mui/material/Grid"
 import Box from "@mui/material/Box"
-
-const POST_API_URL = "http://localhost:5000/api/posts"; // Địa chỉ API của bạn
+import { BACKENDURL } from "../utils/const";
+const POST_API_URL = `${BACKENDURL}/api/posts`; // Địa chỉ API của bạn
 
 function SharePost() {
     const token = localStorage.getItem("token");

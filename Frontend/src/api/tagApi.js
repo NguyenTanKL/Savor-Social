@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Tạo instance của axios với cấu hình mặc định
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api/tags',
+  baseURL: 'https://savor-social-es5s.onrender.com/api/tags',
 });
 // Interceptor để thêm token vào header (sẽ được áp dụng cho tất cả API)
 api.interceptors.request.use(

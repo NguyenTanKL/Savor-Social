@@ -6,25 +6,12 @@ import Post from "./posts/Post";
 import MapUser from "./map/MapUser";
 import axios from "axios";
 import Grid from "@mui/material/Grid"
-import Box from "@mui/material/Box"
+import Box from "@mui/material/Box";
+import { BACKENDURL } from "../utils/const";
 function Timelinepostsaved() {
     
     const [savedPosts, setSavedPosts] = useState([]); // State chứa danh sách bài post đã lưu
     const [selectedPostId, setSelectedPostId] = useState(null);
-    // useEffect(() => {
-    //     const fetchSavedPosts = async () => {
-    //         try {
-    //             const userId = "67b15f306d55edda5de4cde8"; // ID user, có thể lấy từ state hoặc localStorage
-    //             const response = await axios.get(`http://localhost:5000/api/users/${userId}/savedPosts`);
-    //             console.log("Bài post đã lưu:", response.data);
-    //             setSavedPosts(response.data);
-    //         } catch (error) {
-    //             console.error("Lỗi khi lấy bài post đã lưu:", error);
-    //         }
-    //     };
-
-    //     fetchSavedPosts();
-    // }, []);
     const userFromStorage = localStorage.getItem("user");
     let user_
     let userId_
@@ -36,7 +23,7 @@ function Timelinepostsaved() {
         console.log("Không tìm thấy user trong localStorage");
     }
     useEffect(() => {
-        axios.get(`http://localhost:5000/api/user/${userId_}/savedPosts/detail`)
+        axios.get(`${BACKENDURL}/api/user/${userId_}/savedPosts/detail`)
             .then(res => {
                 setSavedPosts(res.data.savedPosts);
                 if (res.data.savedPosts.length > 0) {

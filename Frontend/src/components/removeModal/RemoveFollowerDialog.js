@@ -9,12 +9,13 @@ import Typography from "@mui/material/Typography";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { updateUser } from "../../redux/Reducer/userSlice";
+import { BACKENDURL } from "../../utils/const";
 const RemoveFollowerDialog = ({ open, handleClose, follower, onRemoveSuccess }) => {
     const dispatch = useDispatch();
     const handleRemove = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.delete(`http://localhost:5000/api/user/remove-follower/${follower._id}`, {
+      const response = await axios.delete(`${BACKENDURL}/api/user/remove-follower/${follower._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.status === 200 && response.data) {

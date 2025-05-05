@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import { BACKENDURL } from '../utils/const';
 function RecommendationsPage() {
   const user = useSelector((state) => state.user.user);
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ function RecommendationsPage() {
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
-        const response = await axios.post('http://localhost:5000/api/recommendations', {
+        const response = await axios.post(`${BACKENDURL}/api/recommendations`, {
           address: user.address,
           preferences: user.preferences,
         });
@@ -25,7 +25,7 @@ function RecommendationsPage() {
 
   const handleFollow = async (accountId, type) => {
     try {
-      await axios.post(`http://localhost:5000/api/follow/${accountId}`, {}, {
+      await axios.post(`${BACKENDURL}/api/follow/${accountId}`, {}, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
       });
     } catch (error) {

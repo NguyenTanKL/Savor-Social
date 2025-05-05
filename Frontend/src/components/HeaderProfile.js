@@ -20,7 +20,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { styled } from "@mui/material/styles";
 import { toggleFollow, removeFollower } from "../api/userApi";
 import { updateUser } from "../redux/Reducer/userSlice";
-
+import { BACKENDURL } from "../utils/const";
 function HeaderProfile({ user, userId,  onUserUpdate }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -108,7 +108,7 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
         return;
       }
 
-      const response = await axios.get(`http://localhost:5000/api/user/following/${user._id}`, {
+      const response = await axios.get(`${BACKENDURL}/api/user/following/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -135,7 +135,7 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
         return;
       }
 
-      const response = await axios.get(`http://localhost:5000/api/user/follower/${user._id}`, {
+      const response = await axios.get(`${BACKENDURL}/api/user/follower/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -157,7 +157,7 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
   const checkFollow = async (id) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(`http://localhost:5000/api/user/check-follow/${id}`, {
+      const response = await axios.get(`${BACKENDURL}/api/user/check-follow/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.isFollowing;

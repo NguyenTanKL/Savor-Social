@@ -1,9 +1,10 @@
+import { BACKENDURL } from "./const";
 export const getRecommendations = async (user) => {
   const { address, preferences, following } = user;
   console.log("🔥 Danh sách following nhận từ Reddit:", following);
 
-  const allRestaurants = await fetch('http://localhost:5000/api/user/restaurants').then(res => res.json());
-  const allNormalUsers = await fetch('http://localhost:5000/api/user/normal-users').then(res => res.json());
+  const allRestaurants = await fetch(`${BACKENDURL}/api/user/restaurants`).then(res => res.json());
+  const allNormalUsers = await fetch(`${BACKENDURL}/api/user/normal-users`).then(res => res.json());
 
   // Loại bỏ những người đã follow cho cả hai loại
   const unfollowedNormalUsers = allNormalUsers.filter(normalUser => !following.includes(normalUser._id.toString()));

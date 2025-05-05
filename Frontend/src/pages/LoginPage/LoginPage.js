@@ -5,7 +5,7 @@ import { Box, Button, Container, TextField, Typography, Alert } from "@mui/mater
 import InstagramIcon from "@mui/icons-material/Instagram";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import { BACKENDURL } from "../../utils/const";
 function LoginPage () {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ function LoginPage () {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", loginData);
+      const response = await axios.post(`${BACKENDURL}/api/auth/login`, loginData);
       dispatch(login(response.data.user)); // Dispatch trước
       localStorage.setItem("token", response.data.token);
       console.log("User được lưu vào localStorage:", response.data.user);

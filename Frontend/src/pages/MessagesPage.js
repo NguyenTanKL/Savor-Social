@@ -32,10 +32,11 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import axios from "axios";
 import moment from "moment";
 import io from "socket.io-client";
-const socket = io("http://localhost:5000");
+import { BACKENDURL } from "../utils/const";
+const socket = io(BACKENDURL);
 
-const CHAT_API_URL = "http://localhost:5000/api/chats";
-const USER_API_URL = "http://localhost:5000/api/user";
+const CHAT_API_URL = `${BACKENDURL}/api/chats`;
+const USER_API_URL = `${BACKENDURL}/api/user`;
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
     '& .MuiBadge-badge': {

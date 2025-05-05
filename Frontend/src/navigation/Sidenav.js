@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { BACKENDURL } from "../utils/const";
 import "./Sidenav.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -36,7 +37,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
+      await axios.post(`${BACKENDURL}/api/auth/logout`, {}, { withCredentials: true });
       localStorage.clear();
       dispatch(logout());
       navigate("/login");

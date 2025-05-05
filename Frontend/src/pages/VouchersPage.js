@@ -19,8 +19,8 @@ import HeaderProfile from "../components/HeaderProfile";
 import { styled } from '@mui/material/styles';
 import {QRCodeSVG} from 'qrcode.react';
 import axios from "axios";
-
-const API_USER = "http://localhost:5000/api/user";
+import { BACKENDURL } from "../utils/const";
+const API_USER = `${BACKENDURL}/api/user`;
 
 function VouchersPage( {userId} ) {
     const user = useSelector(state => state.user.user);

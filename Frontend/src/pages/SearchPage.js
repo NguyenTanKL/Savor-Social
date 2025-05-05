@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { BACKENDURL } from "../utils/const";
 import axios from "axios";
 import "./SearchPage.css";
 import SearchIcon from "@mui/icons-material/Search";
@@ -54,7 +55,7 @@ function SearchPage({ onClose }) {
     try {
       console.log("Fetching data with keyword:", normalizedKeyword);
       const response = await axios.post(
-        "http://localhost:5000/api/user/search",
+        `${BACKENDURL}/api/user/search`,
         { query: normalizedKeyword },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

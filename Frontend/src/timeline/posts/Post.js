@@ -28,7 +28,8 @@ import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import PostOptionsDialog from "../../components/post/PostOptionsDialog";
-const VOUCHER_API_URL = "http://localhost:5000/api/vouchers";
+import { BACKENDURL } from "../../utils/const";
+const VOUCHER_API_URL = `${BACKENDURL}/api/vouchers`;
 
 function Post({
   user,
@@ -83,7 +84,7 @@ function Post({
 
   useEffect(() => {
     if (is_voucher) {
-      axios.get(`http://localhost:5000/api/vouchers/voucher_detail/${voucher_id}`)
+      axios.get(`${BACKENDURL}/api/vouchers/voucher_detail/${voucher_id}`)
         .then(res => {
           console.log("Dữ liệu voucher từ API:", res.data);
           setVoucherData(res.data);
@@ -95,7 +96,7 @@ function Post({
   useEffect(() => {
     if (user && currentUserId) {
       // Lấy thông tin user
-      axios.get(`http://localhost:5000/api/userRoutes/${user}`)
+      axios.get(`${BACKENDURL}/api/userRoutes/${user}`)
         .then(res => {
           console.log("Dữ liệu user nhận được:", res.data);
           setUserData(res.data);
@@ -150,7 +151,7 @@ function Post({
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/posts/info/${postID}`, {
+        const response = await axios.get(`${BACKENDURL}/api/posts/info/${postID}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

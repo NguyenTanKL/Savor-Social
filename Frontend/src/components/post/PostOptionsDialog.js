@@ -15,6 +15,7 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const userId = useSelector((state) => state.user.user._id);
+  console.log("PostInfo:0",postInfo);
   const handlePostDelete = async () => {
     try {
       if (!userId) {
@@ -55,7 +56,7 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
   };
   const handleUnfollow = async () => {
     try {
-      const newStatus = await toggleFollow(postInfo.userId, true); // Gọi toggleFollow để unfollow
+      const newStatus = await toggleFollow(user, true); // Gọi toggleFollow để unfollow
       dispatch(updateUser(newStatus.user)); // Cập nhật Redux state
       onClose(); // Đóng modal
     } catch (error) {

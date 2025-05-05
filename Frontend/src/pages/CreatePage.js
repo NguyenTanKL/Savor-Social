@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Select from "react-select";
 import axios from "axios";
 import "./CreatePage.css";
-
+import { BACKENDURL } from "../utils/const";
 function CreatePage() {
     const [content, setContent] = useState("");
     const [images, setImages] = useState([]);
@@ -39,7 +39,7 @@ function CreatePage() {
                 rating
             };
 
-            const response = await axios.post("http://localhost:5000/api/a", postData);
+            const response = await axios.post(`${BACKENDURL}/api/a`, postData);
             alert("Bài viết đã được đăng!");
         } catch (error) {
             console.error("Lỗi đăng bài:", error);
