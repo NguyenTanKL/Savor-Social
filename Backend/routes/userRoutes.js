@@ -1,6 +1,6 @@
 // routes/userRoutes.js
 const express = require("express")
-const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers,checkFollowStatus, removeFollower , getVouchers, removeVoucherFromUser} = require("../controllers/userController.js")
+const { getAllUsers, getRestaurants, getNormalUsers, updateUser,followUser,getFollowedUsers, unfollowUser, getFollowing, searchUser, getUserById, getFollowers,checkFollowStatus, removeFollower , getVouchers, removeVoucherFromUser, getFriends, updatePreferences} = require("../controllers/userController.js")
 const User = require("../models/UserModel"); 
 const userAuth = require("../middlewares/authMiddleware.js")
 const { uploadUser } = require("../config/cloudinary/cloudinaryConfig.js");
@@ -11,6 +11,7 @@ router.get("/", getAllUsers);
 router.get("/restaurants", getRestaurants);
 router.get("/normal-users", getNormalUsers);
 router.put("/update-user", uploadUser.single("image"), userAuth, updateUser);
+router.post("/update-user", userAuth, updateUser);
 router.post("/follow/:id", userAuth, followUser);
 router.get("/followed",userAuth,getFollowedUsers);
 router.delete("/unfollow/:id",userAuth,unfollowUser);
@@ -22,7 +23,8 @@ router.get("/check-follow/:id",userAuth,checkFollowStatus);
 router.delete("/remove-follower/:followerId",userAuth,removeFollower);
 router.get("/vouchers/:userId", getVouchers);
 router.delete('/:userId/voucher/:voucherId', removeVoucherFromUser);
-
+router.get("/friends", userAuth, getFriends);
+router.put('/preferences', userAuth, updatePreferences);
 // API lấy thông tin user theo ID
 router.get("/:userId", async (req, res) => {
     try {

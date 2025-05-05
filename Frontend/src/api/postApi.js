@@ -37,7 +37,8 @@ export const createPost = (formData) =>
   });
 
 export const getPosts = () => api.get('/posts');
-
+export const updatePost = (postId, data) =>
+  api.put(`/posts/${postId}`, data);
 export const deletePost = (postId, userId) =>
   api.request({
     method: "DELETE",
@@ -61,3 +62,7 @@ export const likeComment = (data) =>
   api.post('/posts/likeComment', data);
 export const unlikeComment = (data) => 
   api.post('/posts/unlikeComment', data);
+export const getPostById = (postId) =>
+  api.get(`/posts/info/${postId}`);
+export const getRecommendedPosts = (config) => 
+  api.get('/posts/recommended', config);

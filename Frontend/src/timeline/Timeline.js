@@ -1,85 +1,131 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Sugesstions from "./Sugesstions";
 import "./Timeline.css";
-import "./posts/Post";
 import Post from "./posts/Post";
 import MapUser from "./map/MapUser";
 import { useDispatch, useSelector } from 'react-redux';
-import axios from "axios";
-import { getPostsAsync } from "../redux/Reducer/postSlice";
-import Grid from "@mui/material/Grid"
-import Box from "@mui/material/Box"
+import { getRecommendedPostsAsync, loadMorePosts } from "../redux/Reducer/postSlice";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+
 function Timeline() {
-    const dispatch = useDispatch();
-    useEffect(() => {
-          // Dispatch action để lấy tất cả bài viết
-          dispatch(getPostsAsync())
-            .unwrap()
-            .catch((err) => {
-              console.error("Error fetching posts:", err);
-            });
+  const dispatch = useDispatch();
+  const recommendedPosts = useSelector((state) => state.posts.recommendedPosts || []);
+  const loading = useSelector((state) => state.posts.loading);
+  const error = useSelector((state) => state.posts.error);
+  const page = useSelector((state) => state.posts.page);
+  const hasMore = useSelector((state) => state.posts.hasMore);
 
-      }, [ dispatch]);
-      const posts = useSelector(state => state.posts.posts || []);  console.log("postState:",posts);
-      console.log("TimelinePost:",posts);
-    const [selectedPostId, setSelectedPostId] = useState(null);
-    // Gọi API lấy bài post từ backend
-    // useEffect(() => {
-    //     const fetchPosts = async () => {
-    //         try {
-    //             const response = await axios.get("http://localhost:5000/api/posts"); // Gọi API
-    //             console.log("Dữ liệu từ API:", response.data);
-    //             setPosts(response.data); // Cập nhật state với dữ liệu từ MongoDB
-    //             setSelectedPostId(response.data[0]._id);
-    //         } catch (error) {
-    //             console.error("Lỗi khi lấy bài post:", error);
-    //         }
-    //     };
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const observerRef = useRef(null);
+  const hasLoadedInitial = useRef(false); // Theo dõi lần tải đầu tiên
 
-    //     fetchPosts();
-    // }, []);
+  console.log("recommendedPosts:", recommendedPosts);
+  console.log("Current state:", { page, loading, hasMore });
 
-    return (
-        <Grid container spacing={2}>
-            <Grid item xs={6} md={8}>
-                <div className="timeline__left">
-                    <div className="timeline__title">
-                        <span> What is here?</span>
-                    </div>
-                    <div className="timeline__posts">
-                        {posts.map((post, index) => (
-                            <Post
-                                key={index}
-                                user={post.userId}
-                                postID={post._id}
-                                postComment = {post.comments}
-                                images={post.images || []}
-                                likes={post.likes}
-                                content={post.content}
-                                tags = {post.tags}
-                                taggedUsers={post.taggedUsers}
-                                rating = {post.rating}
-                                address={post.address}
-                                timestamp={post.timestamp}
-                                is_voucher={post.is_voucher}
-                                is_ad={post.is_ad}
-                                isSelected={selectedPostId === post._id} // Chỉ bài post đang chọn có `isSelected = true`
-                                onSelect={() => setSelectedPostId(post._id)}
-                                ad_id={post.ad_id}
-                                voucher_id={post.voucher_id}
-                                
-                            />
-                        ))}
-                    </div>
+  const loadPosts = useCallback(() => {
+    if (loading || !hasMore || hasLoadedInitial.current) return;
+    console.log("Dispatching getRecommendedPostsAsync for page:", page);
+    dispatch(getRecommendedPostsAsync(page));
+    hasLoadedInitial.current = true; // Đánh dấu đã tải lần đầu
+  }, [dispatch, page, loading, hasMore]);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
+
+  const lastPostElementRef = useCallback(
+    (node) => {
+      if (loading || !hasMore) return;
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          console.log("Last post visible, dispatching loadMorePosts for page:", page + 1);
+          dispatch(loadMorePosts());
+        }
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [loading, hasMore, dispatch, page]
+  );
+
+  useEffect(() => {
+    if (recommendedPosts.length > 0 && !selectedPostId) {
+      setSelectedPostId(recommendedPosts[0]._id);
+    }
+  }, [recommendedPosts, selectedPostId]);
+
+  if (error) {
+    return <Typography color="error">Error: {error.message}</Typography>;
+  }
+
+  return (
+    <Grid container spacing={2}>
+      <Grid item xs={6} md={8}>
+        <div className="timeline__left">
+          <div className="timeline__title">
+            <span>What is here?</span>
+          </div>
+          <div className="timeline__posts">
+            {recommendedPosts.map((post, index) => {
+              const isLastElement = recommendedPosts.length === index + 1;
+              return (
+                <div
+                  key={post._id}
+                  ref={isLastElement ? lastPostElementRef : null}
+                >
+                  <Post
+                    user={post.userId._id}
+                    postID={post._id}
+                    postComment={post.comments}
+                    images={post.images || []}
+                    likes={post.likes}
+                    content={post.content}
+                    tags={post.tags}
+                    taggedUsers={post.taggedUsers}
+                    rating={post.rating}
+                    address={post.address}
+                    timestamp={post.createdAt}
+                    is_voucher={post.is_voucher}
+                    is_ad={post.is_ad}
+                    isSelected={selectedPostId === post._id}
+                    onSelect={() => setSelectedPostId(post._id)}
+                    ad_id={post.ad_id}
+                    voucher_id={post.voucher_id}
+                  />
                 </div>
-            </Grid>
-            <Grid item xs={6} md={4}>
-                <div className="timeline__right">
-                    <Sugesstions />
-                    <MapUser selectedPostId={selectedPostId} posts={posts} />
-                </div>
-            </Grid>
-        </Grid>
-    )
+              );
+            })}
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <CircularProgress />
+              </Box>
+            )}
+            {!hasMore && recommendedPosts.length > 0 && (
+              <Typography sx={{ textAlign: 'center', mt: 2, color: 'text.secondary' }}>
+                No more posts to load.
+              </Typography>
+            )}
+            {recommendedPosts.length === 0 && !loading && (
+              <Typography sx={{ textAlign: 'center', mt: 2 }}>
+                No recommended posts available.
+              </Typography>
+            )}
+          </div>
+        </div>
+      </Grid>
+      <Grid item xs={6} md={4}>
+        <div className="timeline__right">
+          <Sugesstions />
+          <MapUser selectedPostId={selectedPostId} posts={recommendedPosts} />
+        </div>
+      </Grid>
+    </Grid>
+  );
 }
-export default Timeline
+
+export default Timeline;

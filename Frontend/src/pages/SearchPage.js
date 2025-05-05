@@ -14,13 +14,16 @@ import {
   Box,
 } from "@mui/material";
 
-function SearchPage() {
+function SearchPage({ onClose }) {
   const navigate = useNavigate();
   const [isFocused, setIsFocused] = useState(false);
   const [searchResults, setSearchResults] = useState({ users: [], tags: [], posts: [] });
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef(null);
+
+  // Debug prop onClose
+  console.log("SearchPage props:", { onClose });
 
   const handleFocus = () => setIsFocused(true);
   const handleBlur = (e) => {
@@ -36,7 +39,12 @@ function SearchPage() {
     const keyword = e.target.value;
     setSearchTerm(keyword);
 
-    if (keyword.trim() === "") {
+    const normalizedKeyword = keyword
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+
+    if (normalizedKeyword === "") {
       setSearchResults({ users: [], tags: [], posts: [] });
       setIsLoading(false);
       return;
@@ -44,10 +52,10 @@ function SearchPage() {
 
     setIsLoading(true);
     try {
-      console.log("Fetching data...");
+      console.log("Fetching data with keyword:", normalizedKeyword);
       const response = await axios.post(
         "http://localhost:5000/api/user/search",
-        { query: keyword },
+        { query: normalizedKeyword },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -62,9 +70,11 @@ function SearchPage() {
   };
 
   const handleTagClick = (tag) => {
+    console.log("Handling tag click:", tag);
     const cleanTag = tag.startsWith("#") ? tag.slice(1) : tag;
-    // Điều hướng sang trang mới với tag
-    navigate(`/explore/${cleanTag}`);
+    const normalizedTag = cleanTag.toLowerCase().replace(/\s/g, "");
+    onClose(); // Đóng SearchPage trước
+    navigate(`/explore/${normalizedTag}`);
   };
 
   const handleClearInput = () => {
@@ -75,10 +85,9 @@ function SearchPage() {
   };
 
   const handleUserClick = (userId) => {
+    console.log("Handling user click:", userId);
+    onClose(); // Đóng SearchPage trước
     navigate(`/profile/${userId}`);
-    setSearchTerm("");
-    setSearchResults({ users: [], tags: [], posts: [] });
-    setIsLoading(false);
   };
 
   const formatPostCount = (count) => {

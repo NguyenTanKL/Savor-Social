@@ -75,7 +75,6 @@ function PostNormal({
       commentInputRef.current.focus();
     }
   };
-console.log("PostNorrmal:");
   return (
     <div className="post">
       <div className="post__header">

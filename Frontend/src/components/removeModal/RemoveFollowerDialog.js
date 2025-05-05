@@ -17,9 +17,7 @@ const RemoveFollowerDialog = ({ open, handleClose, follower, onRemoveSuccess }) 
       const response = await axios.delete(`http://localhost:5000/api/user/remove-follower/${follower._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("xóa",response.data);
       if (response.status === 200 && response.data) {
-        console.log("xóa thành công",response.data);
       onRemoveSuccess(follower._id); // Gọi callback để cập nhật danh sách
       dispatch(updateUser(response.data.user));
       handleClose();}

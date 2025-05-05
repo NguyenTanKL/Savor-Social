@@ -8,7 +8,6 @@ dotenv.config();
 
 const registerUser = async (req, res) => {
   try {
-    console.log("Dữ liệu đăng ký từ client:", req.body);
     const { email, username, password, usertype } = req.body;
 
     if (!email || !password) {
@@ -85,7 +84,6 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    console.log("Dữ liệu đăng nhập nhận từ client:", req.body);
     const { email, password } = req.body;
 
     // Tìm user theo email

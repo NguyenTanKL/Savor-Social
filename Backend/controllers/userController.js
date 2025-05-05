@@ -33,6 +33,35 @@ const getNormalUsers = async (req, res) => {
   }
 };
 
+// const updateUser = async (req, res) => {
+//   try {
+//     const updates = req.body;
+//     // Lấy userId từ middleware userAuth (được gán vào req.user)
+//     const userId = req.user.id;
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+//     }
+//     // Cập nhật các trường nếu có
+//     const imageUrl = req.file ? req.file.path : null;
+//     // if (address !== undefined) user.address = address;
+//     // if (preferences !== undefined) user.preferences = preferences;
+//     // Dynamically update any valid fields
+//     Object.keys(updates).forEach(field => {
+//       if (field !== 'image') {
+//         user[field] = updates[field];
+//       }
+//     });
+
+//     user.avatar = imageUrl;
+    
+//     await user.save();
+//     res.json({ message: 'Cập nhật người dùng thành công', user });
+//   } catch (error) {
+//     console.error('Lỗi khi cập nhật người dùng:', error);
+//     res.status(500).json({ message: 'Lỗi server nội bộ' });
+//   }
+// };
 const updateUser = async (req, res) => {
   try {
     const updates = req.body;
@@ -42,26 +71,39 @@ const updateUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
-    // Cập nhật các trường nếu có
-    const imageUrl = req.file ? req.file.path : null;
-    // if (address !== undefined) user.address = address;
-    // if (preferences !== undefined) user.preferences = preferences;
-    // Dynamically update any valid fields
+
+    // Cập nhật avatar nếu có file upload
+    const imageUrl = req.file ? req.file.path : user.avatar;
+
+    // Tạo đối tượng chứa các trường sẽ cập nhật
+    const updateFields = {};
+
+    // Xử lý các trường trong updates
     Object.keys(updates).forEach(field => {
-      if (field !== 'image') {
-        user[field] = updates[field];
+      if (field === 'preferences' || field === 'foodTypes') {
+        // Parse chuỗi JSON nếu field là preferences hoặc foodTypes
+        try {
+          updateFields[field] = JSON.parse(updates[field]);
+        } catch (error) {
+          throw new Error(`Invalid format for ${field}: ${error.message}`);
+        }
+      } else if (field !== 'image') {
+        // Các trường khác (name, username, bio, v.v.) cập nhật trực tiếp
+        updateFields[field] = updates[field];
       }
     });
 
-    if (imageUrl) {
-      user.avatar = imageUrl;
-    }
-    
+    // Cập nhật avatar
+    updateFields.avatar = imageUrl;
+
+    // Cập nhật user với các trường đã xử lý
+    Object.assign(user, updateFields);
+
     await user.save();
     res.json({ message: 'Cập nhật người dùng thành công', user });
   } catch (error) {
     console.error('Lỗi khi cập nhật người dùng:', error);
-    res.status(500).json({ message: 'Lỗi server nội bộ' });
+    res.status(500).json({ message: 'Lỗi server nội bộ', error: error.message });
   }
 };
 const followUser = async (req, res) => {
@@ -179,9 +221,6 @@ const unfollowUser = async (req, res) => {
 const getFollowing = async (req, res) => {
   try {
     const { userId } = req.params; // Lấy userId từ URL params
-
-    console.log("Lấy danh sách following của user:", userId);
-
     const user = await User.findById(userId).populate("following", "username avatar");
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -196,14 +235,10 @@ const getFollowing = async (req, res) => {
 const getFollowers = async (req, res) => {
   try {
     const { userId } = req.params; // Lấy userId từ URL params
-
-    console.log("Lấy danh sách follower của user:", userId);
-
     const user = await User.findById(userId).populate("followers", "username avatar");
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
-    console.log("follower:", user.followers);
     res.json(user.followers);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách follower:", error);
@@ -211,37 +246,53 @@ const getFollowers = async (req, res) => {
   }
 };
 
-const searchUser = async (req,res) => {
+const searchUser = async (req, res) => {
   try {
     const { query, tag } = req.body;
     const response = {};
 
+    // Chuẩn hóa query: loại bỏ khoảng trắng thừa, chuyển về chữ thường
+    const normalizedQuery = query
+      ? query
+          .trim() // Loại bỏ khoảng trắng đầu/cuối
+          .replace(/\s+/g, " ") // Thay nhiều khoảng trắng bằng 1 khoảng trắng
+          .toLowerCase()
+      : "";
+    const normalizedTag = tag
+      ? tag
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLowerCase()
+      : "";
+
     // Nếu có tag, trả về danh sách bài viết có tag đó
-    if (tag) {
+    if (normalizedTag) {
       const posts = await Post.find({
-        tags: tag.toLowerCase(),
+        tags: normalizedTag, // Tag đã chuẩn hóa
       })
         .populate("userId", "username")
         .limit(20);
       return res.json({ posts });
     }
 
-    // Nếu không có tag, trả về danh sách user và tag liên quan
-    if (!query) {
+    // Nếu không có query, trả về kết quả rỗng
+    if (!normalizedQuery) {
       return res.json({ users: [], tags: [], posts: [] });
     }
 
     // Tìm kiếm tất cả user (bao gồm cả normal và restaurant)
     const users = await User.find({
-      username: { $regex: query, $options: "i" },
+      username: { $regex: normalizedQuery.replace(/\s/g, ""), $options: "i" }, // Bỏ khoảng trắng trong username
     })
       .select("username accountType")
       .limit(5);
 
     // Tìm kiếm tag liên quan và số lượng bài viết
-    const tagQuery = query.startsWith("#") ? query.slice(1) : query;
+    const tagQuery = normalizedQuery.startsWith("#")
+      ? normalizedQuery.slice(1)
+      : normalizedQuery;
     const postsWithTags = await Post.find({
-      tags: { $in: [new RegExp(tagQuery, "i")] },
+      tags: { $in: [new RegExp(tagQuery.replace(/\s/g, ""), "i")] }, // Bỏ khoảng trắng trong tag
     });
 
     // Tạo danh sách tag kèm số lượng bài viết
@@ -249,7 +300,7 @@ const searchUser = async (req,res) => {
     postsWithTags.forEach((post) => {
       post.tags.forEach((t) => {
         const normalizedTag = t.toLowerCase();
-        if (normalizedTag.includes(tagQuery.toLowerCase())) {
+        if (normalizedTag.includes(tagQuery.replace(/\s/g, ""))) {
           tagCounts[normalizedTag] = (tagCounts[normalizedTag] || 0) + 1;
         }
       });
@@ -263,8 +314,8 @@ const searchUser = async (req,res) => {
     // Tìm kiếm bài post (theo content hoặc tags)
     const posts = await Post.find({
       $or: [
-        { content: { $regex: query, $options: "i" } },
-        { tags: { $in: [new RegExp(query, "i")] } },
+        { content: { $regex: normalizedQuery.replace(/\s/g, ""), $options: "i" } }, // Bỏ khoảng trắng trong content
+        { tags: { $in: [new RegExp(normalizedQuery.replace(/\s/g, ""), "i")] } }, // Bỏ khoảng trắng trong tag
       ],
     })
       .populate("userId", "username")
@@ -286,10 +337,10 @@ const getUserById = async(req,res) => {
     .select("-password")
     .populate("followers", "username avatar ")
     .populate("following", "username avatar")
+    .populate('savedPosts', 'userId content images tags taggedUsers createdAt likes');
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    console.log("userbyId:",user);
     res.status(200).json(user);
 
   }
@@ -420,6 +471,43 @@ const removeVoucherFromUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+const getFriends = async (req, res) => {
+  try {
+    const userId = req.user.id; // Giả sử bạn có middleware để lấy userId từ token
+    const user = await User.findById(userId)
+      .select("following followers")
+      .populate("following", "username _id usertype profileUrl")
+      .populate("followers", "username _id usertype profileUrl");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const friends = [...new Set([...(user.following || []), ...(user.followers || [])])];
+    res.status(200).json(friends);
+  } catch (error) {
+    console.error("Error fetching friends:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+const updatePreferences = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { preferences } = req.body;
+
+    if (!Array.isArray(preferences)) {
+      return res.status(400).json({ message: "Preferences must be an array" });
+    }
+
+    // Chuẩn hóa preferences
+    const normalizedPreferences = preferences.map(tag => tag.toLowerCase().trim());
+
+    await User.findByIdAndUpdate(userId, { preferences: normalizedPreferences }, { new: true });
+    res.status(200).json({ message: "Preferences updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update preferences", error: error.message });
+  }
+};
 module.exports = {
   getAllUsers,
   getRestaurants,
@@ -436,4 +524,6 @@ module.exports = {
   removeFollower,
   getVouchers,
   removeVoucherFromUser,
+  getFriends,
+  updatePreferences,
 };

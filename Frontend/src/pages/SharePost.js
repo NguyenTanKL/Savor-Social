@@ -18,11 +18,12 @@ function SharePost() {
     useEffect(() => {
         const fetchPost = async () => {
             try {
-                const response = await axios.get(`${POST_API_URL}/get/${postId}`, {
+                const response = await axios.get(`${POST_API_URL}/info/${postId}`, {
                     headers: {
                       Authorization: `Bearer ${token}`
                     }
                   });
+                  console.log("fetchPosst:",response.data)
                 setPost(response.data);
             } catch (error) {
                 console.error("Error fetching messages:", error);
@@ -31,7 +32,6 @@ function SharePost() {
         
         fetchPost();
     }, [postId]); // Chỉ gọi lại khi postId thay đổi
-    console.log("Dữ liệu từ API:", post);
 
     if (!post) {
         return <div>Loading...</div>;  // Display loading if post is not yet available

@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import "./Sidenav.css";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/Reducer/userSlice";
-import { useSelector } from "react-redux";
 import CreatePost from "../pages/createPost/CreatePage";
 import {
   HomeOutlined,
@@ -25,7 +24,8 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [open,setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -37,8 +37,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
   const handleLogout = async () => {
     try {
       await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
-      // Xóa toàn bộ localStorage
-      localStorage.clear(); // Thay vì chỉ xóa token
+      localStorage.clear();
       dispatch(logout());
       navigate("/login");
     } catch (error) {
@@ -47,45 +46,57 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
     }
     handleCloseMenu();
   };
+
   const handleOpenCreatePost = () => {
     setOpen(true);
   };
 
-  // Hàm đóng dialog CreatePost
   const handleCloseCreatePost = () => {
     setOpen(false);
   };
+
+  // Debug onSearchClick và onCloseSearch
+  const handleSearchClick = () => {
+    console.log("Search button clicked, calling onSearchClick");
+    onSearchClick();
+  };
+
+  const handleNavLinkClick = () => {
+    console.log("NavLink clicked, calling onCloseSearch");
+    onCloseSearch();
+  };
+
   return (
     <div className="sidenav">
       <div className="sidenav__logo">
         <span>Savor Social</span>
       </div>
       <div className="sidenav__buttons">
-        <NavLink to="/home" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/home" className="sidenav__button" onClick={handleNavLinkClick}>
           <HomeOutlined />
           <span>Home</span>
         </NavLink>
-        <div className="sidenav__button" onClick={onSearchClick}>
+        <div className="sidenav__button" onClick={handleSearchClick}>
           <Search />
           <span>Search</span>
         </div>
-        <NavLink to="/favouriteMap" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/favouriteMap" className="sidenav__button" onClick={handleNavLinkClick}>
           <FmdGoodOutlined />
           <span>Favourite Map</span>
         </NavLink>
-        <NavLink to="/savedPosts" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/savedPosts" className="sidenav__button" onClick={handleNavLinkClick}>
           <BookmarkBorderOutlined />
           <span>Saved Posts</span>
         </NavLink>
-        <NavLink to="/vouchers" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/vouchers" className="sidenav__button" onClick={handleNavLinkClick}>
           <LoyaltyOutlined />
           <span>Vouchers</span>
         </NavLink>
-        <NavLink to="/messages" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/messages" className="sidenav__button" onClick={handleNavLinkClick}>
           <ChatBubbleOutlineOutlined />
           <span>Messages</span>
         </NavLink>
-        <NavLink to="/notifications" className="sidenav__button" onClick={onCloseSearch}>
+        <NavLink to="/notifications" className="sidenav__button" onClick={handleNavLinkClick}>
           <NotificationsNoneOutlined />
           <span>Notifications</span>
         </NavLink>
@@ -93,8 +104,8 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
           <AddBoxOutlined />
           <span>Create</span>
         </div>
-        <NavLink to= {`/profile/${userId._id}`} className="sidenav__button" onClick={onCloseSearch}>
-          <Avatar src={userId.avatar} alt={userId.username} />
+        <NavLink to={`/profile/${userId._id}`} className="sidenav__button" onClick={handleNavLinkClick}>
+          <Avatar />
           <span>Profile</span>
         </NavLink>
       </div>

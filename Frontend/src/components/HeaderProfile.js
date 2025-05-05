@@ -25,6 +25,9 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const userStorage = useSelector((state) => state.user.user) || {};
+  const userPosts = useSelector((state) => state.posts.posts).filter((post) => {
+    if (user) return post.userId == user._id;
+  });
   const [followingList, setFollowingList] = useState([]);
   const [followerList, setFollowerList] = useState([]);
   const [openFollowing, setOpenFollowing] = useState(false);
@@ -55,7 +58,6 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
   const filteredFollower = followerList.filter((user) =>
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
-console.log("filteredFollower:",filteredFollower.length);
   const handleEditProfile = () => {
     navigate("/editProfile");
   };
@@ -219,7 +221,7 @@ console.log("filteredFollower:",filteredFollower.length);
 
   // Xác định xem đây có phải là profile của user đang đăng nhập không
   const isOwnProfile = userId === userStorage._id;
-
+  const isRestaurant =  user.usertype === "restaurant";
   return (
     <div className="header__profile">
       <div className="header__left">
@@ -248,7 +250,12 @@ console.log("filteredFollower:",filteredFollower.length);
         </div>
         <div className="header__2">
           <div className="header2__content">
-            <span>1 </span> post
+            <span>{userPosts.length} </span> posts
+          </div>
+          <div className="header2__content">
+          {
+            isRestaurant ? (<><span>{user.avgRating}/5 </span>rating</>) : (<><span>{user.point} </span>point</>)
+          }
           </div>
           <div className="header2__content" onClick={handleShowFollower} style={{ cursor: "pointer" }}>
             <span>{user.followerCount} </span> followers
@@ -256,6 +263,7 @@ console.log("filteredFollower:",filteredFollower.length);
           <div className="header2__content" onClick={handleShowFollowing} style={{ cursor: "pointer" }}>
             <span>{user.followingCount}</span> following
           </div>
+          
         </div>
         <div className="header__3">
           <div className="header2__content">

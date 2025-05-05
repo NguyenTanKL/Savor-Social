@@ -53,7 +53,6 @@ function ModalPost( {open, onClose, user, postImage, likes, caption, address, ti
       const handleMenuClose = () => {
         setAnchorEl(null);
     };
-    console.log("User data2:", user);
     return(
         <div>
             <Modal

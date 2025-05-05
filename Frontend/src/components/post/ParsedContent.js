@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'; // Giả sử bạn dùng react-router 
 const parseContent = (content, taggedUsers) => {
   // Nếu không có nội dung, trả về chuỗi rỗng
   if (!content) return '';
-
   // Tạo một map từ userId sang username để tra cứu nhanh
   const userMap = taggedUsers.reduce((map, user) => {
     map[user._id] = user.username;
