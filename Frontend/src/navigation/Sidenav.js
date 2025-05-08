@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { BACKENDURL } from "../utils/const";
 import "./Sidenav.css";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useAsyncError, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/Reducer/userSlice";
 import CreatePost from "../pages/createPost/CreatePage";
+import NotificationDrawer from "../pages/NotificationDrawer";
 import {
   HomeOutlined,
   Search,
@@ -26,7 +27,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
-
+  const [openNotification, setOpenNotification] = useState(false);  
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -55,7 +56,12 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
   const handleCloseCreatePost = () => {
     setOpen(false);
   };
-
+  const handleOpenNotification = () => {
+    setOpenNotification(true);
+  }
+  const handleCloseNotification = () => {
+    setOpenNotification(false);
+  }
   // Debug onSearchClick và onCloseSearch
   const handleSearchClick = () => {
     console.log("Search button clicked, calling onSearchClick");
@@ -97,10 +103,10 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
           <ChatBubbleOutlineOutlined />
           <span>Messages</span>
         </NavLink>
-        <NavLink to="/notifications" className="sidenav__button" onClick={handleNavLinkClick}>
+        <div className="sidenav__button" onClick={handleOpenNotification}>
           <NotificationsNoneOutlined />
           <span>Notifications</span>
-        </NavLink>
+        </div>
         <div className="sidenav__button" onClick={handleOpenCreatePost}>
           <AddBoxOutlined />
           <span>Create</span>
@@ -131,6 +137,7 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
         </Box>
       </Popover>
       <CreatePost open={open} onClose={handleCloseCreatePost} />
+      <NotificationDrawer open={openNotification} onClose={handleCloseNotification} />
     </div>
   );
 }

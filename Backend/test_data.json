@@ -1,0 +1,30 @@
+{
+  "posts": [
+    {
+      "_id": "68187c0dca96462747390574",
+      "userId": "6811cc62d355a25ad2dd503d",
+      "content": "si u ngon DangFF [phở][phở]",
+      "tags": ["phở", "ẩm thực"]
+    },
+    {
+      "_id": "68187c0dca96462747390575",
+      "userId": "681a03e8d066851427540b0c",
+      "content": "Phở gà thơm lừng [phở gà][phở gà]",
+      "tags": ["phở gà", "miền bắc"]
+    },
+    {
+      "_id": "68187c0dca96462747390576",
+      "userId": "other_user_id",
+      "content": "Pizza ngon tuyệt",
+      "tags": ["pizza", "tây"]
+    },
+    {
+      "_id": "68187c0dca96462747390577",
+      "userId": "random_user_id",
+      "content": "Bún bò Huế cay nồng",
+      "tags": ["bún bò", "huế"]
+    }
+  ],
+  "user_document": "phở bún bò",
+  "following": ["6811cc62d355a25ad2dd503d", "other_user_id"]
+}

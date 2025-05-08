@@ -1,229 +1,142 @@
-// import React from "react";
-// import { ListItem, ListItemAvatar, Avatar, ListItemText, Button } from "@mui/material";
-// import "./NotificationItem.css";
-
-// function NotificationItem({ user, action, time, type, avatar, following }) {
-//   const renderActionButton = () => {
-//     if (type === "follow") {
-//       return following ? (
-//         <Button variant="outlined" size="small" className="follow-btn">
-//           Following
-//         </Button>
-//       ) : (
-//         <Button variant="contained" size="small" className="follow-btn">
-//           Follow
-//         </Button>
-//       );
-//     }
-//     return null;
-//   };
-
-//   return (
-//     <ListItem className="notification-item">
-//       <ListItemAvatar>
-//         <Avatar src={avatar} />
-//       </ListItemAvatar>
-//       <ListItemText
-//         primary={`${user} ${action}`}
-//         secondary={time}
-//       />
-//       {renderActionButton()}
-//     </ListItem>
-//   );
-// }
-
-// export default NotificationItem;
-
-
-// import React from "react";
-// import { ListItem, ListItemAvatar, Avatar, ListItemText, Button } from "@mui/material";
-// import "./NotificationItem.css";
-
-// function NotificationItem({
-//   key,
-//   username,
-//   avatar,
-//   type,
-//   time,
-//   posstImage,
-//   isRead
-// }) {
-//   // Format time
-//   const formattedTime = new Date(createdAt).toLocaleString();
-
-//   // Render action based on notification type
-//   const renderActionText = () => {
-//     switch (type) {
-//       case "like":
-//         return "liked your post";
-//       case "comment":
-//         return "commented on your post";
-//       case "follow":
-//         return "started following you";
-//       default:
-//         return "";
-//     }
-//   };
-
-//   const renderActionButton = () => {
-//     if (type === "follow") {
-//       return (
-//         <Button variant="outlined" size="small" className="follow-btn">
-//           Following
-//         </Button>
-//       );
-//     }
-//     return null;
-//   };
-
-//   return (
-//     <ListItem className="notification-item">
-//       <ListItemAvatar>
-//         <Avatar src={avatarSender} />
-//       </ListItemAvatar>
-//       <ListItemText
-//         primary={`${senderId.username} ${renderActionText()}`}
-//         secondary={formattedTime}
-//       />
-//       {type === "like" && imgPost && (
-//         <img
-//           src={imgPost}
-//           alt="Post image"
-//           style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "5px" }}
-//         />
-//       )}
-//       {renderActionButton()}
-//     </ListItem>
-//   );
-// }
-
-// export default NotificationItem;
-
-
-// import React from "react";
-// import { ListItem, ListItemAvatar, Avatar, ListItemText, Button } from "@mui/material";
-// import "./NotificationItem.css";
-
-// function NotificationItem({
-//   username,
-//   avatar,
-//   type,
-//   time,
-//   postImage,
-//   isRead,
-//   following
-// }) {
-//   // Format time
-//   const formattedTime = new Date(time).toLocaleString();
-
-//   // Render action text
-//   const renderActionText = () => {
-//     switch (type) {
-//       case "like":
-//         return "liked your post";
-//       case "comment":
-//         return "commented on your post";
-//       case "follow":
-//         return "started following you";
-//       default:
-//         return "did something";
-//     }
-//   };
-
-//   // Optional follow button
-//   const renderActionButton = () => {
-//     if (type === "follow") {
-//       return following ? (
-//         <Button variant="outlined" size="small" className="follow-btn">
-//           Following
-//         </Button>
-//       ) : (
-//         <Button variant="contained" size="small" className="follow-btn">
-//           Follow
-//         </Button>
-//       );
-//     }
-//     return null;
-//   };
-
-//   return (
-//     <ListItem className={`notification-item ${isRead ? "read" : "unread"}`}>
-//       <ListItemAvatar>
-//         <Avatar src={avatar} />
-//       </ListItemAvatar>
-//       <ListItemText
-//         primary={`${username} ${renderActionText()}`}
-//         secondary={formattedTime}
-//       />
-//       {type === "like" && postImage && (
-//         <img
-//           src={postImage}
-//           alt="Post"
-//           style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "5px" }}
-//         />
-//       )}
-//       {renderActionButton()}
-//     </ListItem>
-//   );
-// }
-
-// export default NotificationItem;
-
-
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { ListItem, ListItemAvatar, Avatar, ListItemText, Button } from "@mui/material";
+import { FaHeart, FaComment, FaUserPlus, FaTag, FaReply } from "react-icons/fa";
+import { checkFollow, toggleFollow } from "../api/userApi";
+import { updateUser } from "../redux/Reducer/userSlice";
 import "./NotificationItem.css";
 
 function NotificationItem({
   id,
-  username,
+  message,
   avatar,
+  username,
+  senderId,
   type,
   time,
   postImage,
   isRead,
+  hasPost,
+  onClick,
   onMarkAsRead,
 }) {
-  const formattedTime = new Date(time).toLocaleString();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [loadingFollow, setLoadingFollow] = useState(false);
 
-  const renderActionText = () => {
+  useEffect(() => {
+    if (type === "follow" && senderId) {
+      const fetchFollowStatus = async () => {
+        const status = await checkFollow(senderId);
+        setIsFollowing(status);
+      };
+      fetchFollowStatus();
+    }
+  }, [type, senderId]);
+
+  const getIcon = () => {
     switch (type) {
-      case "like": return "liked your post";
-      case "comment": return "commented on your post";
-      case "mention": return "mentioned you in a comment";
-      case "follow": return "started following you";
-      default: return "did something";
+      case "follow":
+        return <FaUserPlus className="notification__icon" />;
+      case "tag":
+        return <FaTag className="notification__icon" />;
+      case "like":
+        return <FaHeart className="notification__icon" />;
+      case "comment":
+        return <FaComment className="notification__icon" />;
+      case "reply":
+        return <FaReply className="notification__icon" />;
+      default:
+        return null;
+    }
+  };
+
+  const handleProfileClick = (e) => {
+    e.stopPropagation();
+    if (senderId) {
+      navigate(`/profile/${senderId}`);
+      if (!isRead) {
+        onMarkAsRead(id);
+      }
+    }
+  };
+
+  const handleItemClick = (e) => {
+    if (hasPost && onClick) {
+      if (!isRead) {
+        onMarkAsRead(id);
+      }
+      onClick(e);
+    }
+  };
+
+  const handleToggleFollow = async (e) => {
+    e.stopPropagation();
+    if (senderId) {
+      setLoadingFollow(true);
+      try {
+        await toggleFollow(senderId, isFollowing);
+        setIsFollowing(!isFollowing);
+        const user = JSON.parse(localStorage.getItem("user"));
+        const updatedFollowing = isFollowing
+          ? user.following.filter((id) => id !== senderId)
+          : [...user.following, senderId];
+        dispatch(updateUser({ ...user, following: updatedFollowing }));
+        localStorage.setItem("user", JSON.stringify({ ...user, following: updatedFollowing }));
+      } catch (error) {
+        console.error("Lỗi khi toggle follow:", error);
+      } finally {
+        setLoadingFollow(false);
+      }
     }
   };
 
   return (
-    <ListItem className={`notification-item ${isRead ? "read" : "unread"}`}>
+    <ListItem
+      className={`notification-item ${isRead ? "read" : "unread"} ${hasPost ? "clickable" : ""}`}
+      onClick={handleItemClick}
+      sx={{ padding: "10px", borderRadius: "8px" }}
+    >
       <ListItemAvatar>
-        <Avatar src={avatar} />
+        <Avatar
+          src={avatar}
+          alt="Avatar"
+          sx={{ width: 40, height: 40, cursor: "pointer" }}
+          onClick={handleProfileClick}
+        />
       </ListItemAvatar>
       <ListItemText
         primary={
-          <span className={isRead ? "read-text" : "unread-text"}>
-            <strong>{username}</strong> {renderActionText()}
-          </span>
+          <div className="notification__header">
+            {getIcon()}
+            <span
+              className="notification__username"
+              onClick={handleProfileClick}
+              style={{ cursor: "pointer" }}
+            >
+              {username || "Người dùng"}
+            </span>
+            <span className={isRead ? "read-text" : "unread-text"} style={{fontSize:"14px"}}> {message}</span>
+          </div>
         }
-        secondary={formattedTime}
+        secondary={time}
+        sx={{ marginRight: postImage || type === "follow" ? "60px" : "0" }}
       />
-      {type === "like" && postImage && (
-        <img
-          src={postImage}
-          alt="Post"
-          className="notification-image"
-        />
+      {postImage && (
+        <img src={postImage} alt="Post" className="notification-image" />
       )}
-      {!isRead && (
+      {type === "follow" && (
         <Button
-          variant="text"
+          variant={isFollowing ? "outlined" : "contained"}
           size="small"
-          className="mark-read-btn"
-          onClick={() => onMarkAsRead(id)}
+          className="follow-btn"
+          onClick={handleToggleFollow}
+          disabled={loadingFollow}
+          sx={{ position: "absolute", right: "10px" }}
         >
-          Mark as Read
+          {isFollowing ? "Following" : "Follow"}
         </Button>
       )}
     </ListItem>

@@ -1,9 +1,9 @@
 // src/api/postApi.js
 import axios from 'axios';
-
+import { BACKENDURL } from '../utils/const';
 // Tạo instance của axios với cấu hình mặc định
 const api = axios.create({
-  baseURL: 'https://savor-social-es5s.onrender.com/api',
+  baseURL: `${BACKENDURL}/api`,
 });
 
 // Interceptor để thêm token vào header (sẽ được áp dụng cho tất cả API)
@@ -65,4 +65,4 @@ export const unlikeComment = (data) =>
 export const getPostById = (postId) =>
   api.get(`/posts/info/${postId}`);
 export const getRecommendedPosts = (config) => 
-  api.get('/posts/recommended', config);
+  api.get('/posts/recommend', config);

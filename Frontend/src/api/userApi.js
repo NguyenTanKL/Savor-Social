@@ -18,13 +18,7 @@ export const toggleFollow = async (targetUserId, isFollowing) => {
     } else {
         console.log("Không tìm thấy user trong localStorage");
     }
-  await axios.post(`${BACKENDURL}/api/notifications/create`, {
-    senderId: userId_,
-    receiverId: targetUserId,
-    type: "follow",
-    postId: null,
-    createdAt: new Date()
-  });
+  
   const url = `${API_URL}/${isFollowing ? "unfollow" : "follow"}/${targetUserId}`;
   try {
     const response = await axios({

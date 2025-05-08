@@ -118,5 +118,5 @@ router.get("/:postId/rating/average", userAuth, getAverageRating);
 // router.post("/:postId/rating",userAuth, userRatingPost);
 
 router.get("/getPostBytag",userAuth,getByTag);
-router.get('/recommended', userAuth,getRecommendedPosts);
+router.get('/recommend', userAuth,getRecommendedPosts);
 module.exports =  router;

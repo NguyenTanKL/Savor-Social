@@ -70,6 +70,7 @@ const UserSchema = new mongoose.Schema({
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Danh sách user follow người này
     followerCount: { type: Number, default: 0 }, // Thêm trường followerCount
     followingCount: { type: Number, default: 0 }, // Thêm trường followingCount
+    likedPosts: [{ type: String, ref: 'Post' }],
     savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // Thêm danh sách bài post đã lưu
     point: {
         type: Number,

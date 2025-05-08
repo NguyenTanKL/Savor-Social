@@ -1,8 +1,8 @@
 import axios from 'axios';
-
+import { BACKENDURL } from '../utils/const';
 // Tạo instance của axios với cấu hình mặc định
 const api = axios.create({
-  baseURL: 'https://savor-social-es5s.onrender.com/api/tags',
+  baseURL: `${BACKENDURL}/api/tags`,
 });
 // Interceptor để thêm token vào header (sẽ được áp dụng cho tất cả API)
 api.interceptors.request.use(

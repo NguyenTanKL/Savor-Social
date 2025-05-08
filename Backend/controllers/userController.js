@@ -1,8 +1,6 @@
 // controllers/userController.js
-const userAuth = require("../middlewares/authMiddleware");
 const User = require("../models/UserModel");
-const cloudinary = require("../config/cloudinary/cloudinaryConfig").cloudinary;
-
+const Notification = require("../models/NotificationModel");
 
 const Post = require("../models/PostModel");
 const getAllUsers = async (req, res) => {
@@ -65,45 +63,84 @@ const getNormalUsers = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const updates = req.body;
-    // Lấy userId từ middleware userAuth (được gán vào req.user)
-    const userId = req.user.id;
+    const userId = req.user.id; // Từ middleware auth
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    // Cập nhật avatar nếu có file upload
-    const imageUrl = req.file ? req.file.path : user.avatar;
+    // Xử lý avatar nếu có file upload
+    let imageUrl = user.avatar;
+    if (req.file) {
+      if (!["image/jpeg", "image/png", "image/gif"].includes(req.file.mimetype)) {
+        throw new Error("Avatar phải là file JPEG, PNG hoặc GIF");
+      }
+      imageUrl = req.file.path;
+    }
 
     // Tạo đối tượng chứa các trường sẽ cập nhật
     const updateFields = {};
 
     // Xử lý các trường trong updates
-    Object.keys(updates).forEach(field => {
-      if (field === 'preferences' || field === 'foodTypes') {
-        // Parse chuỗi JSON nếu field là preferences hoặc foodTypes
-        try {
-          updateFields[field] = JSON.parse(updates[field]);
-        } catch (error) {
-          throw new Error(`Invalid format for ${field}: ${error.message}`);
+    for (const field of Object.keys(updates)) {
+      if (field === "preferences" || field === "foodTypes") {
+        let parsedValues;
+        const value = updates[field];
+        if (Array.isArray(value)) {
+          parsedValues = value
+            .map((item) => item?.toString().trim())
+            .filter((item) => item);
+        } else if (typeof value === "string") {
+          parsedValues = value
+            .split(",")
+            .map((item) => item.trim())
+            .filter((item) => item);
+        } else {
+          throw new Error(`${field} phải là mảng hoặc chuỗi phân tách bằng dấu phẩy`);
         }
-      } else if (field !== 'image') {
-        // Các trường khác (name, username, bio, v.v.) cập nhật trực tiếp
-        updateFields[field] = updates[field];
+        if (parsedValues.length === 0) {
+          throw new Error(`${field} không được rỗng`);
+        }
+        updateFields[field] = parsedValues;
+      } else if (field === "address") {
+        if (typeof updates[field] !== "string" || updates[field].trim().length === 0) {
+          throw new Error("Address phải là chuỗi không rỗng");
+        }
+        updateFields[field] = updates[field].trim();
+      } else if (field === "username") {
+        if (typeof updates[field] !== "string" || updates[field].trim().length < 3) {
+          throw new Error("Username phải là chuỗi ít nhất 3 ký tự");
+        }
+        updateFields[field] = updates[field].trim();
+      } else if (field === "bio") {
+        if (typeof updates[field] !== "string") {
+          throw new Error("Bio phải là chuỗi");
+        }
+        updateFields[field] = updates[field].trim();
+      } else if (field !== "image") {
+        updateFields[field] = updates[field]; // Các trường khác
       }
-    });
+    }
 
     // Cập nhật avatar
     updateFields.avatar = imageUrl;
 
-    // Cập nhật user với các trường đã xử lý
-    Object.assign(user, updateFields);
+    // Cập nhật user với findByIdAndUpdate
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    ).select("-password");
 
-    await user.save();
-    res.json({ message: 'Cập nhật người dùng thành công', user });
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    console.log(`User updated: ${userId}`, updateFields);
+    res.json({ message: "Cập nhật người dùng thành công", user: updatedUser });
   } catch (error) {
-    console.error('Lỗi khi cập nhật người dùng:', error);
-    res.status(500).json({ message: 'Lỗi server nội bộ', error: error.message });
+    console.error(`Lỗi khi cập nhật người dùng ${req.user?.id}:`, error.message, { body: req.body, file: req.file });
+    res.status(500).json({ message: "Lỗi server nội bộ", error: error.message });
   }
 };
 const followUser = async (req, res) => {
@@ -125,19 +162,40 @@ const followUser = async (req, res) => {
     if (!user || !followUser) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
-
+    let updated = false;
     if (!user.following.includes(followId)) {
       user.following.push(followId);
       user.followingCount = user.following.length;
       await user.save();
+      updated = true;
     }
 
     if (!followUser.followers.includes(userId)) {
       followUser.followers.push(userId);
       followUser.followerCount = followUser.followers.length;
       await followUser.save();
+      updated = true;
     }
+    // Gửi thông báo nếu đã cập nhật (tức là follow mới)
+    if (updated) {
+      const existingNotification = await Notification.findOne({
+        senderId: userId,
+        receiverId: followId,
+        type: "follow",
+        isRead: false,
+      });
 
+      if (!existingNotification) {
+        const notification = new Notification({
+          senderId: userId,
+          receiverId: followId,
+          type: "follow",
+          message: `đã follow bạn`,
+        });
+        await notification.save();
+        console.log(`Tạo thông báo follow: ${userId} -> ${followId}`);
+      }
+    }
     res.json({
       message: "Follow thành công",
       isFollowing: true, // Trả về trạng thái follow
