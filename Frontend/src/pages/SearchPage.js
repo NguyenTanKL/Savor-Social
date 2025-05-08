@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { BACKENDURL } from "../utils/const";
 import axios from "axios";
 import "./SearchPage.css";
@@ -13,9 +13,10 @@ import {
   ListItemText,
   CircularProgress,
   Box,
+  Drawer,
 } from "@mui/material";
 
-function SearchPage({ onClose }) {
+function SearchPage({ open, onClose }) {
   const navigate = useNavigate();
   const [isFocused, setIsFocused] = useState(false);
   const [searchResults, setSearchResults] = useState({ users: [], tags: [], posts: [] });
@@ -23,8 +24,17 @@ function SearchPage({ onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef(null);
 
-  // Debug prop onClose
-  console.log("SearchPage props:", { onClose });
+  // Chặn cuộn trang chính khi Drawer mở
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [open]);
 
   const handleFocus = () => setIsFocused(true);
   const handleBlur = (e) => {
@@ -74,7 +84,8 @@ function SearchPage({ onClose }) {
     console.log("Handling tag click:", tag);
     const cleanTag = tag.startsWith("#") ? tag.slice(1) : tag;
     const normalizedTag = cleanTag.toLowerCase().replace(/\s/g, "");
-    onClose(); // Đóng SearchPage trước
+    console.log("Closing SearchPage before navigating to tag:", normalizedTag);
+    onClose(); // Đóng Drawer trước
     navigate(`/explore/${normalizedTag}`);
   };
 
@@ -86,8 +97,7 @@ function SearchPage({ onClose }) {
   };
 
   const handleUserClick = (userId) => {
-    console.log("Handling user click:", userId);
-    onClose(); // Đóng SearchPage trước
+    onClose(); // Đóng Drawer trước
     navigate(`/profile/${userId}`);
   };
 
@@ -101,81 +111,103 @@ function SearchPage({ onClose }) {
   };
 
   return (
-    <div className="search__tab">
-      <div className="tab__header">
-        <span>Search</span>
-      </div>
-      <div className="tab__main">
-        <div className="input__search0">
-          <div className="input__search1">
-            {searchTerm ? (
-              <CancelIcon className="cancel-icon" onClick={handleClearInput} />
-            ) : (
-              <SearchIcon className="search-icon" />
-            )}
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchTerm}
-              onChange={handleSearch}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              ref={inputRef}
-            />
-          </div>
+    <Drawer
+      anchor="left"
+      open={open} // Sử dụng prop open trực tiếp
+      onClose={onClose}
+      sx={{
+        "& .MuiDrawer-paper": {
+          left: "16.67%",
+          width: "400px",
+          top: 0,
+          height: "100vh",
+         
+        },
+      }}
+      ModalProps={{
+        BackdropProps: {
+          style: { backgroundColor: "transparent" },
+        },
+        
+      }}
+ 
+    >
+      <div className="search__tab">
+        <div className="tab__header">
+          <span>Search</span>
         </div>
-        <hr />
-        <div className="history__search">
-          <div className="history__title">
-            <span>Results</span>
-            <button className="clear__history" onClick={handleClearAll}>
-              Clear all
-            </button>
-          </div>
-          {isLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <CircularProgress />
-            </Box>
-          ) : searchResults.users.length > 0 || searchResults.tags.length > 0 ? (
-            <>
-              {searchResults.users.length > 0 && (
-                <>
-                  {searchResults.users.map((user, index) => (
-                    <FriendCard
-                      key={index}
-                      friendInfo={user}
-                      isSearchList={true}
-                      onUserClick={handleUserClick}
-                    />
-                  ))}
-                </>
+        <div className="tab__main">
+          <div className="input__search0">
+            <div className="input__search1">
+              {searchTerm ? (
+                <CancelIcon className="cancel-icon" onClick={handleClearInput} />
+              ) : (
+                <SearchIcon className="search-icon" />
               )}
-              {searchResults.tags.length > 0 && (
-                <>
-                  <List dense>
-                    {searchResults.tags.map((tagInfo, index) => (
-                      <ListItem
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchTerm}
+                onChange={handleSearch}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                ref={inputRef}
+              />
+            </div>
+          </div>
+          <hr />
+          <div className="history__search">
+            <div className="history__title">
+              <span>Results</span>
+              <button className="clear__history" onClick={handleClearAll}>
+                Clear all
+              </button>
+            </div>
+            {isLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <CircularProgress />
+              </Box>
+            ) : searchResults.users.length > 0 || searchResults.tags.length > 0 ? (
+              <>
+                {searchResults.users.length > 0 && (
+                  <>
+                    {searchResults.users.map((user, index) => (
+                      <FriendCard
                         key={index}
-                        button
-                        onClick={() => handleTagClick(tagInfo.tag)}
-                        sx={{ display: "flex", justifyContent: "space-between" }}
-                      >
-                        <ListItemText primary={tagInfo.tag} />
-                        <Typography variant="body2" color="textSecondary">
-                          {formatPostCount(tagInfo.postCount)} posts
-                        </Typography>
-                      </ListItem>
+                        friendInfo={user}
+                        isSearchList={true}
+                        onUserClick={handleUserClick}
+                      />
                     ))}
-                  </List>
-                </>
-              )}
-            </>
-          ) : (
-            <p>No results found.</p>
-          )}
+                  </>
+                )}
+                {searchResults.tags.length > 0 && (
+                  <>
+                    <List dense>
+                      {searchResults.tags.map((tagInfo, index) => (
+                        <ListItem
+                          key={index}
+                          button
+                          onClick={() => handleTagClick(tagInfo.tag)}
+                          sx={{ display: "flex", justifyContent: "space-between" }}
+                        >
+                          <ListItemText primary={tagInfo.tag} />
+                          <Typography variant="body2" color="textSecondary">
+                            {formatPostCount(tagInfo.postCount)} posts
+                          </Typography>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </>
+                )}
+              </>
+            ) : (
+              <p>No results found.</p>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </Drawer>
   );
 }
 

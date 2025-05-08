@@ -34,7 +34,10 @@ import moment from "moment";
 import io from "socket.io-client";
 import { BACKENDURL } from "../utils/const";
 const socket = io(BACKENDURL);
-
+// const socket = io(`${BACKENDURL}`, {
+//     transports: ['websocket'], // ✅ ép chỉ dùng WebSocket
+//     withCredentials: true
+//   });
 const CHAT_API_URL = `${BACKENDURL}/api/chats`;
 const USER_API_URL = `${BACKENDURL}/api/user`;
 

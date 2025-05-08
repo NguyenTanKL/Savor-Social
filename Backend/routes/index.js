@@ -7,18 +7,7 @@ const voucherRouter = require("../routes/user/voucherRouter.js");
 const uploadRouter = require("../routes/helper/uploadRouter.js");
 const postRouter = require("../routes/postRoutes.js");
 const tagRouter = require("../routes/tagRoutes.js");
-// import postRouter from "./postRoutes.js";
-// import chatRouter from "./chatRoutes.js";
-
-// const router = express.Router();
-
-// router.use("/auth", authRouter);
-// router.use("/users", userRouter);
-// // router.use("/posts", postRouter);
-// // router.use("/chat", chatRouter);
-
-// module.exports = router;
-
+const notificationRouter = require("../routes/notificationRouter.js");
 function route(app){
     app.use('/api/auth/', authRouter);
     app.use('/api/user/', userRouter);
@@ -26,6 +15,7 @@ function route(app){
     app.use('/api/vouchers/', voucherRouter);
     app.use('/api/posts/',postRouter);
     app.use('api/tags/',tagRouter);
+    app.use('api/notifications/',notificationRouter);
 }
 
 module.exports = route

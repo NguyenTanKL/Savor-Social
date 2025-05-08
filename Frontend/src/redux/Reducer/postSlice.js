@@ -52,9 +52,11 @@ export const getRecommendedPostsAsync = createAsyncThunk(
   'posts/getRecommendedPosts',
   async (page, { rejectWithValue }) => {
     try {
+      console.log(`Fetching recommended posts, page: ${page}`);
       const res = await getRecommendedPosts({ params: { page } });
       return { data: res.data, page };
     } catch (error) {
+      console.error('getRecommendedPostsAsync error:', error.response?.data);
       return rejectWithValue(error.response?.data || { message: 'Failed to get recommended posts' });
     }
   }
@@ -185,11 +187,21 @@ const postSlice = createSlice({
       if (index !== -1) {
         state.posts[index].likes.push(action.payload.userId);
       }
+      const recIndex = state.recommendedPosts.findIndex((post) => post._id === action.payload.postId);
+      if (recIndex !== -1) {
+        state.recommendedPosts[recIndex].likes.push(action.payload.userId);
+      }
     },
     unlikePost: (state, action) => {
       const index = state.posts.findIndex((post) => post._id === action.payload.postId);
       if (index !== -1) {
         state.posts[index].likes = state.posts[index].likes.filter(
+          (userId) => userId !== action.payload.userId
+        );
+      }
+      const recIndex = state.recommendedPosts.findIndex((post) => post._id === action.payload.postId);
+      if (recIndex !== -1) {
+        state.recommendedPosts[recIndex].likes = state.recommendedPosts[recIndex].likes.filter(
           (userId) => userId !== action.payload.userId
         );
       }
@@ -243,14 +255,14 @@ const postSlice = createSlice({
         state.error = null;
       })
       .addCase(getRecommendedPostsAsync.fulfilled, (state, action) => {
-        state.loading = false;
+        state.recommendedPostsLoading = false;
         const { data, page } = action.payload;
         if (page === 1) {
-          state.recommendedPosts = data;
+          state.recommendedPosts = data.posts || [];
         } else {
-          state.recommendedPosts = [...state.recommendedPosts, ...data];
+          state.recommendedPosts = [...state.recommendedPosts, ...(data.posts || [])];
         }
-        if (data.length < 20) state.hasMore = false;
+        state.hasMore = data.hasMore !== undefined ? data.hasMore : data.posts.length >= 50;
       })
       .addCase(getRecommendedPostsAsync.rejected, (state, action) => {
         state.loading = false;
@@ -272,6 +284,7 @@ const postSlice = createSlice({
       // Xóa bài viết
       .addCase(deletePostAsync.fulfilled, (state, action) => {
         state.posts = state.posts.filter((post) => post._id !== action.payload);
+        state.recommendedPosts = state.recommendedPosts.filter((post) => post._id !== action.payload);
       })
       // Thích bài viết
       .addCase(likePostAsync.pending, (state) => {
@@ -284,6 +297,10 @@ const postSlice = createSlice({
         const index = state.posts.findIndex((post) => post._id === updatedPost._id);
         if (index !== -1) {
           state.posts[index] = updatedPost;
+        }
+        const recIndex = state.recommendedPosts.findIndex((post) => post._id === updatedPost._id);
+        if (recIndex !== -1) {
+          state.recommendedPosts[recIndex] = updatedPost;
         }
       })
       .addCase(likePostAsync.rejected, (state, action) => {
@@ -301,6 +318,10 @@ const postSlice = createSlice({
         const index = state.posts.findIndex((post) => post._id === updatedPost._id);
         if (index !== -1) {
           state.posts[index] = updatedPost;
+        }
+        const recIndex = state.recommendedPosts.findIndex((post) => post._id === updatedPost._id);
+        if (recIndex !== -1) {
+          state.recommendedPosts[recIndex] = updatedPost;
         }
       })
       .addCase(unlikePostAsync.rejected, (state, action) => {
@@ -332,6 +353,10 @@ const postSlice = createSlice({
         if (commentIndex !== -1) {
           state.comments.commentList[commentIndex] = updatedComment;
         }
+        const recIndex = state.recommendedPosts.findIndex((post) => post._id === updatedComment._id);
+        if (recIndex !== -1) {
+          state.recommendedPosts[recIndex] = updatedComment;
+        }
       })
       .addCase(createReplyAsync.rejected, (state, action) => {
         state.loading = false;
@@ -345,6 +370,10 @@ const postSlice = createSlice({
         );
         if (commentIndex !== -1) {
           state.comments.commentList[commentIndex] = updatedComment;
+        }
+        const recIndex = state.recommendedPosts.findIndex((post) => post._id === updatedComment._id);
+        if (recIndex !== -1) {
+          state.recommendedPosts[recIndex] = updatedComment;
         }
       })
       // Bỏ thích bình luận hoặc reply
@@ -363,6 +392,10 @@ const postSlice = createSlice({
         const index = state.posts.findIndex((post) => post._id === action.payload._id);
         if (index !== -1) {
           state.posts[index] = action.payload;
+        }
+        const recIndex = state.recommendedPosts.findIndex((post) => post._id === action.payload._id);
+        if (recIndex !== -1) {
+          state.recommendedPosts[recIndex] = action.payload;
         }
       });
   },

@@ -10,7 +10,7 @@ import SavedPostsPage from './pages/SavedPostsPage';
 import VouchersPage from './pages/restaurantVoucher/VouchersPage';
 import UserVouchersPage from './pages/VouchersPage';
 import MessagesPage from './pages/MessagesPage';
-import NotificationsPage from './pages/NotificationsPage';
+import NotificationDrawer from './pages/NotificationDrawer';
 import CreatePost from './pages/createPost/CreatePage';
 import EditProfilePage from './pages/EditProfilePage';
 import LoginPage from './pages/LoginPage/LoginPage';
@@ -41,7 +41,6 @@ function App() {
     setIsSearchOpen(false);
   };
 
-  // Debug isSearchOpen changes
   useEffect(() => {
     console.log("isSearchOpen updated:", isSearchOpen);
   }, [isSearchOpen]);
@@ -74,14 +73,13 @@ function App() {
                 <Route path="/favouriteMap" element={<FavouriteMapPage />} />
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
                 <Route path="/sharepost/:postId" element={<SharePost />} />
-                <Route path="/vouchers" element={<UserVouchersPage userId={userStorage._id}/>} />
-                <Route path="/messages" element={<MessagesPage sender={userStorage._id}/>} />
-                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/vouchers" element={<UserVouchersPage userId={userStorage._id} />} />
+                <Route path="/messages" element={<MessagesPage sender={userStorage._id} />} />
                 <Route path="/create" element={<CreatePost />} />
-                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />  
-                <Route path="/post/:postId" element={<PostDetail />} />   
+                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />
+                <Route path="/post/:postId" element={<PostDetail />} />
                 <Route path="/profile/:userId" element={<ProfilePage />} />
-                <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id}/>} />
+                <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id} />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/explore/:tagName" element={<TagPage />} />
               </>
@@ -95,14 +93,13 @@ function App() {
                 <Route path="/savedPosts" element={<SavedPostsPage />} />
                 <Route path="/post/:postId" element={<PostDetail />} />
                 <Route path="/sharepost/:postId" element={<SharePost />} />
-                <Route path="/vouchers" element={<VouchersPage restaurantId={userStorage._id}/>} />
-                <Route path="/messages" element={<MessagesPage sender={userStorage._id}/>} />
-                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/vouchers" element={<VouchersPage restaurantId={userStorage._id} />} />
+                <Route path="/messages" element={<MessagesPage sender={userStorage._id} />} />
                 <Route path="/create" element={<CreatePost />} />
                 <Route path="/explore/:tagName" element={<TagPage />} />
-                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />     
+                <Route path="/restaurant_profile" element={<RestaurantProfilePage />} />
                 <Route path="/profile/:userId" element={<ProfilePage />} />
-                <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id}/>} />
+                <Route path="/editProfile" element={<EditProfilePage userId={userStorage._id} />} />
                 <Route path="/search" element={<SearchPage />} />
               </>
             ) : (
@@ -110,8 +107,8 @@ function App() {
             )}
           </Routes>
 
-          {isLoggedIn && isSearchOpen && (
-            <SearchPage onClose={handleCloseSearch} />
+          {isLoggedIn && (
+            <SearchPage open={isSearchOpen} onClose={handleCloseSearch} />
           )}
         </Grid>
       </Grid>

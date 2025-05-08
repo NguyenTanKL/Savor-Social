@@ -79,7 +79,7 @@ function Timeline() {
                   ref={isLastElement ? lastPostElementRef : null}
                 >
                   <Post
-                    user={post.userId._id}
+                    user={post.userId}
                     postID={post._id}
                     postComment={post.comments}
                     images={post.images || []}
@@ -97,6 +97,7 @@ function Timeline() {
                     ad_id={post.ad_id}
                     voucher_id={post.voucher_id}
                   />
+                  
                 </div>
               );
             })}

@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Avatar } from "@mui/material";
-import { Link } from "react-router-dom";
 import "./FriendCard.css"; // Import CSS
 
-const FriendCard = ({ friendInfo, onFollow, isFollowed }) => {
-  const [isFollowing, setIsFollowing] = useState(isFollowed);
+const FriendCard = ({ friendInfo, onUserClick }) => {
+  const [isFollowing, setIsFollowing] = useState(false);
 
-  useEffect(() => {
-    setIsFollowing(isFollowed); // Cập nhật trạng thái khi prop thay đổi
-  }, [isFollowed]);
-
-  const handleFollowClick = async (e) => {
-    e.preventDefault(); // Ngăn chặn Link bị click khi bấm vào nút
-    const success = await onFollow();
-    if (success) {
-      setIsFollowing((prev) => !prev);
+  const handleClick = (e) => {
+    e.preventDefault(); // Ngăn điều hướng mặc định
+    if (onUserClick) {
+      onUserClick(friendInfo._id); // Gọi onUserClick với userId
     }
   };
 
   return (
-    <Link to={`/profile/${friendInfo._id}`} className="friend-card">
+    <div className="friend-card" onClick={handleClick}>
       <div className="friend-left">
         <Avatar
           src={friendInfo.avatar}
@@ -34,9 +28,7 @@ const FriendCard = ({ friendInfo, onFollow, isFollowed }) => {
           <span className="friend-nickname">{friendInfo.nickname}</span>
         </div>
       </div>
-
-      
-    </Link>
+    </div>
   );
 };
 
