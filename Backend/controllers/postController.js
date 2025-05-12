@@ -1,13 +1,14 @@
 const Post = require("../models/PostModel");
 const Comment = require("../models/CommentModel");
 const User = require("../models/UserModel");
+const FavouriteMap = require("../models/FavouriteMapModel");
 const Notification = require("../models/NotificationModel");
 const Tag = require("../models/TagsModel");
 const cloudinary = require("../config/cloudinary/cloudinaryConfig");
 const { spawn } = require('child_process');
 const createPost = async (req, res) => {
   try {
-    const { userId, content, rating, is_ad } = req.body;
+    const { userId, content, rating, is_ad, location } = req.body;
     let images = [];
 
     // Nếu có nhiều file ảnh được gửi lên, lấy URL từ req.files
@@ -50,7 +51,17 @@ const createPost = async (req, res) => {
     if (restaurantCount > 1) {
       return res.status(400).json({ message: "Cannot tag more than one restaurant in a post." });
     }
-
+    let parsedLocation = null;
+    if (location) {
+      try {
+        parsedLocation = JSON.parse(location); // Parse chuỗi JSON thành object
+        if (!parsedLocation.address || !parsedLocation.coordinates) {
+          return res.status(400).json({ message: 'Invalid location format. Must include address and coordinates.' });
+        }
+      } catch (error) {
+        return res.status(400).json({ message: 'Invalid location format. Must be a valid JSON string.' });
+      }
+    }
     // Tạo bài post mới
     const newPost = new Post({
       userId,
@@ -61,6 +72,7 @@ const createPost = async (req, res) => {
       tags: hashtags,
       taggedUsers: taggedUserIds,
       rating: rating ? Number(rating) : null,
+      location: parsedLocation || undefined,
       timestamp: new Date().toISOString(),
     });
     await newPost.save();
@@ -917,7 +929,64 @@ const getRecommendedPosts = async (req, res) => {
     return res.status(500).json({ message: "Lỗi xử lý đề xuất", error: error.message });
   }
 };
+const getFavouriteLocations = async (req, res) =>{
+  try {
+    const userId = req.user.id;
+    const favouriteLocations = await FavouriteMap.find({ userId });
+    const savedLocations = favouriteLocations.map(location => ({
+      name: location.name,
+      address: location.address,
+      lat: location.coordinates.lat,
+      lng: location.coordinates.lng,
+      postId: location.postId,
+    }));
 
+    res.status(200).json(savedLocations);
+  } catch (err) {
+    console.error('Error fetching favourite locations:', err);
+    res.status(500).json({ message: 'Failed to fetch favourite locations', error: err.message });
+  }
+}
+const updatePostSelection = async (req, res) =>{
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (!post.location || !post.location.coordinates) {
+      return res.status(400).json({ message: 'Post does not have location data' });
+    }
+
+    const existingFavourite = await FavouriteMap.findOne({ userId, postId });
+
+    if (existingFavourite) {
+      // Nếu đã có, xóa khỏi FavouriteMap (unselect)
+      await FavouriteMap.deleteOne({ userId, postId });
+      res.status(200).json({ message: 'Removed from favourite map' });
+    } else {
+      // Nếu chưa có, thêm vào FavouriteMap (select)
+      const newFavourite = new FavouriteMap({
+        userId,
+        postId,
+        name: post.location.address || `Địa điểm tại ${post.location.coordinates.lat}, ${post.location.coordinates.lng}`,
+        address: post.location.address || 'Không có địa chỉ cụ thể',
+        coordinates: {
+          lat: post.location.coordinates.lat,
+          lng: post.location.coordinates.lng,
+        },
+      });
+      await newFavourite.save();
+      res.status(200).json({ message: 'Added to favourite map' });
+    }
+  } catch (err) {
+    console.error('Error updating post selection:', err);
+    res.status(500).json({ message: 'Failed to update post selection', error: err.message });
+  }
+}
   module.exports ={
     createPost,
     updatePost,
@@ -935,4 +1004,6 @@ const getRecommendedPosts = async (req, res) => {
     getAverageRating,
     getByTag,
     getRecommendedPosts,
+    getFavouriteLocations,
+    updatePostSelection
   }

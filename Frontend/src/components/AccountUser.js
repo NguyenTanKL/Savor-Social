@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import "./AccountUser.css";
 import { Avatar } from "@mui/material";
-import { Link } from 'react-router-dom'
-function AccountUser({ username, nickname, onFollow, isFollowed }) {
+import { Link } from 'react-router-dom';
+import { FRONTENDURL } from "../utils/const";
+function AccountUser({ username, avatar, userId, onFollow, isFollowed }) {
     const [isFollowing, setIsFollowing] = useState(isFollowed);
 
     useEffect(() => {
         setIsFollowing(isFollowed); // Đồng bộ state khi prop thay đổi
     }, [isFollowed]);
 
-    const handleFollowClick = async () => {
+    const handleFollowClick = async (e) => {
+        e.preventDefault();
         const success = await onFollow(); // Gọi API Follow/Unfollow
         if (success) {
             setIsFollowing((prev) => !prev); // ✅ Toggle UI ngay lập tức
@@ -17,14 +19,13 @@ function AccountUser({ username, nickname, onFollow, isFollowed }) {
     };
 
     return (
-        <Link className="sugesstion__username">
+        <Link className="sugesstion__username" to={`${FRONTENDURL}/profile/${userId}`}>
             <div className="username__left">
                 <span className="avatar">
-                    <Avatar>{username?.charAt(0).toUpperCase()}</Avatar>
+                    <Avatar alt={username} src = {avatar}/>
                 </span>
                 <div className="username__info">
                     <span className="username">{username}</span>
-                    <span className="nickname">{nickname}</span>
                 </div>
             </div>
 

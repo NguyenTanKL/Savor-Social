@@ -125,13 +125,6 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
             <Divider />
           </>
         )}
-
-        <Typography
-          sx={{ padding: "10px 0", cursor: "pointer" }}
-          onClick={handleShare}
-        >
-          Share to ...
-        </Typography>
         <Divider />
 
         <Typography

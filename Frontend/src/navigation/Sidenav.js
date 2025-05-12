@@ -22,7 +22,7 @@ import { Avatar, Box, Button, Popover, MenuItem, Typography } from "@mui/materia
 import axios from "axios";
 
 function Sidenav({ onSearchClick, onCloseSearch }) {
-  const userId = useSelector((state) => state.user.user);
+  const user = useSelector((state) => state.user.user);
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -111,8 +111,8 @@ function Sidenav({ onSearchClick, onCloseSearch }) {
           <AddBoxOutlined />
           <span>Create</span>
         </div>
-        <NavLink to={`/profile/${userId._id}`} className="sidenav__button" onClick={handleNavLinkClick}>
-          <Avatar />
+        <NavLink to={`/profile/${user._id}`} className="sidenav__button" onClick={handleNavLinkClick}>
+          <Avatar alt="avatar" src = {user.avatar} />
           <span>Profile</span>
         </NavLink>
       </div>

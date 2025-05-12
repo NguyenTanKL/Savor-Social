@@ -19,8 +19,9 @@ function Timeline() {
   const hasMore = useSelector((state) => state.posts.hasMore);
 
   const [selectedPostId, setSelectedPostId] = useState(null);
+  const [directionsData, setDirectionsData] = useState(null);
   const observerRef = useRef(null);
-  const hasLoadedInitial = useRef(false); // Theo dõi lần tải đầu tiên
+  const hasLoadedInitial = useRef(false);
 
   console.log("recommendedPosts:", recommendedPosts);
   console.log("Current state:", { page, loading, hasMore });
@@ -29,7 +30,7 @@ function Timeline() {
     if (loading || !hasMore || hasLoadedInitial.current) return;
     console.log("Dispatching getRecommendedPostsAsync for page:", page);
     dispatch(getRecommendedPostsAsync(page));
-    hasLoadedInitial.current = true; // Đánh dấu đã tải lần đầu
+    hasLoadedInitial.current = true;
   }, [dispatch, page, loading, hasMore]);
 
   useEffect(() => {
@@ -58,6 +59,14 @@ function Timeline() {
       setSelectedPostId(recommendedPosts[0]._id);
     }
   }, [recommendedPosts, selectedPostId]);
+
+  const handlePostSelect = (data) => {
+    if (data?.action === "showDirections" && data.coordinates) {
+      setDirectionsData(data.coordinates);
+    } else {
+      setSelectedPostId(data?.postId || data);
+    }
+  };
 
   if (error) {
     return <Typography color="error">Error: {error.message}</Typography>;
@@ -88,16 +97,15 @@ function Timeline() {
                     tags={post.tags}
                     taggedUsers={post.taggedUsers}
                     rating={post.rating}
-                    address={post.address}
+                    address={post.location?.address}
                     timestamp={post.createdAt}
                     is_voucher={post.is_voucher}
                     is_ad={post.is_ad}
                     isSelected={selectedPostId === post._id}
-                    onSelect={() => setSelectedPostId(post._id)}
+                    onSelect={handlePostSelect}
                     ad_id={post.ad_id}
                     voucher_id={post.voucher_id}
                   />
-                  
                 </div>
               );
             })}
@@ -122,7 +130,7 @@ function Timeline() {
       <Grid item xs={6} md={4}>
         <div className="timeline__right">
           <Sugesstions />
-          <MapUser selectedPostId={selectedPostId} posts={recommendedPosts} />
+          <MapUser selectedPostId={selectedPostId} posts={recommendedPosts} directionsData={directionsData} />
         </div>
       </Grid>
     </Grid>

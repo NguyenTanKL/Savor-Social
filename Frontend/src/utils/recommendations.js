@@ -1,14 +1,23 @@
 import { BACKENDURL } from "./const";
+
 export const getRecommendations = async (user) => {
-  const { address, preferences, following } = user;
+  const { address, preferences, following, _id } = user; // Lấy _id của user hiện tại
   console.log("🔥 Danh sách following nhận từ Reddit:", following);
 
   const allRestaurants = await fetch(`${BACKENDURL}/api/user/restaurants`).then(res => res.json());
   const allNormalUsers = await fetch(`${BACKENDURL}/api/user/normal-users`).then(res => res.json());
 
-  // Loại bỏ những người đã follow cho cả hai loại
-  const unfollowedNormalUsers = allNormalUsers.filter(normalUser => !following.includes(normalUser._id.toString()));
-  const unfollowedRestaurants = allRestaurants.filter(restaurant => !following.includes(restaurant._id.toString()));
+  // Loại bỏ chính user hiện tại và những người đã follow
+  const unfollowedNormalUsers = allNormalUsers.filter(
+    normalUser => 
+      normalUser._id.toString() !== _id.toString() && // Loại bỏ chính user hiện tại
+      !following.includes(normalUser._id.toString()) // Loại bỏ những người đã follow
+  );
+  const unfollowedRestaurants = allRestaurants.filter(
+    restaurant => 
+      restaurant._id.toString() !== _id.toString() && // Loại bỏ chính user hiện tại (nếu user là nhà hàng)
+      !following.includes(restaurant._id.toString()) // Loại bỏ những nhà hàng đã follow
+  );
 
   // Lọc người dùng có sở thích chung
   let filteredNormalUsers = unfollowedNormalUsers.filter(normalUser =>

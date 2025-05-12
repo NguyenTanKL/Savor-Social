@@ -17,6 +17,8 @@ const {
     getAverageRating,
     getByTag,
     getRecommendedPosts,
+    getFavouriteLocations,
+    updatePostSelection,
 } =  require("../controllers/postController.js");
 const userAuth = require("../middlewares/authMiddleware.js")
 // Cấu hình multer để xử lý file upload
@@ -116,7 +118,8 @@ router.post("/unlikeComment",userAuth, unlikeComment);
 router.get("/:postId/rating/average", userAuth, getAverageRating);
 // router.get("/:postId/rating/user/:userId", userAuth, getUserRatingPost);
 // router.post("/:postId/rating",userAuth, userRatingPost);
-
+router.get("/favourite-locations",userAuth,getFavouriteLocations);
+router.put("/:postId/select",userAuth,updatePostSelection);
 router.get("/getPostBytag",userAuth,getByTag);
 router.get('/recommend', userAuth,getRecommendedPosts);
 module.exports =  router;

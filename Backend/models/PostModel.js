@@ -7,8 +7,6 @@ const postSchema = new mongoose.Schema(
     images: { type: [String], default: [] },
     videos: { type: [String], default: [] },
     location: {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
-      name: { type: String, required: false },
       address: { type: String, required: false },
       coordinates: {
         lat: { type: Number, required: false },

@@ -123,8 +123,9 @@ function Sugesstions() {
             suggestions.map((user) => (
               <AccountUser
                 key={user._id}
+                userId = {user._id}
                 username={user.username}
-                nickname={user.nickname || "User"}
+                avatar = {user.avatar}
                 isFollowed={followedAccounts.has(user._id.toString())}
                 onFollow={() => toggleFollow(user._id)}
               />

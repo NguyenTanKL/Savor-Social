@@ -13,7 +13,7 @@ import { getFriendsAsync } from "../../redux/Reducer/userSlice";
 import Stack from "@mui/joy/Stack";
 import Box from "@mui/joy/Box";
 import Sheet from "@mui/joy/Sheet";
-import { Avatar ,Popover} from "@mui/material";
+import { Avatar, Popover, IconButton } from "@mui/material";
 import Typography from "@mui/joy/Typography";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -23,7 +23,6 @@ import SendIcon from "@mui/icons-material/Send";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import TextField from "@mui/material/TextField";
-import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import ShareModal from "../ShareModal/ShareModal";
 import Comment from "../Comment";
@@ -36,6 +35,7 @@ import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
 import { BACKENDURL } from "../../utils/const";
+
 // Tái sử dụng style từ CreatePost
 const mentionStyle = {
   control: {
@@ -81,6 +81,7 @@ function PostDetail({ canDelete }) {
   const [editContent, setEditContent] = useState("");
   const [taggedUsers, setTaggedUsers] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0); // Thêm state để quản lý ảnh hiện tại
 
   useEffect(() => {
     dispatch(getPostByIdAsync(postId));
@@ -215,7 +216,6 @@ function PostDetail({ canDelete }) {
 
     dispatch(updatePostAsync({ postId, content: editContent, taggedUsers })).then((action) => {
       if (action.meta.requestStatus === "fulfilled") {
-        // Cập nhật postInfo ngay lập tức với nội dung mới
         const updatedPost = { ...postInfo, content: editContent, taggedUsers };
         dispatch({
           type: "posts/updatePost/fulfilled",
@@ -249,6 +249,53 @@ function PostDetail({ canDelete }) {
     }
   };
 
+  // Xử lý emoji picker cho bình luận
+  const handleOpenEmojiPicker = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseEmojiPicker = () => {
+    setAnchorEl(null);
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    setCommentText((prev) => prev + emoji.native);
+    handleCloseEmojiPicker();
+  };
+
+  // Xử lý emoji picker cho chỉnh sửa nội dung
+  const handleOpenEditEmojiPicker = (event) => {
+    setEditAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseEditEmojiPicker = () => {
+    setEditAnchorEl(null);
+  };
+
+  const handleEditEmojiSelect = (emoji) => {
+    setEditContent((prev) => prev + emoji.native);
+    updateTaggedUsersFromContent(editContent + emoji.native);
+    handleCloseEditEmojiPicker();
+  };
+
+  const openEmojiPicker = Boolean(anchorEl);
+  const openEditEmojiPicker = Boolean(editAnchorEl);
+
+  const handleUsernameClick = () => {
+    if (userId) {
+      navigate(`/profile/${userId}`);
+    }
+  };
+
+  // Hàm điều hướng ảnh
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % (Array.isArray(postInfo.images) ? postInfo.images.length : 1));
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + (Array.isArray(postInfo.images) ? postInfo.images.length : 1)) % (Array.isArray(postInfo.images) ? postInfo.images.length : 1));
+  };
+
   if (!postInfo._id) {
     return <Typography>Loading...</Typography>;
   }
@@ -256,43 +303,7 @@ function PostDetail({ canDelete }) {
   if (!postInfo) {
     return <div>Post not found</div>;
   }
-// Xử lý emoji picker cho bình luận
-const handleOpenEmojiPicker = (event) => {
-  setAnchorEl(event.currentTarget);
-};
 
-const handleCloseEmojiPicker = () => {
-  setAnchorEl(null);
-};
-
-const handleEmojiSelect = (emoji) => {
-  setCommentText((prev) => prev + emoji.native);
-  handleCloseEmojiPicker();
-};
-
-// Xử lý emoji picker cho chỉnh sửa nội dung
-const handleOpenEditEmojiPicker = (event) => {
-  setEditAnchorEl(event.currentTarget);
-};
-
-const handleCloseEditEmojiPicker = () => {
-  setEditAnchorEl(null);
-};
-
-const handleEditEmojiSelect = (emoji) => {
-  setEditContent((prev) => prev + emoji.native);
-  updateTaggedUsersFromContent(editContent + emoji.native);
-  handleCloseEditEmojiPicker();
-};
-
-const openEmojiPicker = Boolean(anchorEl);
-const openEditEmojiPicker = Boolean(editAnchorEl);
-
-  const handleUsernameClick = () => {
-    if (userId) {
-      navigate(`/profile/${userId}`);
-    }
-  };
   return (
     <Box
       sx={{
@@ -339,12 +350,50 @@ const openEditEmojiPicker = Boolean(editAnchorEl);
             display: "flex",
           }}
         >
-          <Box sx={{ width: "60%", height: "100%", overflow: "hidden", flexShrink: 0 }}>
-            <img
-              src={postInfo.images}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              alt={postInfo.content}
-            />
+          <Box sx={{ width: "60%", height: "100%", overflow: "hidden", flexShrink: 0, position: "relative" }}>
+            {Array.isArray(postInfo.images) && postInfo.images.length > 0 ? (
+              <>
+                <img
+                  src={postInfo.images[currentImageIndex]}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  alt={`Post image ${currentImageIndex}`}
+                />
+                {postInfo.images.length > 1 && (
+                  <>
+                    <IconButton
+                      onClick={prevImage}
+                      sx={{
+                        position: "absolute",
+                        left: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "white",
+                        bgcolor: "rgba(0, 0, 0, 0.5)",
+                        "&:hover": { bgcolor: "rgba(0, 0, 0, 0.8)" },
+                      }}
+                    >
+                      ◀
+                    </IconButton>
+                    <IconButton
+                      onClick={nextImage}
+                      sx={{
+                        position: "absolute",
+                        right: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "white",
+                        bgcolor: "rgba(0, 0, 0, 0.5)",
+                        "&:hover": { bgcolor: "rgba(0, 0, 0, 0.8)" },
+                      }}
+                    >
+                      ▶
+                    </IconButton>
+                  </>
+                )}
+              </>
+            ) : (
+              <Typography>No images available</Typography>
+            )}
           </Box>
 
           <Stack direction="column" sx={{ flex: 1, borderLeft: "1px solid #e0e0e0" }}>
@@ -536,7 +585,6 @@ const openEditEmojiPicker = Boolean(editAnchorEl);
                       },
                     }}
                   />
-                  
                   <IconButton
                     onClick={handleCreateComment}
                     disabled={loading || !commentText.trim()}

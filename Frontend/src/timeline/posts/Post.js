@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Avatar, Button, Rating, Box, Chip, Stack, TextField, IconButton, Typography, Popover } from "@mui/material";
+import MapIcon from '@mui/icons-material/Map';
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import "./Post.css";
 import Card from "@mui/material/Card";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -12,11 +14,10 @@ import TelegramIcon from "@mui/icons-material/Telegram";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import FmdGoodOutlinedIcon from "@mui/icons-material/FmdGoodOutlined";
-import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
+import RoomIcon from "@mui/icons-material/Room";
 import SendIcon from "@mui/icons-material/Send";
 import Grid from "@mui/material/Grid";
 import Modal from "../../components/Modal";
-import RoomIcon from "@mui/icons-material/Room";
 import usePostInteractions from "../../components/hooks/usePostInteractions";
 import axios from "axios";
 import ShareModal from "../../components/ShareModal/ShareModal";
@@ -63,8 +64,9 @@ function Post({
   const [voucherData, setVoucherData] = useState(null);
   const [current, setCurrent] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null); // State cho Popover
+  const [anchorEl, setAnchorEl] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isUserSelected, setIsUserSelected] = useState(false);
   const {
     liked,
     likeCount,
@@ -95,7 +97,6 @@ function Post({
 
   useEffect(() => {
     if (user && currentUserId) {
-      // Lấy thông tin user
       axios.get(`${BACKENDURL}/api/userRoutes/${user}`)
         .then(res => {
           console.log("Dữ liệu user nhận được:", res.data);
@@ -106,7 +107,6 @@ function Post({
           console.log("Lỗi chi tiết:", err.response?.data);
         });
 
-      // Kiểm tra trạng thái follow
       const fetchFollowStatus = async () => {
         try {
           const status = await checkFollow(user);
@@ -118,6 +118,25 @@ function Post({
       fetchFollowStatus();
     }
   }, [user, currentUserId]);
+
+  useEffect(() => {
+    const checkIfSelected = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${BACKENDURL}/api/posts/favourite-locations`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const favouriteLocations = response.data;
+        const isSelected = favouriteLocations.some(loc => loc.postId === postID);
+        setIsUserSelected(isSelected);
+      } catch (error) {
+        console.error('Error checking favourite status:', error);
+      }
+    };
+    checkIfSelected();
+  }, [postID]);
 
   const usernameOfPost = userData?.username || "Unknown";
 
@@ -184,7 +203,7 @@ function Post({
       setCommentText("");
     }
   };
-  // Xử lý mở/đóng emoji picker
+
   const handleOpenEmojiPicker = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -193,7 +212,6 @@ function Post({
     setAnchorEl(null);
   };
 
-  // Xử lý chọn emoji
   const handleEmojiSelect = (emoji) => {
     setCommentText((prev) => prev + emoji.native);
     handleCloseEmojiPicker();
@@ -205,6 +223,39 @@ function Post({
       navigate(`/profile/${user}`);
     }
   };
+
+  const handleSelectMap = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        `${BACKENDURL}/api/posts/${postID}/select`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.status === 200) {
+        setIsUserSelected(!isUserSelected);
+        if (onSelect) onSelect();
+      }
+    } catch (error) {
+      console.error('Error updating post selection:', error);
+      alert('Failed to update selection');
+    }
+  };
+
+  const handleShowDirections = () => {
+    if (postInfo?.location?.coordinates) {
+      const { lat, lng } = postInfo.location.coordinates;
+      console.log("Showing directions to:", { lat, lng });
+      if (onSelect) {
+        onSelect({ action: "showDirections", coordinates: { lat, lng } });
+      }
+    }
+  };
+
   if (is_voucher && is_ad) {
     return (
       <div className="post">
@@ -309,11 +360,15 @@ function Post({
               <TelegramIcon className="postIcon" />
             </div>
             <div className="post_iconSave">
-              <MapOutlinedIcon className="postIcon" />
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+              {isUserSelected ? (
+                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
               ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
+              )}
+              {isSelected ? (
+                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
+              ) : (
+                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
               )}
               {isSaved ? (
                 <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
@@ -483,11 +538,15 @@ function Post({
               <TelegramIcon className="postIcon" />
             </div>
             <div className="post_iconSave">
-              <MapOutlinedIcon className="postIcon" />
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+              {isUserSelected ? (
+                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
               ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
+              )}
+              {isSelected ? (
+                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
+              ) : (
+                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
               )}
               {isSaved ? (
                 <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
@@ -501,54 +560,6 @@ function Post({
           <div className="post__caption">
             <span>{usernameOfPost} </span> {content}
           </div>
-          {/* <div className="post__comment">
-            <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
-            {open && <Modal
-              open={open}
-              onClose={() => setOpen(false)}
-              user={user}
-              postImage={images[0]}
-              likes={likes}
-              caption={content}
-              address={address}
-              timestamp={timestamp}
-            />}
-            <div className="comment">
-              <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
-                <Avatar src={currentUser?.avatar || ""} sx={{ width: 32, height: 32 }} />
-                <TextField
-                  inputRef={commentInputRef}
-                  fullWidth
-                  variant="standard"
-                  placeholder="Add a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={handleCommentKeyDown}
-                  InputProps={{
-                    disableUnderline: true,
-                    style: { fontSize: 14 },
-                  }}
-                  sx={{
-                    "& .MuiInputBase-root": {
-                      padding: "0 8px",
-                    },
-                  }}
-                />
-                {commentText.trim() && (
-                  <IconButton
-                    onClick={() => {
-                      handleCreateComment(username);
-                      setCommentText("");
-                    }}
-                    disabled={loading}
-                    sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
-                  >
-                    <SendIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                )}
-              </Stack>
-            </div>
-          </div> */}
         </div>
       </div>
     );
@@ -603,11 +614,15 @@ function Post({
               <TelegramIcon className="postIcon" />
             </div>
             <div className="post_iconSave">
-              <MapOutlinedIcon className="postIcon" />
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+              {isUserSelected ? (
+                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
               ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
+              )}
+              {isSelected ? (
+                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
+              ) : (
+                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
               )}
               {isSaved ? (
                 <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
@@ -678,8 +693,8 @@ function Post({
         <div className="post__header">
           <div className="post__headerAuthor">
             <Avatar src={userData?.avatar}>?</Avatar>
-            <Typography sx ={{ml:1, cursor:"pointer"}} onClick={handleUsernameClick}>
-                {usernameOfPost}
+            <Typography sx={{ ml: 1, cursor: "pointer" }} onClick={handleUsernameClick}>
+              {usernameOfPost}
             </Typography>
             <Typography> • {moment(timestamp).fromNow()}</Typography>
             {currentUserId !== user && !isFollowing && (
@@ -699,8 +714,18 @@ function Post({
           <FmdGoodOutlinedIcon className="postIcon" color="action" />
           <span>{address}</span>
         </div>
-        <div className="post__image">
-          <img src={images} alt="" />
+        <div className="post__image" style={{ position: "relative" }}>
+          <img
+            src={images[current]}
+            alt={`post-img-${current}`}
+            style={{ width: "100%", borderRadius: "10px" }}
+          />
+          {images.length > 1 && (
+            <>
+              <button onClick={prevImage} className="nav-button left">◀</button>
+              <button onClick={nextImage} className="nav-button right">▶</button>
+            </>
+          )}
         </div>
         <div className="post__footer">
           <div className="post_footerIcons">
@@ -714,11 +739,15 @@ function Post({
               <TelegramIcon className="postIcon" onClick={handleOpenShareModal} />
             </div>
             <div className="post_iconSave">
-              <MapOutlinedIcon className="postIcon" />
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={onSelect} color="error" />
+              {isUserSelected ? (
+                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
               ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={onSelect} />
+                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
+              )}
+              {isUserSelected ? (
+                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
+              ) : (
+                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
               )}
               {isSaved ? (
                 <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
@@ -731,24 +760,23 @@ function Post({
           <br />
           {rating ? (
             <Stack direction={"row"}>
-                <Typography variant="body2" color="text.secondary">
-                    Rate: {rating} 
-                </Typography>
-                <Rating
-                    value={rating}
-                    max={5}
-                    precision={0.5}
-                    readOnly
-                    size="small"
-                    />
-                
-            </Stack>   
+              <Typography variant="body2" color="text.secondary">
+                Rate: {rating}
+              </Typography>
+              <Rating
+                value={rating}
+                max={5}
+                precision={0.5}
+                readOnly
+                size="small"
+              />
+            </Stack>
           ) : (
             <></>
           )}
           <Box sx={{ mt: 1, mb: 1 }}></Box>
           <div className="post__caption">
-            <span onClick={handleUsernameClick} style={{cursor:"pointer"}}>{usernameOfPost} </span>
+            <span onClick={handleUsernameClick} style={{ cursor: "pointer" }}>{usernameOfPost} </span>
             {parseContent(content, taggedUsers)}
             <br />
           </div>
@@ -756,63 +784,63 @@ function Post({
             <span onClick={handleOpenPostDetail} style={{ cursor: "pointer" }}>
               View all {postComment?.length} comments
             </span>
-              <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
-                <TextField
-                  inputRef={commentInputRef}
-                  fullWidth
-                  variant="standard"
-                  placeholder="Add a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={handleCommentKeyDown}
-                  InputProps={{
-                    disableUnderline: true,
-                    style: { fontSize: 15 },
+            <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
+              <TextField
+                inputRef={commentInputRef}
+                fullWidth
+                variant="standard"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={handleCommentKeyDown}
+                InputProps={{
+                  disableUnderline: true,
+                  style: { fontSize: 15 },
+                }}
+              />
+              <IconButton onClick={handleOpenEmojiPicker} sx={{ color: "#rgb(0, 0, 0)" }}>
+                <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+              {commentText.trim() && (
+                <IconButton
+                  onClick={() => {
+                    handleCreateComment(username);
+                    setCommentText("");
                   }}
-                />
-                <IconButton onClick={handleOpenEmojiPicker} sx={{ color: "#rgb(0, 0, 0)" }}>
-                  <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
+                  disabled={loading}
+                  sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
+                >
+                  <SendIcon sx={{ fontSize: 20 }} />
                 </IconButton>
-                {commentText.trim() && (
-                  <IconButton
-                    onClick={() => {
-                      handleCreateComment(username);
-                      setCommentText("");
-                    }}
-                    disabled={loading}
-                    sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
-                  >
-                    <SendIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                )}
-              </Stack>
-              <Popover
-                open={openEmojiPicker}
-                anchorEl={anchorEl}
-                onClose={handleCloseEmojiPicker}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "left",
-                }}
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "left",
-                }}
-              >
-                <Picker data={data} onEmojiSelect={handleEmojiSelect} />
-              </Popover>
+              )}
+            </Stack>
+            <Popover
+              open={openEmojiPicker}
+              anchorEl={anchorEl}
+              onClose={handleCloseEmojiPicker}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "left",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "left",
+              }}
+            >
+              <Picker data={data} onEmojiSelect={handleEmojiSelect} />
+            </Popover>
           </div>
         </div>
         <br />
         <ShareModal postId={postID} open={shareModalOpen} onClose={handleCloseShareModal} />
         <PostOptionsDialog
-        user={user}
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        postInfo={postInfo}
-        onDelete={() => navigate(-1)}
-        isFollowing={isFollowing}
-      />
+          user={user}
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          postInfo={postInfo}
+          onDelete={() => navigate(-1)}
+          isFollowing={isFollowing}
+        />
       </div>
     );
   }

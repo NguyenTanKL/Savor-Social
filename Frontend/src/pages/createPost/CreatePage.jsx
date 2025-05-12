@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useDispatch, useSelector } from 'react-redux';
-
 import {
   Dialog,
   DialogTitle,
@@ -14,7 +13,10 @@ import {
   Typography,
   Avatar,
   Stack,
-  Popover
+  Popover,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
@@ -26,10 +28,11 @@ import { createPostAsync, getPostsAsync } from '../../redux/Reducer/postSlice';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { MentionsInput, Mention } from 'react-mentions';
-import { getTags } from '../../api'; // Import getTags để lấy danh sách tag
-import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
-import Picker from "@emoji-mart/react";
-import data from "@emoji-mart/data";
+import { getTags } from '../../api';
+import EmojiEmotionsOutlinedIcon from '@mui/icons-material/EmojiEmotionsOutlined';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
+
 const mentionStyle = {
   control: {
     fontSize: '1rem',
@@ -87,6 +90,12 @@ const CreatePost = ({ open, onClose }) => {
   const followers = Array.isArray(user?.followers) ? user.followers : [];
   const friends = [...new Set([...following, ...followers].map(f => JSON.stringify(f)))].map(f => JSON.parse(f));
 
+  const [address, setAddress] = useState('');
+  const [location, setLocation] = useState(null);
+  const [showLocationInput, setShowLocationInput] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const GOONG_PLACES_API_KEY = 'bI22G8oebQwHbOmJ6CGZLpBqhFWTow7pXwpyrOXT';
+
   const mentionUsers = friends
     .filter(friend => friend && friend._id && friend.username)
     .map(friend => ({
@@ -94,9 +103,9 @@ const CreatePost = ({ open, onClose }) => {
       display: friend.username,
     }));
 
-  const [availableTags, setAvailableTags] = useState([]); // State để lưu danh sách tag từ server
+  const [availableTags, setAvailableTags] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
-  // Lấy danh sách tag từ server khi component mount
+
   useEffect(() => {
     const fetchTags = async () => {
       try {
@@ -107,7 +116,7 @@ const CreatePost = ({ open, onClose }) => {
         })));
       } catch (err) {
         console.error('Failed to load tags:', err);
-        setAvailableTags([]); // Dùng danh sách trống nếu lỗi
+        setAvailableTags([]);
       }
     };
     fetchTags();
@@ -119,7 +128,7 @@ const CreatePost = ({ open, onClose }) => {
     handleSubmit,
     setValue,
   } = useForm({
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   const updateTaggedUsersFromContent = (content) => {
@@ -147,10 +156,13 @@ const CreatePost = ({ open, onClose }) => {
 
   useEffect(() => {
     return () => {
-      images.forEach(img => URL.revokeObjectURL(img));
-      croppedImages.forEach(img => URL.revokeObjectURL(img));
+      // Chỉ revoke khi component unmount hoặc khi reset hoàn toàn
+      if (step === 1) {
+        images.forEach(img => URL.revokeObjectURL(img));
+        croppedImages.forEach(img => URL.revokeObjectURL(img));
+      }
     };
-  }, [images, croppedImages]);
+  }, [images, croppedImages, step]);
 
   const handleImageChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -158,6 +170,9 @@ const CreatePost = ({ open, onClose }) => {
       setFiles(selectedFiles);
       const previewUrls = selectedFiles.map(file => URL.createObjectURL(file));
       setImages(previewUrls);
+      setCroppedImages([]); // Reset cropped images
+      setCroppedFiles([]); // Reset cropped files
+      setCurrentImageIndex(0); // Reset index
       setStep(2);
       e.target.value = null;
     }
@@ -196,18 +211,28 @@ const CreatePost = ({ open, onClose }) => {
   const handleCropComplete = async () => {
     if (imageRef && crop.width && crop.height) {
       const { croppedFile, croppedUrl } = await getCroppedImg(imageRef, crop);
-      const newCroppedFiles = [...croppedFiles];
-      const newCroppedImages = [...croppedImages];
 
-      newCroppedFiles[currentImageIndex] = croppedFile;
-      newCroppedImages[currentImageIndex] = croppedUrl;
+      // Cập nhật mảng croppedFiles và croppedImages
+      setCroppedFiles(prev => {
+        const newCroppedFiles = [...prev];
+        newCroppedFiles[currentImageIndex] = croppedFile;
+        return newCroppedFiles;
+      });
 
-      setCroppedFiles(newCroppedFiles);
-      setCroppedImages(newCroppedImages);
+      setCroppedImages(prev => {
+        const newCroppedImages = [...prev];
+        newCroppedImages[currentImageIndex] = croppedUrl;
+        return newCroppedImages;
+      });
 
       if (currentImageIndex < images.length - 1) {
         setCurrentImageIndex(currentImageIndex + 1);
+        setCrop({ aspect: 1, unit: '%', width: 100, height: 100 }); // Reset crop cho ảnh tiếp theo
       } else {
+        // Đảm bảo mảng croppedImages và croppedFiles có đủ phần tử
+        setCroppedImages(prev => prev.filter(Boolean)); // Loại bỏ các phần tử undefined/null
+        setCroppedFiles(prev => prev.filter(Boolean));
+        setCurrentImageIndex(0); // Reset index khi chuyển sang step 3
         setStep(3);
       }
     }
@@ -222,6 +247,8 @@ const CreatePost = ({ open, onClose }) => {
     images.forEach(img => URL.revokeObjectURL(img));
     setImages([]);
     setFiles([]);
+    setCroppedImages([]);
+    setCroppedFiles([]);
     setCurrentImageIndex(0);
   };
 
@@ -230,9 +257,13 @@ const CreatePost = ({ open, onClose }) => {
     croppedImages.forEach(img => URL.revokeObjectURL(img));
     setCroppedImages([]);
     setCroppedFiles([]);
-    setValue("content", "");
+    setValue('content', '');
     setCurrentImageIndex(0);
     setErrorMessage('');
+    setAddress('');
+    setLocation(null);
+    setShowLocationInput(false);
+    setLocationSuggestions([]);
   };
 
   const handleCancelImage = () => {
@@ -247,6 +278,77 @@ const CreatePost = ({ open, onClose }) => {
     setStep(1);
     setCurrentImageIndex(0);
     setErrorMessage('');
+    setAddress('');
+    setLocation(null);
+    setShowLocationInput(false);
+    setLocationSuggestions([]);
+  };
+
+  const fetchLocationSuggestions = useCallback(async (input) => {
+    if (!input) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://rsapi.goong.io/Place/AutoComplete?input=${encodeURIComponent(input)}&api_key=${GOONG_PLACES_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.status === 'OK' && data.predictions) {
+        setLocationSuggestions(data.predictions.map(prediction => ({
+          description: prediction.description,
+          structured_formatting: prediction.structured_formatting,
+          place_id: prediction.place_id,
+        })));
+      } else {
+        setLocationSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Lỗi tìm kiếm gợi ý địa điểm:', error);
+      setLocationSuggestions([]);
+    }
+  }, [GOONG_PLACES_API_KEY]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchLocationSuggestions(address);
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [address, fetchLocationSuggestions]);
+
+  const handleSelectLocation = (suggestion) => {
+    setLocation({
+      address: suggestion.description,
+      coordinates: null,
+    });
+    setAddress(suggestion.description);
+    setLocationSuggestions([]);
+
+    fetchPlaceDetails(suggestion.place_id);
+  };
+
+  const fetchPlaceDetails = async (placeId) => {
+    try {
+      const response = await fetch(
+        `https://rsapi.goong.io/Place/Detail?place_id=${placeId}&api_key=${GOONG_PLACES_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.status === 'OK' && data.result.geometry.location) {
+        setLocation(prev => ({
+          ...prev,
+          coordinates: {
+            lat: data.result.geometry.location.lat,
+            lng: data.result.geometry.location.lng,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error('Lỗi lấy chi tiết địa điểm:', error);
+    }
   };
 
   const onSubmit = async (data) => {
@@ -257,7 +359,7 @@ const CreatePost = ({ open, onClose }) => {
     }
 
     if (!user?._id) {
-      alert("User not found. Please log in again.");
+      alert('User not found. Please log in again.');
       return;
     }
 
@@ -271,6 +373,10 @@ const CreatePost = ({ open, onClose }) => {
       formData.append('rating', rating);
     }
 
+    if (location && location.coordinates) {
+      formData.append('location', JSON.stringify(location));
+    }
+
     formData.append('taggedUsers', JSON.stringify(taggedUsers.map(u => ({ id: u._id, username: u.username }))));
 
     croppedFiles.forEach((file, index) => {
@@ -279,19 +385,19 @@ const CreatePost = ({ open, onClose }) => {
         `image_${Date.now()}_${index}.${file.name.split('.').pop()}`,
         { type: file.type }
       );
-      formData.append("images", renamedFile);
+      formData.append('images', renamedFile);
     });
 
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 30000);
+        setTimeout(() => reject(new Error('Request timed out')), 30000);
       });
       await Promise.race([
         dispatch(createPostAsync(formData)).unwrap(),
         timeoutPromise,
       ]);
       await dispatch(getPostsAsync()).unwrap();
-      setValue("content", "");
+      setValue('content', '');
       setImages([]);
       setFiles([]);
       setCroppedImages([]);
@@ -301,10 +407,14 @@ const CreatePost = ({ open, onClose }) => {
       setStep(1);
       setCurrentImageIndex(0);
       setErrorMessage('');
+      setAddress('');
+      setLocation(null);
+      setShowLocationInput(false);
+      setLocationSuggestions([]);
       onClose();
     } catch (err) {
-      console.error("Error creating post:", err);
-      alert("Failed to create post. Please try again.");
+      console.error('Error creating post:', err);
+      alert('Failed to create post. Please try again.');
     }
   };
 
@@ -327,7 +437,6 @@ const CreatePost = ({ open, onClose }) => {
     }
   };
 
-  // Xử lý emoji picker
   const handleOpenEmojiPicker = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -337,13 +446,12 @@ const CreatePost = ({ open, onClose }) => {
   };
 
   const handleEmojiSelect = (emoji, field) => {
-    setValue("content", field.value + emoji.native);
+    setValue('content', field.value + emoji.native);
     updateTaggedUsersFromContent(field.value + emoji.native);
     handleCloseEmojiPicker();
   };
 
   const openEmojiPicker = Boolean(anchorEl);
-
 
   return (
     <Dialog
@@ -363,7 +471,7 @@ const CreatePost = ({ open, onClose }) => {
           <DialogTitle sx={{ textAlign: 'center' }}>Create new post</DialogTitle>
           <DialogContent sx={{ textAlign: 'center', py: 4 }}>
             <Box>
-              <CloudUploadIcon sx={{ fontSize: 100, color: "gray", marginBottom: 2 }} />
+              <CloudUploadIcon sx={{ fontSize: 100, color: 'gray', marginBottom: 2 }} />
               <Typography variant="body1" gutterBottom>
                 Drag photos and videos here
               </Typography>
@@ -418,7 +526,7 @@ const CreatePost = ({ open, onClose }) => {
             </IconButton>
             <Typography>Create new post</Typography>
             <Button type="submit" color="primary" disabled={loading || errorMessage}>
-              {loading ? "Sharing..." : "Share"}
+              {loading ? 'Sharing...' : 'Share'}
             </Button>
           </DialogTitle>
           <DialogContent
@@ -442,28 +550,51 @@ const CreatePost = ({ open, onClose }) => {
                 overflow: 'hidden',
               }}
             >
-              {croppedImages.length > 0 && (
-                <img
-                  src={croppedImages[0]}
-                  alt="Cropped"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-              )}
-              {croppedImages.length > 0 && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleCancelImage}
-                  sx={{ position: 'absolute', top: 10, right: 10 }}
-                  disabled={loading}
-                >
-                  Cancel Images
-                </Button>
-              )}
+              <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+                {croppedImages.length > 0 && (
+                  <>
+                    <img
+                      src={croppedImages[currentImageIndex]}
+                      alt={`Cropped ${currentImageIndex}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        display: 'block',
+                      }}
+                    />
+                    {croppedImages.length > 1 && (
+                      <>
+                        <IconButton
+                          onClick={() => setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : croppedImages.length - 1))}
+                          sx={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'white' }}
+                          disabled={loading}
+                        >
+                          ◀
+                        </IconButton>
+                        <IconButton
+                          onClick={() => setCurrentImageIndex((prev) => (prev + 1) % croppedImages.length)}
+                          sx={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: 'white' }}
+                          disabled={loading}
+                        >
+                          ▶
+                        </IconButton>
+                      </>
+                    )}
+                  </>
+                )}
+                {croppedImages.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleCancelImage}
+                    sx={{ position: 'absolute', top: 10, right: 10 }}
+                    disabled={loading}
+                  >
+                    Cancel Images
+                  </Button>
+                )}
+              </Box>
             </Box>
             <Box
               sx={{
@@ -478,45 +609,43 @@ const CreatePost = ({ open, onClose }) => {
               <Box>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Avatar src={user?.avatar} alt={user?.username} />
-                  <Typography variant="subtitle1">
-                    {user?.username}
-                  </Typography>
+                  <Typography variant="subtitle1">{user?.username}</Typography>
                 </Stack>
                 <Controller
                   name="content"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Content is required" }}
+                  rules={{ required: 'Content is required' }}
                   render={({ field }) => (
                     <>
-                    <MentionsInput
-                      value={field.value}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                        updateTaggedUsersFromContent(e.target.value);
-                      }}
-                      style={mentionStyle}
-                      placeholder="Write a caption..."
-                      disabled={loading}
-                      className="mentions-input"
-                    >
-                      <Mention
-                        trigger="@"
-                        data={mentionUsers}
-                        onAdd={handleAddMention}
-                        markup="@[__display__](__id__)"
-                        displayTransform={(id, display) => `@${display}`}
-                        style={{ backgroundColor: '#d1eaff' }}
-                      />
-                      <Mention
-                        trigger="#"
-                        data={availableTags}
-                        markup="#[__display__](__id__)"
-                        displayTransform={(id, display) => `#${display}`}
-                        style={{ backgroundColor: '#d1eaff' }}
-                      />
-                    </MentionsInput>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                      <MentionsInput
+                        value={field.value}
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                          updateTaggedUsersFromContent(e.target.value);
+                        }}
+                        style={mentionStyle}
+                        placeholder="Write a caption..."
+                        disabled={loading}
+                        className="mentions-input"
+                      >
+                        <Mention
+                          trigger="@"
+                          data={mentionUsers}
+                          onAdd={handleAddMention}
+                          markup="@[__display__](__id__)"
+                          displayTransform={(id, display) => `@${display}`}
+                          style={{ backgroundColor: '#d1eaff' }}
+                        />
+                        <Mention
+                          trigger="#"
+                          data={availableTags}
+                          markup="#[__display__](__id__)"
+                          displayTransform={(id, display) => `#${display}`}
+                          style={{ backgroundColor: '#d1eaff' }}
+                        />
+                      </MentionsInput>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                         <IconButton onClick={handleOpenEmojiPicker} sx={{ color: 'grey.500' }}>
                           <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
                         </IconButton>
@@ -568,10 +697,48 @@ const CreatePost = ({ open, onClose }) => {
                     <Typography sx={{ ml: 1 }}>{rating}/5</Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: "column", alignItems: "flex-start" }}>
-                  <Button variant="text" color="primary" disabled={loading}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <Button
+                    variant="text"
+                    color="primary"
+                    disabled={loading}
+                    onClick={() => setShowLocationInput(!showLocationInput)}
+                  >
                     Add location
                   </Button>
+                  {showLocationInput && (
+                    <Box sx={{ mt: 1, width: '100%' }}>
+                      <TextField
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Nhập địa chỉ..."
+                        size="small"
+                        sx={{ flex: 1, mb: 1 }}
+                        autoFocus
+                      />
+                      {locationSuggestions.length > 0 && (
+                        <List sx={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ccc' }}>
+                          {locationSuggestions.map((suggestion, index) => (
+                            <ListItem
+                              button
+                              key={index}
+                              onClick={() => handleSelectLocation(suggestion)}
+                            >
+                              <ListItemText
+                                primary={suggestion.description}
+                                secondary={suggestion.structured_formatting.main_text}
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      )}
+                    </Box>
+                  )}
+                  {location && location.coordinates && (
+                    <Typography variant="caption" sx={{ mt: 1 }}>
+                      Đã chọn: {location.address} (lat: {location.coordinates.lat}, lng: {location.coordinates.lng})
+                    </Typography>
+                  )}
                   <Button variant="text" color="primary" disabled={loading}>
                     Add collaborators
                   </Button>
@@ -588,7 +755,7 @@ const CreatePost = ({ open, onClose }) => {
               </Box>
               {error && (
                 <Typography color="error" variant="body2" sx={{ mt: 2 }}>
-                  {error.message || "An error occurred"}
+                  {error.message || 'An error occurred'}
                 </Typography>
               )}
             </Box>
@@ -598,4 +765,5 @@ const CreatePost = ({ open, onClose }) => {
     </Dialog>
   );
 };
+
 export default CreatePost;
