@@ -11,15 +11,27 @@ function MapUser({ selectedPostId, posts, directionsData }) {
   const [userLocation, setUserLocation] = useState(null);
   const [mapInstance, setMapInstance] = useState(null);
 
+  console.log("MapUser received directionsData:",selectedPostId,posts, directionsData);
+
+  // Kiểm tra phần tử DOM
+  useEffect(() => {
+    const mapElement = document.getElementById('map');
+    console.log("Map element:", mapElement);
+    console.log("Map element dimensions:", mapElement?.offsetWidth, mapElement?.offsetHeight);
+  }, []);
+
   // Lấy tọa độ từ bài post được chọn
   useEffect(() => {
     if (!selectedPostId) return;
 
     const selectedPost = posts.find(post => post._id === selectedPostId);
+    console.log("Selected post:", selectedPost);
 
     if (selectedPost?.location?.coordinates) {
       const { lat, lng } = selectedPost.location.coordinates;
       setCoordinates({ lat, lng });
+    } else {
+      console.log("Selected post does not have coordinates.");
     }
   }, [selectedPostId, posts]);
 
@@ -38,15 +50,17 @@ function MapUser({ selectedPostId, posts, directionsData }) {
     }
   }, []);
 
-  // Khởi tạo bản đồ
+  // Khởi tạo bản đồ và vẽ tuyến đường
   useEffect(() => {
     if (!coordinates || !userLocation) return;
+
+    console.log("Initializing map with coordinates:", coordinates, "and userLocation:", userLocation);
 
     goongjs.accessToken = GOONG_MAPS_API_KEY;
 
     const map = new goongjs.Map({
       container: "map",
-      style: "https://tiles.goong.io/assets/goong_map_web.json",
+      style: `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPS_API_KEY}`, // Thêm api_key vào URL
       center: [coordinates.lng, coordinates.lat],
       zoom: 12,
     });
@@ -54,36 +68,46 @@ function MapUser({ selectedPostId, posts, directionsData }) {
     setMapInstance(map);
 
     map.on('load', () => {
+      console.log("Map loaded successfully");
+      console.log("Adding marker for post at:", [coordinates.lng, coordinates.lat]);
       new goongjs.Marker().setLngLat([coordinates.lng, coordinates.lat]).addTo(map);
+      console.log("Adding marker for user at:", [userLocation.lng, userLocation.lat]);
       new goongjs.Marker({ color: 'red' }).setLngLat([userLocation.lng, userLocation.lat]).addTo(map);
+
+      if (directionsData) {
+        console.log("Fetching route with directionsData:", directionsData);
+        fetchRoute(map, userLocation, directionsData);
+      }
+    });
+
+    map.on('error', (e) => {
+      console.error("Map error:", e);
+      alert("Failed to load map. Please check API key and style URL.");
     });
 
     return () => {
       if (map) map.remove();
     };
-  }, [coordinates, userLocation]);
-
-  // Vẽ tuyến đường khi directionsData thay đổi
-  useEffect(() => {
-    if (!mapInstance || !userLocation || !directionsData) return;
-
-    fetchRoute(mapInstance, userLocation, directionsData);
-  }, [directionsData, mapInstance, userLocation]);
+  }, [coordinates, userLocation, directionsData]);
 
   const fetchRoute = async (map, start, end) => {
     try {
+      console.log("Fetching route from:", start, "to:", end);
       const response = await fetch(
         `https://rsapi.goong.io/Direction?origin=${start.lat},${start.lng}&destination=${end.lat},${end.lng}&vehicle=car&api_key=${GOONG_PLACES_API_KEY}`
       );
 
+      console.log("Route API response status:", response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      console.log("Route API response data:", data);
 
       if (data && data.routes) {
         const route = data.routes[0];
         const routeCoordinates = route.legs[0].steps.map(step => [step.start_location.lng, step.start_location.lat]);
+        console.log("Route coordinates:", routeCoordinates);
 
         if (map.getLayer('route')) {
           map.removeLayer('route');
@@ -114,10 +138,11 @@ function MapUser({ selectedPostId, posts, directionsData }) {
           },
         });
 
-        // Center bản đồ vào tuyến đường
         const bounds = new goongjs.LngLatBounds();
         routeCoordinates.forEach(coord => bounds.extend(coord));
         map.fitBounds(bounds, { padding: 50 });
+      } else {
+        console.log("No routes found in response");
       }
     } catch (error) {
       console.error("Error fetching route:", error);
@@ -125,6 +150,7 @@ function MapUser({ selectedPostId, posts, directionsData }) {
   };
 
   const handleGoTo = () => {
+    console.log("Mapuser:", selectedPostId, posts, directionsData);
     if (coordinates) {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`;
       window.open(url, "_blank");

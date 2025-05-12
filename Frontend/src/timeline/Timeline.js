@@ -61,8 +61,14 @@ function Timeline() {
   }, [recommendedPosts, selectedPostId]);
 
   const handlePostSelect = (data) => {
+    console.log("handlePostSelect received:", data);
     if (data?.action === "showDirections" && data.coordinates) {
+      console.log("Setting directionsData:", data.coordinates);
       setDirectionsData(data.coordinates);
+      if (data.postId) {
+        console.log("Setting selectedPostId:", data.postId);
+        setSelectedPostId(data.postId);
+      }
     } else {
       setSelectedPostId(data?.postId || data);
     }

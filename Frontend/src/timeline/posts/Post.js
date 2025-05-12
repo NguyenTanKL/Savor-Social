@@ -54,7 +54,7 @@ function Post({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.user.user);
-  const posts = useSelector((state) => state.posts.posts || []);
+  const posts = useSelector((state) => state.posts.recommendedPosts || []);
   const postInfo = posts.find((post) => post._id === postID);
   const currentUserId = currentUser?._id;
   const username = currentUser?.username || "Unknown";
@@ -138,6 +138,25 @@ function Post({
     checkIfSelected();
   }, [postID]);
 
+  useEffect(() => {
+    console.log("Posts state:", posts);
+    if (!postInfo && postID) {
+      const fetchPost = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.get(`${BACKENDURL}/api/posts/info/${postID}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          console.log("Fetched post:", response.data);
+          // Cập nhật state hoặc prop nếu cần
+        } catch (error) {
+          console.error("Error fetching post:", error);
+        }
+      };
+      fetchPost();
+    }
+  }, [postID, posts, postInfo]);
+
   const usernameOfPost = userData?.username || "Unknown";
 
   const handleFollow = async () => {
@@ -175,7 +194,7 @@ function Post({
             Authorization: `Bearer ${token}`
           }
         });
-        console.log("voucher:", response.data);
+        console.log("Voucher:", response.data);
         setVoucherSelected(response.data);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -185,6 +204,10 @@ function Post({
   }, [postID]);
 
   const handleSelect = async () => {
+    if (!voucherSelected || !voucherSelected.voucher_id) {
+      alert("Voucher data is not available.");
+      return;
+    }
     try {
       console.log("Voucher selected:", voucherSelected.voucher_id);
       const response = await axios.post(`${VOUCHER_API_URL}/${userId}/collect/${voucherSelected.voucher_id}`);
@@ -192,7 +215,7 @@ function Post({
         alert("Voucher selected successfully!");
       }
     } catch (error) {
-      console.error("Error collected voucher:", error);
+      console.error("Error collected voucher:", error.response?.data || error.message);
       alert("Failed to collect voucher");
     }
   };
@@ -227,9 +250,15 @@ function Post({
   const handleSelectMap = async () => {
     try {
       const token = localStorage.getItem('token');
+      const coordinates = postInfo?.location?.coordinates || {};
+      if (!coordinates.lat || !coordinates.lng) {
+        alert("This post does not have valid coordinates to select.");
+        return;
+      }
+
       const response = await axios.put(
         `${BACKENDURL}/api/posts/${postID}/select`,
-        {},
+        { coordinates },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -241,21 +270,24 @@ function Post({
         if (onSelect) onSelect();
       }
     } catch (error) {
-      console.error('Error updating post selection:', error);
+      console.error('Error updating post selection:', error.response?.data || error.message);
       alert('Failed to update selection');
     }
   };
-
   const handleShowDirections = () => {
-    if (postInfo?.location?.coordinates) {
-      const { lat, lng } = postInfo.location.coordinates;
-      console.log("Showing directions to:", { lat, lng });
-      if (onSelect) {
-        onSelect({ action: "showDirections", coordinates: { lat, lng } });
-      }
+    console.log("directions", posts);
+    console.log("PostInfo:", postInfo);
+    console.log("onSelect prop:", onSelect);
+    if (!postInfo || !postInfo.location?.coordinates) {
+      alert("This post does not have location coordinates to show directions.");
+      return;
+    }
+    const { lat, lng } = postInfo.location.coordinates;
+    console.log("Showing directions to:", { lat, lng });
+    if (onSelect) {
+      onSelect({ action: "showDirections", coordinates: { lat, lng }, postId: postID });
     }
   };
-
   if (is_voucher && is_ad) {
     return (
       <div className="post">
@@ -282,11 +314,13 @@ function Post({
           <span>{address}</span>
         </div>
         <div className="post__image" style={{ position: "relative" }}>
-          <img
-            src={images[current]}
-            alt={`post-img-${current}`}
-            style={{ width: "100%", borderRadius: "10px" }}
-          />
+          {images.length > 0 && (
+            <img
+              src={images[current]}
+              alt={`post-img-${current}`}
+              style={{ width: "100%", borderRadius: "10px" }}
+            />
+          )}
           {images.length > 1 && (
             <>
               <button onClick={prevImage} className="nav-button left">◀</button>
@@ -459,11 +493,13 @@ function Post({
           <span>{address}</span>
         </div>
         <div className="post__image" style={{ position: "relative" }}>
-          <img
-            src={images[current]}
-            alt={`post-img-${current}`}
-            style={{ width: "100%", borderRadius: "10px" }}
-          />
+          {images.length > 0 && (
+            <img
+              src={images[current]}
+              alt={`post-img-${current}`}
+              style={{ width: "100%", borderRadius: "10px" }}
+            />
+          )}
           {images.length > 1 && (
             <>
               <button onClick={prevImage} className="nav-button left">◀</button>
@@ -590,11 +626,13 @@ function Post({
           <span>{address}</span>
         </div>
         <div className="post__image" style={{ position: "relative" }}>
-          <img
-            src={images[current]}
-            alt={`post-img-${current}`}
-            style={{ width: "100%", borderRadius: "10px" }}
-          />
+          {images.length > 0 && (
+            <img
+              src={images[current]}
+              alt={`post-img-${current}`}
+              style={{ width: "100%", borderRadius: "10px" }}
+            />
+          )}
           {images.length > 1 && (
             <>
               <button onClick={prevImage} className="nav-button left">◀</button>
@@ -715,11 +753,13 @@ function Post({
           <span>{address}</span>
         </div>
         <div className="post__image" style={{ position: "relative" }}>
-          <img
-            src={images[current]}
-            alt={`post-img-${current}`}
-            style={{ width: "100%", borderRadius: "10px" }}
-          />
+          {images.length > 0 && (
+            <img
+              src={images[current]}
+              alt={`post-img-${current}`}
+              style={{ width: "100%", borderRadius: "10px" }}
+            />
+          )}
           {images.length > 1 && (
             <>
               <button onClick={prevImage} className="nav-button left">◀</button>
