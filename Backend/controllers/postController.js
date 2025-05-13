@@ -4,7 +4,8 @@ const User = require("../models/UserModel");
 const FavouriteMap = require("../models/FavouriteMapModel");
 const Notification = require("../models/NotificationModel");
 const Tag = require("../models/TagsModel");
-const cloudinary = require("../config/cloudinary/cloudinaryConfig");
+// const cloudinary = require("../config/cloudinary/cloudinaryConfig");
+const cloudinary = require("../config/cloudinary/cloudinaryConfig").cloudinary;
 const { spawn } = require('child_process');
 const createPost = async (req, res) => {
   try {
@@ -260,17 +261,24 @@ const deletePost = async (req, res) => {
       }
 
       // Xóa ảnh trên Cloudinary nếu có
-      if (post.imageUrl) {        
-        const parts = post.imageUrl.split('/');
-        const publicIdWithExtension = parts[parts.length - 1]; // Lấy tên file từ URL
-        const publicId = publicIdWithExtension.split('.')[0]; // Lấy publicId    
-        try {
-            const result = await cloudinary.uploader.destroy(publicId);
-        } catch (error) {
+      if (post.images && Array.isArray(post.images) && post.images.length > 0) {
+        for (const imageUrl of post.images) {
+          try {
+            // Trích xuất publicId từ URL
+            const publicId = imageUrl
+              .split('/')
+              .pop() // Lấy phần cuối cùng (ví dụ: 'image1.jpg')
+              .split('.')[0]; // Loại bỏ phần mở rộng (ví dụ: 'image1')
+            console.log("Deleting image with publicId:", `posts/${publicId}`); // Log để debug
+            const result = await cloudinary.uploader.destroy(`posts/${publicId}`);
+            console.log("Image deleted from Cloudinary:", result);
+          } catch (error) {
             console.error("Error deleting image from Cloudinary:", error);
+          }
         }
-    }
-
+      } else {
+        console.log("No images to delete for post:", post._id);
+      }
       // Xóa bài viết
       await Post.findByIdAndDelete(postId);
       res.status(200).json({ message: "Delete post successfully" });
