@@ -57,10 +57,14 @@ def main():
         print(json.dumps([]))
         return
 
-    # Tải mô hình
-    print("Loading SentenceTransformer model...", file=sys.stderr)
-    model = SentenceTransformer('distiluse-base-multilingual-cased-v2')
-    print("Model loaded successfully", file=sys.stderr)
+# Tải mô hình với xử lý lỗi
+    try:
+        print("Loading SentenceTransformer model...", file=sys.stderr)
+        model = SentenceTransformer('distiluse-base-multilingual-cased-v2')
+        print("Model loaded successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"Error loading model: {e}", file=sys.stderr)
+        sys.exit(1)
     # Tạo embeddings
     print(f"Total documents for embedding: {len(post_data) + 1}", file=sys.stderr)
     all_texts = post_data + [user_data]
