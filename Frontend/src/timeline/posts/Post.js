@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { Avatar, Button, Rating, Box, Chip, Stack, TextField, IconButton, Typography, Popover } from "@mui/material";
+import { Avatar, Button, Rating, Box, Stack, TextField, IconButton, Typography, Popover } from "@mui/material";
 import MapIcon from '@mui/icons-material/Map';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import "./Post.css";
@@ -148,7 +148,6 @@ function Post({
             headers: { Authorization: `Bearer ${token}` },
           });
           console.log("Fetched post:", response.data);
-          // Cập nhật state hoặc prop nếu cần
         } catch (error) {
           console.error("Error fetching post:", error);
         }
@@ -274,60 +273,189 @@ function Post({
       alert('Failed to update selection');
     }
   };
+
   const handleShowDirections = () => {
-    console.log("directions", posts);
-    console.log("PostInfo:", postInfo);
-    console.log("onSelect prop:", onSelect);
     if (!postInfo || !postInfo.location?.coordinates) {
       alert("This post does not have location coordinates to show directions.");
       return;
     }
     const { lat, lng } = postInfo.location.coordinates;
-    console.log("Showing directions to:", { lat, lng });
     if (onSelect) {
       onSelect({ action: "showDirections", coordinates: { lat, lng }, postId: postID });
     }
   };
+
+  // Common footer component for all posts (including comments, tags, and post detail)
+  const renderPostFooter = () => (
+    <div className="post__footer">
+      <div className="post_footerIcons">
+        <div className="post__iconsMain">
+          {liked ? (
+            <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
+          ) : (
+            <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
+          )}
+          <ChatBubbleOutlineIcon className="postIcon" onClick={handleOpenPostDetail} />
+          <TelegramIcon className="postIcon" onClick={handleOpenShareModal} />
+        </div>
+        <div className="post_iconSave">
+          {isUserSelected ? (
+            <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
+          ) : (
+            <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
+          )}
+          {isSelected ? (
+            <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
+          ) : (
+            <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
+          )}
+          {isSaved ? (
+            <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
+          ) : (
+            <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+          )}
+        </div>
+      </div>
+      <span className="post_likes">{likeCount} likes</span>
+      <br />
+      {rating ? (
+        <Stack direction={"row"}>
+          <Typography variant="body2" color="text.secondary">
+            Rate: {rating}
+          </Typography>
+          <Rating
+            value={rating}
+            max={5}
+            precision={0.5}
+            readOnly
+            size="small"
+          />
+        </Stack>
+      ) : (
+        <></>
+      )}
+      <Box sx={{ mt: 1, mb: 1 }}></Box>
+      <div className="post__caption">
+        <span onClick={handleUsernameClick} style={{ cursor: "pointer" }}>{usernameOfPost} </span>
+        {parseContent(content, taggedUsers)}
+        <br />
+      </div>
+      <div className="post__comment">
+        <span onClick={handleOpenPostDetail} style={{ cursor: "pointer" }}>
+          View all {postComment?.length || 0} comments
+        </span>
+        <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
+          <TextField
+            inputRef={commentInputRef}
+            fullWidth
+            variant="standard"
+            placeholder="Add a comment..."
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={handleCommentKeyDown}
+            InputProps={{
+              disableUnderline: true,
+              style: { fontSize: 15 },
+            }}
+          />
+          <IconButton onClick={handleOpenEmojiPicker} sx={{ color: "#rgb(0, 0, 0)" }}>
+            <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          {commentText.trim() && (
+            <IconButton
+              onClick={() => {
+                handleCreateComment(username);
+                setCommentText("");
+              }}
+              disabled={loading}
+              sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
+            >
+              <SendIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          )}
+        </Stack>
+        <Popover
+          open={openEmojiPicker}
+          anchorEl={anchorEl}
+          onClose={handleCloseEmojiPicker}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "left",
+          }}
+        >
+          <Picker data={data} onEmojiSelect={handleEmojiSelect} />
+        </Popover>
+      </div>
+    </div>
+  );
+
+  // Common location display for all posts (including name and address)
+  const renderLocation = () => (
+    <div className="post__address">
+      <FmdGoodOutlinedIcon className="postIcon" color="action" />
+      <span>
+        {postInfo?.location?.name ? `${postInfo.location.name} - ` : ""}
+        {postInfo?.location?.address || address || "Unknown location"}
+      </span>
+    </div>
+  );
+
+  // Common header for all posts
+  const renderHeader = () => (
+    <div className="post__header">
+      <div className="post__headerAuthor">
+        <Avatar src={userData?.avatar}>?</Avatar>
+        <Typography sx={{ ml: 1, cursor: "pointer" }} onClick={handleUsernameClick}>
+          {usernameOfPost}
+        </Typography>
+        <Typography>
+          • {moment(timestamp).fromNow()}
+          {is_ad && " • Advertisement"}
+        </Typography>
+        {currentUserId !== user && !isFollowing && (
+          <Typography
+            variant="body2"
+            className="follow-text"
+            onClick={handleFollow}
+            sx={{ color: "#0095f6", cursor: "pointer", ml: 1 }}
+          >
+            Follow
+          </Typography>
+        )}
+      </div>
+      <MoreHorizIcon sx={{ cursor: "pointer" }} onClick={() => setDialogOpen(true)} />
+    </div>
+  );
+
+  // Common image display for all posts
+  const renderImages = () => (
+    <div className="post__image" style={{ position: "relative" }}>
+      {images.length > 0 && (
+        <img
+          src={images[current]}
+          alt={`post-img-${current}`}
+          style={{ width: "100%", borderRadius: "10px" }}
+        />
+      )}
+      {images.length > 1 && (
+        <>
+          <button onClick={prevImage} className="nav-button left">◀</button>
+          <button onClick={nextImage} className="nav-button right">▶</button>
+        </>
+      )}
+    </div>
+  );
+
   if (is_voucher && is_ad) {
     return (
       <div className="post">
-        <div className="post__header">
-          <div className="post__headerAuthor">
-            <Avatar src={userData?.avatar}>?</Avatar>
-            <span>{usernameOfPost}</span>
-            {currentUserId !== user && !isFollowing && (
-              <Typography
-                variant="body2"
-                className="follow-text"
-                onClick={handleFollow}
-                sx={{ color: "#0095f6", cursor: "pointer", ml: 1 }}
-              >
-                Follow
-              </Typography>
-            )}
-            <span> • {moment(timestamp).fromNow()} • Advertisement</span>
-          </div>
-          <MoreHorizIcon />
-        </div>
-        <div className="post__address">
-          <FmdGoodOutlinedIcon className="postIcon" color="action" />
-          <span>{address}</span>
-        </div>
-        <div className="post__image" style={{ position: "relative" }}>
-          {images.length > 0 && (
-            <img
-              src={images[current]}
-              alt={`post-img-${current}`}
-              style={{ width: "100%", borderRadius: "10px" }}
-            />
-          )}
-          {images.length > 1 && (
-            <>
-              <button onClick={prevImage} className="nav-button left">◀</button>
-              <button onClick={nextImage} className="nav-button right">▶</button>
-            </>
-          )}
-        </div>
+        {renderHeader()}
+        {renderLocation()}
+        {renderImages()}
         <div>
           <Card elevation={3} style={{ maxWidth: 600, margin: 'auto' }}>
             <Grid container>
@@ -353,8 +481,12 @@ function Post({
                   Voucher
                 </Typography>
                 <Typography variant="body1">{voucherData?.name}</Typography>
-                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
-                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span></Typography>
+                <Typography variant="body2">
+                  Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span>
+                </Typography>
+                <Typography variant="body2">
+                  Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span>
+                </Typography>
               </Grid>
               <Grid
                 item
@@ -382,131 +514,34 @@ function Post({
             </Grid>
           </Card>
         </div>
-        <div className="post__footer">
-          <div className="post_footerIcons">
-            <div className="post__iconsMain">
-              {liked ? (
-                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-              ) : (
-                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-              )}
-              <ChatBubbleOutlineIcon className="postIcon" />
-              <TelegramIcon className="postIcon" />
-            </div>
-            <div className="post_iconSave">
-              {isUserSelected ? (
-                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
-              ) : (
-                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
-              )}
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
-              ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
-              )}
-              {isSaved ? (
-                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
-              ) : (
-                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
-              )}
-            </div>
-          </div>
-          <span className="post_likes">{likeCount} likes</span>
-          <br />
-          <div className="post__caption">
-            <span>{usernameOfPost} </span> {content}
-          </div>
-          <div className="post__comment">
-            <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
-            {open && <Modal
-              open={open}
-              onClose={() => setOpen(false)}
-              user={user}
-              postImage={images[0]}
-              likes={likes}
-              caption={content}
-              address={address}
-              timestamp={timestamp}
-            />}
-            <div className="comment">
-              <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
-                <Avatar src={currentUser?.avatar || ""} sx={{ width: 32, height: 32 }} />
-                <TextField
-                  inputRef={commentInputRef}
-                  fullWidth
-                  variant="standard"
-                  placeholder="Add a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={handleCommentKeyDown}
-                  InputProps={{
-                    disableUnderline: true,
-                    style: { fontSize: 14 },
-                  }}
-                  sx={{
-                    "& .MuiInputBase-root": {
-                      padding: "0 8px",
-                    },
-                  }}
-                />
-                {commentText.trim() && (
-                  <IconButton
-                    onClick={() => {
-                      handleCreateComment(username);
-                      setCommentText("");
-                    }}
-                    disabled={loading}
-                    sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
-                  >
-                    <SendIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                )}
-              </Stack>
-            </div>
-          </div>
-        </div>
+        {renderPostFooter()}
+        <ShareModal postId={postID} open={shareModalOpen} onClose={handleCloseShareModal} />
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          user={user}
+          postImage={images[0]}
+          likes={likes}
+          caption={content}
+          address={postInfo?.location?.address || address}
+          timestamp={timestamp}
+        />
+        <PostOptionsDialog
+          user={user}
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          postInfo={postInfo}
+          onDelete={() => navigate(-1)}
+          isFollowing={isFollowing}
+        />
       </div>
     );
   } else if (is_voucher && !is_ad) {
     return (
       <div className="post">
-        <div className="post__header">
-          <div className="post__headerAuthor">
-            <Avatar src={userData?.avatar}>?</Avatar>
-            <span>{usernameOfPost}</span>
-            {currentUserId !== user && !isFollowing && (
-              <Typography
-                variant="body2"
-                className="follow-text"
-                onClick={handleFollow}
-                sx={{ color: "#0095f6", cursor: "pointer", ml: 1 }}
-              >
-                Follow
-              </Typography>
-            )}
-            <span> • {moment(timestamp).fromNow()}</span>
-          </div>
-          <MoreHorizIcon />
-        </div>
-        <div className="post__address">
-          <FmdGoodOutlinedIcon className="postIcon" color="action" />
-          <span>{address}</span>
-        </div>
-        <div className="post__image" style={{ position: "relative" }}>
-          {images.length > 0 && (
-            <img
-              src={images[current]}
-              alt={`post-img-${current}`}
-              style={{ width: "100%", borderRadius: "10px" }}
-            />
-          )}
-          {images.length > 1 && (
-            <>
-              <button onClick={prevImage} className="nav-button left">◀</button>
-              <button onClick={nextImage} className="nav-button right">▶</button>
-            </>
-          )}
-        </div>
+        {renderHeader()}
+        {renderLocation()}
+        {renderImages()}
         <div>
           <Card elevation={3} style={{ maxWidth: 600, margin: 'auto', minHeight: "80px" }}>
             <Grid container>
@@ -532,8 +567,12 @@ function Post({
                   Voucher
                 </Typography>
                 <Typography variant="body1">{voucherData?.name}</Typography>
-                <Typography variant="body2">Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span></Typography>
-                <Typography variant="body2">Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span></Typography>
+                <Typography variant="body2">
+                  Ngày hết hạn: <span style={{ fontWeight: "bold" }}>{new Date(voucherData?.expire_day).toLocaleDateString()}</span>
+                </Typography>
+                <Typography variant="body2">
+                  Số lượng còn: <span style={{ fontWeight: "bold" }}>{voucherData?.in_stock}</span>
+                </Typography>
               </Grid>
               <Grid
                 item
@@ -563,316 +602,74 @@ function Post({
             </Grid>
           </Card>
         </div>
-        <div className="post__footer">
-          <div className="post_footerIcons">
-            <div className="post__iconsMain">
-              {liked ? (
-                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-              ) : (
-                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-              )}
-              <TelegramIcon className="postIcon" />
-            </div>
-            <div className="post_iconSave">
-              {isUserSelected ? (
-                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
-              ) : (
-                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
-              )}
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
-              ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
-              )}
-              {isSaved ? (
-                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
-              ) : (
-                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
-              )}
-            </div>
-          </div>
-          <span className="post_likes">{likeCount} likes</span>
-          <br />
-          <div className="post__caption">
-            <span>{usernameOfPost} </span> {content}
-          </div>
-        </div>
+        {renderPostFooter()}
+        <ShareModal postId={postID} open={shareModalOpen} onClose={handleCloseShareModal} />
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          user={user}
+          postImage={images[0]}
+          likes={likes}
+          caption={content}
+          address={postInfo?.location?.address || address}
+          timestamp={timestamp}
+        />
+        <PostOptionsDialog
+          user={user}
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          postInfo={postInfo}
+          onDelete={() => navigate(-1)}
+          isFollowing={isFollowing}
+        />
       </div>
     );
   } else if (!is_voucher && is_ad) {
     return (
       <div className="post">
-        <div className="post__header">
-          <div className="post__headerAuthor">
-            <Avatar src={userData?.avatar}>?</Avatar>
-            <span>{usernameOfPost}</span>
-            {currentUserId !== user && !isFollowing && (
-              <Typography
-                variant="body2"
-                className="follow-text"
-                onClick={handleFollow}
-                sx={{ color: "#0095f6", cursor: "pointer", ml: 1 }}
-              >
-                Follow
-              </Typography>
-            )}
-            <span> • {moment(timestamp).fromNow()} • Advertisement</span>
-            <br />
-          </div>
-          <MoreHorizIcon />
-        </div>
-        <div className="post__address">
-          <FmdGoodOutlinedIcon className="postIcon" color="action" />
-          <span>{address}</span>
-        </div>
-        <div className="post__image" style={{ position: "relative" }}>
-          {images.length > 0 && (
-            <img
-              src={images[current]}
-              alt={`post-img-${current}`}
-              style={{ width: "100%", borderRadius: "10px" }}
-            />
-          )}
-          {images.length > 1 && (
-            <>
-              <button onClick={prevImage} className="nav-button left">◀</button>
-              <button onClick={nextImage} className="nav-button right">▶</button>
-            </>
-          )}
-        </div>
-        <div className="post__footer">
-          <div className="post_footerIcons">
-            <div className="post__iconsMain">
-              {liked ? (
-                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-              ) : (
-                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-              )}
-              <ChatBubbleOutlineIcon className="postIcon" />
-              <TelegramIcon className="postIcon" />
-            </div>
-            <div className="post_iconSave">
-              {isUserSelected ? (
-                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
-              ) : (
-                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
-              )}
-              {isSelected ? (
-                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
-              ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
-              )}
-              {isSaved ? (
-                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
-              ) : (
-                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
-              )}
-            </div>
-          </div>
-          <span className="post_likes">{likeCount} likes</span>
-          <br />
-          <div className="post__caption">
-            <span>{usernameOfPost} </span> {content}
-          </div>
-          <div className="post__comment">
-            <span onClick={() => setOpen(true)} style={{ cursor: "pointer" }}>View all 13,384 comments</span>
-            {open && <Modal
-              open={open}
-              onClose={() => setOpen(false)}
-              user={user}
-              postImage={images[0]}
-              likes={likes}
-              caption={content}
-              address={address}
-              timestamp={timestamp}
-            />}
-            <div className="comment">
-              <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
-                <Avatar src={currentUser?.avatar || ""} sx={{ width: 32, height: 32 }} />
-                <TextField
-                  inputRef={commentInputRef}
-                  fullWidth
-                  variant="standard"
-                  placeholder="Add a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={handleCommentKeyDown}
-                  InputProps={{
-                    disableUnderline: true,
-                    style: { fontSize: 14 },
-                  }}
-                  sx={{
-                    "& .MuiInputBase-root": {
-                      padding: "0 8px",
-                    },
-                  }}
-                />
-                {commentText.trim() && (
-                  <IconButton
-                    onClick={() => {
-                      handleCreateComment(username);
-                      setCommentText("");
-                    }}
-                    disabled={loading}
-                    sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
-                  >
-                    <SendIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                )}
-              </Stack>
-            </div>
-          </div>
-        </div>
+        {renderHeader()}
+        {renderLocation()}
+        {renderImages()}
+        {renderPostFooter()}
+        <ShareModal postId={postID} open={shareModalOpen} onClose={handleCloseShareModal} />
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          user={user}
+          postImage={images[0]}
+          likes={likes}
+          caption={content}
+          address={postInfo?.location?.address || address}
+          timestamp={timestamp}
+        />
+        <PostOptionsDialog
+          user={user}
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          postInfo={postInfo}
+          onDelete={() => navigate(-1)}
+          isFollowing={isFollowing}
+        />
       </div>
     );
   } else {
     return (
       <div className="post">
-        <div className="post__header">
-          <div className="post__headerAuthor">
-            <Avatar src={userData?.avatar}>?</Avatar>
-            <Typography sx={{ ml: 1, cursor: "pointer" }} onClick={handleUsernameClick}>
-              {usernameOfPost}
-            </Typography>
-            <Typography> • {moment(timestamp).fromNow()}</Typography>
-            {currentUserId !== user && !isFollowing && (
-              <Typography
-                variant="body2"
-                className="follow-text"
-                onClick={handleFollow}
-                sx={{ color: "#0095f6", cursor: "pointer", ml: 1 }}
-              >
-                Follow
-              </Typography>
-            )}
-          </div>
-          <MoreHorizIcon sx={{ cursor: "pointer" }} onClick={() => setDialogOpen(true)} />
-        </div>
-        <div className="post__address">
-          <FmdGoodOutlinedIcon className="postIcon" color="action" />
-          <span>{address}</span>
-        </div>
-        <div className="post__image" style={{ position: "relative" }}>
-          {images.length > 0 && (
-            <img
-              src={images[current]}
-              alt={`post-img-${current}`}
-              style={{ width: "100%", borderRadius: "10px" }}
-            />
-          )}
-          {images.length > 1 && (
-            <>
-              <button onClick={prevImage} className="nav-button left">◀</button>
-              <button onClick={nextImage} className="nav-button right">▶</button>
-            </>
-          )}
-        </div>
-        <div className="post__footer">
-          <div className="post_footerIcons">
-            <div className="post__iconsMain">
-              {liked ? (
-                <FavoriteIcon className="postIcon liked" onClick={handleLike} color="error" />
-              ) : (
-                <FavoriteBorderIcon className="postIcon" onClick={handleLike} />
-              )}
-              <ChatBubbleOutlineIcon className="postIcon" onClick={handleOpenPostDetail} />
-              <TelegramIcon className="postIcon" onClick={handleOpenShareModal} />
-            </div>
-            <div className="post_iconSave">
-              {isUserSelected ? (
-                <MapIcon className="postIcon selected" onClick={handleSelectMap} color="error" />
-              ) : (
-                <MapOutlinedIcon className="postIcon" onClick={handleSelectMap} />
-              )}
-              {isUserSelected ? (
-                <RoomIcon className="postIcon selected" onClick={handleShowDirections} color="error" />
-              ) : (
-                <FmdGoodOutlinedIcon className="postIcon" onClick={handleShowDirections} />
-              )}
-              {isSaved ? (
-                <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
-              ) : (
-                <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
-              )}
-            </div>
-          </div>
-          <span className="post_likes">{likeCount} likes</span>
-          <br />
-          {rating ? (
-            <Stack direction={"row"}>
-              <Typography variant="body2" color="text.secondary">
-                Rate: {rating}
-              </Typography>
-              <Rating
-                value={rating}
-                max={5}
-                precision={0.5}
-                readOnly
-                size="small"
-              />
-            </Stack>
-          ) : (
-            <></>
-          )}
-          <Box sx={{ mt: 1, mb: 1 }}></Box>
-          <div className="post__caption">
-            <span onClick={handleUsernameClick} style={{ cursor: "pointer" }}>{usernameOfPost} </span>
-            {parseContent(content, taggedUsers)}
-            <br />
-          </div>
-          <div className="post__comment">
-            <span onClick={handleOpenPostDetail} style={{ cursor: "pointer" }}>
-              View all {postComment?.length} comments
-            </span>
-            <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
-              <TextField
-                inputRef={commentInputRef}
-                fullWidth
-                variant="standard"
-                placeholder="Add a comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={handleCommentKeyDown}
-                InputProps={{
-                  disableUnderline: true,
-                  style: { fontSize: 15 },
-                }}
-              />
-              <IconButton onClick={handleOpenEmojiPicker} sx={{ color: "#rgb(0, 0, 0)" }}>
-                <EmojiEmotionsOutlinedIcon sx={{ fontSize: 20 }} />
-              </IconButton>
-              {commentText.trim() && (
-                <IconButton
-                  onClick={() => {
-                    handleCreateComment(username);
-                    setCommentText("");
-                  }}
-                  disabled={loading}
-                  sx={{ color: commentText.trim() ? "#0095f6" : "#b2dffc" }}
-                >
-                  <SendIcon sx={{ fontSize: 20 }} />
-                </IconButton>
-              )}
-            </Stack>
-            <Popover
-              open={openEmojiPicker}
-              anchorEl={anchorEl}
-              onClose={handleCloseEmojiPicker}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-            >
-              <Picker data={data} onEmojiSelect={handleEmojiSelect} />
-            </Popover>
-          </div>
-        </div>
-        <br />
+        {renderHeader()}
+        {renderLocation()}
+        {renderImages()}
+        {renderPostFooter()}
         <ShareModal postId={postID} open={shareModalOpen} onClose={handleCloseShareModal} />
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          user={user}
+          postImage={images[0]}
+          likes={likes}
+          caption={content}
+          address={postInfo?.location?.address || address}
+          timestamp={timestamp}
+        />
         <PostOptionsDialog
           user={user}
           open={dialogOpen}

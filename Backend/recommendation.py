@@ -59,7 +59,7 @@ def main():
 
     # Tải mô hình
     print("Loading SentenceTransformer model...", file=sys.stderr)
-    model = SentenceTransformer('distiluse-base-multilingual-cased-v2')
+    model = SentenceTransformer('all-MiniLM-L6-v2')
     print("Model loaded successfully", file=sys.stderr)
     # Tạo embeddings
     print(f"Total documents for embedding: {len(post_data) + 1}", file=sys.stderr)

@@ -56,7 +56,7 @@ const createPost = async (req, res) => {
     if (location) {
       try {
         parsedLocation = JSON.parse(location); // Parse chuỗi JSON thành object
-        if (!parsedLocation.address || !parsedLocation.coordinates) {
+        if (!parsedLocation.address || !parsedLocation.coordinates || !parsedLocation.name) {
           return res.status(400).json({ message: 'Invalid location format. Must include address and coordinates.' });
         }
       } catch (error) {
@@ -980,7 +980,7 @@ const updatePostSelection = async (req, res) =>{
       const newFavourite = new FavouriteMap({
         userId,
         postId,
-        name: post.location.address || `Địa điểm tại ${post.location.coordinates.lat}, ${post.location.coordinates.lng}`,
+        name: post.location.name || `Địa điểm tại ${post.location.coordinates.lat}, ${post.location.coordinates.lng}`,
         address: post.location.address || 'Không có địa chỉ cụ thể',
         coordinates: {
           lat: post.location.coordinates.lat,

@@ -321,6 +321,7 @@ const CreatePost = ({ open, onClose }) => {
 
   const handleSelectLocation = (suggestion) => {
     setLocation({
+      name: suggestion.structured_formatting.main_text,
       address: suggestion.description,
       coordinates: null,
     });
@@ -340,6 +341,7 @@ const CreatePost = ({ open, onClose }) => {
       if (data.status === 'OK' && data.result.geometry.location) {
         setLocation(prev => ({
           ...prev,
+          name: data.result.name,
           coordinates: {
             lat: data.result.geometry.location.lat,
             lng: data.result.geometry.location.lng,
@@ -736,15 +738,9 @@ const CreatePost = ({ open, onClose }) => {
                   )}
                   {location && location.coordinates && (
                     <Typography variant="caption" sx={{ mt: 1 }}>
-                      Đã chọn: {location.address} (lat: {location.coordinates.lat}, lng: {location.coordinates.lng})
+                      Đã chọn:{location.name} - {location.address} (lat: {location.coordinates.lat}, lng: {location.coordinates.lng})
                     </Typography>
                   )}
-                  <Button variant="text" color="primary" disabled={loading}>
-                    Add collaborators
-                  </Button>
-                  <Button variant="text" color="primary" disabled={loading}>
-                    Share to
-                  </Button>
                   {user.usertype === 'restaurant' && (
                     <FormControlLabel
                       control={<Switch checked={adsEnabled} onChange={(e) => setAdsEnabled(e.target.checked)} />}

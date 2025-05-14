@@ -96,13 +96,6 @@ function VouchersPage( {userId} ) {
                                     >
                                         Date end: {voucher.expire_day}
                                     </Typography>
-                                    <Typography
-                                        variant="subtitle1"
-                                        component="div"
-                                        sx={{ color: 'text.secondary' }}
-                                    >
-                                        Description: {voucher.description}
-                                    </Typography>
                                     <Stack direction="row" spacing={0}>
                                         <Item>
                                             <Button 

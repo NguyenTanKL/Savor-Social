@@ -14,6 +14,8 @@ import Stack from "@mui/joy/Stack";
 import Box from "@mui/joy/Box";
 import Sheet from "@mui/joy/Sheet";
 import { Avatar, Popover, IconButton } from "@mui/material";
+import MapIcon from '@mui/icons-material/Map';
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import Typography from "@mui/joy/Typography";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -35,7 +37,7 @@ import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
 import { BACKENDURL } from "../../utils/const";
-
+import axios from "axios";
 // Tái sử dụng style từ CreatePost
 const mentionStyle = {
   control: {
@@ -82,10 +84,11 @@ function PostDetail({ canDelete }) {
   const [taggedUsers, setTaggedUsers] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // Thêm state để quản lý ảnh hiện tại
-
+  const [isLocationSaved, setIsLocationSaved] = useState(false);
   useEffect(() => {
     dispatch(getPostByIdAsync(postId));
     dispatch(getFriendsAsync());
+    checkLocationSavedStatus();
   }, [dispatch, postId]);
 
   const postInfo = useSelector((state) => state.posts.currentPost || {});
@@ -295,7 +298,62 @@ function PostDetail({ canDelete }) {
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + (Array.isArray(postInfo.images) ? postInfo.images.length : 1)) % (Array.isArray(postInfo.images) ? postInfo.images.length : 1));
   };
+// Hàm kiểm tra trạng thái lưu địa điểm
+const checkLocationSavedStatus = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${BACKENDURL}/api/posts/favourite-locations`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const favouriteLocations = response.data;
+    const isSaved = favouriteLocations.some(loc => loc.postId === postId);
+    setIsLocationSaved(isSaved);
+  } catch (error) {
+    console.error("Error checking location saved status:", error);
+  }
+};
 
+// Hàm lưu địa điểm vào favourite-locations
+const handleSaveLocation = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const coordinates = postInfo.location?.coordinates || {};
+    const postId = postInfo._id;
+    if (!coordinates.lat || !coordinates.lng) {
+      alert("This post does not have valid coordinates to save.");
+      return;
+    }
+
+    if (isLocationSaved) {
+      // Xóa khỏi favourite-locations nếu đã lưu
+      await axios.put(`${BACKENDURL}/api/posts/${postId}/select`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLocationSaved(false);
+      alert("Location removed from favourites!");
+    } else {
+      // Thêm vào favourite-locations
+      await axios.put(
+        `${BACKENDURL}/api/posts/${postId}/select`,
+        { postId, coordinates },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLocationSaved(true);
+      alert("Location saved to favourites!");
+    }
+  } catch (error) {
+    console.error("Error saving location:", error.response?.data || error.message);
+    alert("Failed to save location");
+  }
+};
   if (!postInfo._id) {
     return <Typography>Loading...</Typography>;
   }
@@ -550,11 +608,19 @@ function PostDetail({ canDelete }) {
                 <IconButton onClick={handleOpenShareModal}>
                   <SendIcon sx={{ fontSize: 24 }} />
                 </IconButton>
+                
                 <IconButton onClick={handleSavePost} sx={{ marginLeft: "auto" }}>
                   {isSaved ? (
                     <BookmarkIcon className="postIcon" onClick={handleSavePost} color="primary" />
                   ) : (
                     <BookmarkBorderIcon className="postIcon" onClick={handleSavePost} />
+                  )}
+                </IconButton>
+                <IconButton onClick={handleSaveLocation}>
+                  {isLocationSaved ? (
+                    <MapIcon className="postIcon" color="error" />
+                  ) : (
+                    <MapOutlinedIcon className="postIcon" />
                   )}
                 </IconButton>
               </Stack>
