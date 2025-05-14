@@ -1,6 +1,7 @@
-sentence-transformers==2.2.2
-transformers==4.35.2
-torch==2.1.0
-numpy==1.26.0
-tqdm==4.66.1
-scikit-learn==1.3.2
+sentence-transformers==2.7.0  # Phiên bản mới hơn, tương thích với huggingface_hub mới
+huggingface_hub==0.23.0       # Phiên bản mới nhất tại thời điểm hiện tại (14/05/2025)
+transformers==4.41.0
+torch==2.3.0
+numpy==1.26.4
+tqdm==4.66.4
+scikit-learn==1.5.0
