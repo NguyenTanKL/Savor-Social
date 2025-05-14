@@ -162,7 +162,7 @@ function VouchersPage( {restaurantId}) {
 
     return (
         <div className="voucherpage">
-            <HeaderProfile user={userStorage}/>
+            <HeaderProfile user={userStorage} userId = {userStorage._id} />
             <div style={{ marginBottom: "20px" }}>
                 {tabs.map((tab) => (
                 <Button
