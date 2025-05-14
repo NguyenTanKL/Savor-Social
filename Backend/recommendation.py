@@ -60,7 +60,7 @@ def main():
 # Tải mô hình với xử lý lỗi
     try:
         print("Loading SentenceTransformer model...", file=sys.stderr)
-        model = SentenceTransformer('distiluse-base-multilingual-cased-v2')
+        model = SentenceTransformer('all-MiniLM-L6-v2')
         print("Model loaded successfully", file=sys.stderr)
     except Exception as e:
         print(f"Error loading model: {e}", file=sys.stderr)
