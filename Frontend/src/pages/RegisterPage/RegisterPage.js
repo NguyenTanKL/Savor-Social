@@ -71,7 +71,7 @@ const RegisterPage = () => {
       <Box sx={{ width: "100%", bgcolor: "white", border: "1px solid #dbdbdb", p: 3, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", mb: 2 }}>
         <InstagramIcon sx={{ fontSize: 50, color: "#e1306c" }} />
         <Typography variant="h5" sx={{ fontWeight: "bold", my: 2, fontFamily: "cursive" }}>
-          Instagram
+        Savor Social
         </Typography>
 
         <TextField fullWidth label="Email" name="email" value={registerData.email} onChange={handleChange} sx={{ bgcolor: "#fafafa" }} />

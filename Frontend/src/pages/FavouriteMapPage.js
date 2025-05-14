@@ -129,7 +129,7 @@ function FavouriteMapPage() {
       if (data.results && data.results.length > 0) {
         const place = data.results[0];
         setPlaceDetails({
-          name: place.formatted_address || place.name,
+          name: place.name ,
           description: place.formatted_address,
           rating: place.rating || "Chưa có đánh giá",
         });
@@ -150,11 +150,12 @@ function FavouriteMapPage() {
 
       if (data.results && data.results.length > 0) {
         const location = {
-          name: data.results[0].formatted_address,
+          name: data.results[0].name,
           address: data.results[0].formatted_address,
           lat,
           lng,
         };
+        console.log("location:",location);
         setSelectedLocation(location);
       }
     } catch (error) {
@@ -381,7 +382,7 @@ function FavouriteMapPage() {
               >
                 <strong>{location.name}</strong>
                 <br />
-                <small>{location.address}</small>
+                
               </li>
             ))}
           </ul>
