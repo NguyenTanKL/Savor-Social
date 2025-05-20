@@ -6,6 +6,11 @@ const postSchema = new mongoose.Schema(
     content: { type: String, required: true },
     images: { type: [String], default: [] },
     videos: { type: [String], default: [] },
+    visibility: {
+      type: String,
+      enum: ['public', 'private'],
+      default: 'public',
+    },
     location: {
       name: { type: String, required: false },
       address: { type: String, required: false },

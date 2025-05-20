@@ -125,6 +125,7 @@ function Sugesstions() {
                 key={user._id}
                 userId = {user._id}
                 username={user.username}
+                usertype = {user.usertype}
                 avatar = {user.avatar}
                 isFollowed={followedAccounts.has(user._id.toString())}
                 onFollow={() => toggleFollow(user._id)}

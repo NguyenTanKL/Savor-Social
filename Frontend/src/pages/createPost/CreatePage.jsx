@@ -17,6 +17,10 @@ import {
   List,
   ListItem,
   ListItemText,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
@@ -94,6 +98,7 @@ const CreatePost = ({ open, onClose }) => {
   const [location, setLocation] = useState(null);
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [visibility, setVisibility] = useState('public');
   const GOONG_PLACES_API_KEY = 'bI22G8oebQwHbOmJ6CGZLpBqhFWTow7pXwpyrOXT';
 
   const mentionUsers = friends
@@ -264,6 +269,7 @@ const CreatePost = ({ open, onClose }) => {
     setLocation(null);
     setShowLocationInput(false);
     setLocationSuggestions([]);
+    setVisibility('public');
   };
 
   const handleCancelImage = () => {
@@ -282,6 +288,7 @@ const CreatePost = ({ open, onClose }) => {
     setLocation(null);
     setShowLocationInput(false);
     setLocationSuggestions([]);
+    setVisibility('public'); 
   };
 
   const fetchLocationSuggestions = useCallback(async (input) => {
@@ -354,7 +361,7 @@ const CreatePost = ({ open, onClose }) => {
   };
 
   const onSubmit = async (data) => {
-    const restaurantCount = taggedUsers.filter(user => user.userType === 'restaurant').length;
+    const restaurantCount = taggedUsers.filter(user => user.usertype === 'restaurant').length;
     if (restaurantCount > 1) {
       setErrorMessage('You can only tag at most one restaurant in a post.');
       return;
@@ -368,10 +375,11 @@ const CreatePost = ({ open, onClose }) => {
     const formData = new FormData();
     formData.append('content', data.content);
     formData.append('userId', user._id);
+    formData.append('visibility', visibility);
     if (adsEnabled) {
       formData.append('is_ad', true);
     }
-    if (rating > 0) {
+    if (rating > 0 && !adsEnabled) {
       formData.append('rating', rating);
     }
 
@@ -413,6 +421,7 @@ const CreatePost = ({ open, onClose }) => {
       setLocation(null);
       setShowLocationInput(false);
       setLocationSuggestions([]);
+      setVisibility('public'); 
       onClose();
     } catch (err) {
       console.error('Error creating post:', err);
@@ -680,6 +689,7 @@ const CreatePost = ({ open, onClose }) => {
                     {errorMessage}
                   </Typography>
                 )}
+                {!adsEnabled && (
                 <Box sx={{ mb: 2 }}>
                   <Typography gutterBottom>Rate this post</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -699,7 +709,21 @@ const CreatePost = ({ open, onClose }) => {
                     <Typography sx={{ ml: 1 }}>{rating}/5</Typography>
                   </Box>
                 </Box>
+                )}
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <FormControl sx={{ mt: 1, mb: 1, width: '100%' }}>
+                    <InputLabel id="visibility-label">Visibility</InputLabel>
+                    <Select
+                      labelId="visibility-label"
+                      value={visibility}
+                      label="Visibility"
+                      onChange={(e) => setVisibility(e.target.value)}
+                      disabled={loading}
+                    >
+                      <MenuItem value="public">Công khai</MenuItem>
+                      <MenuItem value="private">Chỉ mình tôi</MenuItem>
+                    </Select>
+                  </FormControl>
                   <Button
                     variant="text"
                     color="primary"

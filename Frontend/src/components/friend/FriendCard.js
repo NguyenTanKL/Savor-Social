@@ -4,7 +4,7 @@ import "./FriendCard.css"; // Import CSS
 
 const FriendCard = ({ friendInfo, onUserClick }) => {
   const [isFollowing, setIsFollowing] = useState(false);
-
+console.log("friendcard:",friendInfo);
   const handleClick = (e) => {
     e.preventDefault(); // Ngăn điều hướng mặc định
     if (onUserClick) {

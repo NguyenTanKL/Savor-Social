@@ -23,7 +23,7 @@ import SetupPage from './pages/SetupPage/SetupPage';
 import RecommendationsPage from './pages/RecommendationsPage/RecommendationsPage';
 import PostDetail from './components/post/PostDetail';
 import TagPage from './pages/ListPostByTag/TagPage';
-
+import VerifyEmail from './pages/verifyEmail/VerifyEmail';
 function App() {
   const userStorage = useSelector(state => state.user.user);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -62,7 +62,7 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-
+            <Route path="/verify-email" element={<VerifyEmail />} />
             {/* Protected routes */}
             {isLoggedIn && userStorage.usertype === "normal" ? (
               <>

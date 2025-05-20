@@ -90,6 +90,9 @@ const UserSchema = new mongoose.Schema({
         type: String, // Ví dụ: "21:00"
         default: null, // Chỉ áp dụng cho userType: restaurant
     },
+    isVerified: { type: Boolean, default: false }, // Trạng thái xác thực
+    verificationCode: { type: String }, // Mã xác thực
+    verificationCodeExpires: { type: Date }, // Thời gian hết hạn mã
 });
 
 const UserModel = mongoose.model('User',UserSchema);

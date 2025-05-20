@@ -13,7 +13,8 @@ import {
   CardActions,
   CardMedia,
   CircularProgress,
-  Avatar
+  Avatar,
+  Box
 } from '@mui/material';
 import { BACKENDURL } from '../../utils/const';
 
@@ -89,7 +90,9 @@ function RecommendationsPage() {
   const handleComplete = () => {
     navigate('/home');
   };
-
+  const handleViewProfile = (userId) => {
+    navigate(`/profile/${userId}`); 
+  };
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Paper elevation={6} sx={{ p: 4, borderRadius: 2, backgroundColor: '#fff' }}>
@@ -115,14 +118,22 @@ function RecommendationsPage() {
                   recommendations.restaurants.map((restaurant) => (
                     <Card key={restaurant._id} sx={{ mb: 3, borderRadius: 1, boxShadow: 3, transition: 'all 0.3s', '&:hover': { boxShadow: 6 } }}>
                       <CardMedia>
+                      <Box
+                          sx={{ display: 'flex', justifyContent: 'center', mt: 2, cursor: 'pointer' }}
+                          onClick={() => handleViewProfile(restaurant._id)} // Điều hướng khi nhấp vào avatar
+                        >
                         <Avatar
                           alt={restaurant.username}
                           src={restaurant.avatar || '/default-avatar.png'} // Sử dụng avatar từ dữ liệu hoặc ảnh mặc định
                           sx={{ width: 100, height: 100, mx: 'auto', mt: 2 }}
                         />
+                        </Box>
                       </CardMedia>
                       <CardContent sx={{ textAlign: 'center', pt: 0 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 500 }}>{restaurant.username}</Typography>
+                        <Typography 
+                        variant="h6" sx={{ fontWeight: 500 }}
+                        onClick={() => handleViewProfile(restaurant._id)}
+                        >{restaurant.username}</Typography>
                         {/* <Typography variant="body2" color="text.secondary">Điểm: {restaurant.rating}</Typography> */}
                       </CardContent>
                       <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
@@ -153,15 +164,24 @@ function RecommendationsPage() {
                   recommendations.normalUsers.map((normalUser) => (
                     <Card key={normalUser._id} sx={{ mb: 3, borderRadius: 1, boxShadow: 3, transition: 'all 0.3s', '&:hover': { boxShadow: 6 } }}>
                       <CardMedia>
-                        <Avatar
-                          alt={normalUser.username}
-                          src={normalUser.avatar || '/default-avatar.png'} // Sử dụng avatar từ dữ liệu hoặc ảnh mặc định
-                          sx={{ width: 100, height: 100, mx: 'auto', mt: 2 }}
-                        />
+                        <Box
+                            sx={{ display: 'flex', justifyContent: 'center', mt: 2, cursor: 'pointer' }}
+                            onClick={() => handleViewProfile(normalUser._id)} // Điều hướng khi nhấp vào avatar
+                          >
+                            <Avatar
+                              alt={normalUser.username}
+                              src={normalUser.avatar || '/default-avatar.png'} // Sử dụng avatar từ dữ liệu hoặc ảnh mặc định
+                              sx={{ width: 100, height: 100, mx: 'auto', mt: 2 }}
+                            />
+                          </Box>
                       </CardMedia>
                       <CardContent sx={{ textAlign: 'center', pt: 0 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 500 }}>{normalUser.username}</Typography>
-                        {/* <Typography variant="body2" color="text.secondary">Điểm: {normalUser.points}</Typography> */}
+                        <Typography 
+                        variant="h6" 
+                        sx={{ fontWeight: 500 }}
+                        onClick={() => handleViewProfile(normalUser._id)}>
+                          {normalUser.username}
+                        </Typography>
                       </CardContent>
                       <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
                         <Button 

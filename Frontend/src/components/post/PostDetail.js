@@ -14,6 +14,8 @@ import Stack from "@mui/joy/Stack";
 import Box from "@mui/joy/Box";
 import Sheet from "@mui/joy/Sheet";
 import { Avatar, Popover, IconButton } from "@mui/material";
+import PublicIcon from '@mui/icons-material/Public'; 
+import LockIcon from '@mui/icons-material/Lock';
 import MapIcon from '@mui/icons-material/Map';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import Typography from "@mui/joy/Typography";
@@ -34,6 +36,11 @@ import parseContent from "./ParsedContent";
 import usePostInteractions from "../hooks/usePostInteractions";
 import { MentionsInput, Mention } from "react-mentions";
 import Picker from "@emoji-mart/react";
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
+import Button from "@mui/material/Button";
 import data from "@emoji-mart/data";
 import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
 import { BACKENDURL } from "../../utils/const";
@@ -85,6 +92,7 @@ function PostDetail({ canDelete }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // Thêm state để quản lý ảnh hiện tại
   const [isLocationSaved, setIsLocationSaved] = useState(false);
+ 
   useEffect(() => {
     dispatch(getPostByIdAsync(postId));
     dispatch(getFriendsAsync());
@@ -109,7 +117,9 @@ function PostDetail({ canDelete }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [editAnchorEl, setEditAnchorEl] = useState(null);
   const commentInputRef = useRef(null);
-
+  const [isEditingVisibility, setIsEditingVisibility] = useState(false);
+  const [newVisibility, setNewVisibility] = useState(postInfo?.visibility || 'public');
+  const [visibilityAnchorEl, setVisibilityAnchorEl] = useState(null);
   // Lấy danh sách bạn bè để tag (tương tự CreatePost)
   const following = Array.isArray(currentUser?.following) ? currentUser.following : [];
   const followers = Array.isArray(currentUser?.followers) ? currentUser.followers : [];
@@ -167,7 +177,32 @@ function PostDetail({ canDelete }) {
       setErrorMessage("");
     }
   };
-
+  const handleOpenVisibilityPicker = (event) => {
+    if (currentUserId === userId) {
+      setVisibilityAnchorEl(event.currentTarget);
+      setIsEditingVisibility(true);
+      setNewVisibility(postInfo?.visibility || 'public');
+    }
+  };
+  const handleCloseVisibilityPicker = () => {
+  setVisibilityAnchorEl(null);
+  setIsEditingVisibility(false);
+};
+  const handleSaveVisibility = async () => {
+    try {
+      const updatedData = { postId: postInfo._id, visibility: newVisibility };
+      const result = await dispatch(updatePostAsync(updatedData)).unwrap();
+      dispatch({
+        type: "posts/updatePost/fulfilled",
+        payload: { ...postInfo, visibility: newVisibility },
+      });
+      handleCloseVisibilityPicker();
+    } catch (error) {
+      console.error("Error updating visibility:", error);
+      alert("Failed to update visibility. Please try again.");
+    }
+  };
+  const openVisibilityPicker = Boolean(visibilityAnchorEl);
   const handleCreateComment = () => {
     if (!commentText.trim() || isEditing) return;
 
@@ -465,10 +500,26 @@ const handleSaveLocation = async () => {
               }}
             >
               <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
-                <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32 }} />
-                <Typography fontWeight="bold" fontSize={14}>
-                  {usernamePost}
-                </Typography>
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1, cursor: "pointer" }} onClick = {handleUsernameClick}>
+                  <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32 }} />
+                  <Typography fontWeight="bold" fontSize={14}>
+                    {usernamePost}
+                  </Typography>
+                </Stack>
+                
+                {postInfo.visibility === 'public' ? (
+                  <PublicIcon
+                    sx={{ fontSize: 16, color: "grey.500", cursor: "pointer" }}
+                    titleAccess="Công khai"
+                    onClick={handleOpenVisibilityPicker}
+                  />
+                ) : (
+                  <LockIcon
+                    sx={{ fontSize: 16, color: "grey.500", cursor: "pointer" }}
+                    titleAccess="Chỉ mình tôi"
+                    onClick={handleOpenVisibilityPicker}
+                  />
+                )}
               </Stack>
               {currentUserId === userId && (
                 isEditing ? (
@@ -485,7 +536,65 @@ const handleSaveLocation = async () => {
                 )
               )}
             </Stack>
-
+            <Popover
+              open={openVisibilityPicker}
+              anchorEl={null}
+              onClose={handleCloseVisibilityPicker}
+              anchorOrigin={{
+                vertical: "center",
+                horizontal: "center",
+              }}
+              transformOrigin={{
+                vertical: "center",
+                horizontal: "center",
+              }}
+              PaperProps={{
+                sx: {
+                  position: "fixed",
+                  left: "50%",
+                  top: "50%",
+                  transform: "translate(-50%, -50%)",
+                  minWidth: "300px",
+                  maxWidth: "400px",
+                  bgcolor: "white",
+                  p: 2,
+                  textAlign: "center",
+                },
+              }}
+            >
+              <Box >
+                <Typography sx={{ fontWeight: "bold", mb: 2 }}>
+                  Chọn đối tượng
+                </Typography>
+                <FormControl component="fieldset" sx={{ width: "100%" }}>
+                  <RadioGroup
+                    value={newVisibility}
+                    onChange={(e) => setNewVisibility(e.target.value)}
+                  >
+                    <FormControlLabel
+                      value="public"
+                      control={<Radio />}
+                      label="Công khai"
+                      sx={{ padding: "5px 0", justifyContent: "center" }}
+                    />
+                    <FormControlLabel
+                      value="private"
+                      control={<Radio />}
+                      label="Chỉ mình tôi"
+                      sx={{ padding: "5px 0", justifyContent: "center" }}
+                    />
+                  </RadioGroup>
+                </FormControl>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                  <Button onClick={handleCloseVisibilityPicker} sx={{ width: "48%" }}>
+                    Hủy
+                  </Button>
+                  <Button onClick={handleSaveVisibility} sx={{ width: "48%" }}>
+                    Xong
+                  </Button>
+                </Box>
+              </Box>
+            </Popover>
             <Stack
               sx={{
                 flex: 1,
@@ -554,10 +663,10 @@ const handleSaveLocation = async () => {
               ) : (
                 <Stack direction="column" sx={{ gap: 1 }}>
                   <Stack direction="row" sx={{ gap: 1, mb: 2 }}>
-                    <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32 }} />
+                    <Avatar src={user?.avatar || ""} sx={{ width: 32, height: 32,cursor:"pointer" }} onClick={handleUsernameClick} />
                     <Stack direction="column">
                       <Stack direction="row">
-                        <Typography fontWeight="bold" fontSize={14}>
+                        <Typography fontWeight="bold" fontSize={14} sx = {{cursor:"pointer"}} onClick={handleUsernameClick}>
                           {usernamePost}
                         </Typography>
                         <Typography fontSize={12} color="text.secondary">

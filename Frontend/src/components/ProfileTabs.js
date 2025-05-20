@@ -44,19 +44,6 @@ function ProfileTabs({ type, setType }) {
           value="posts"
         />
         <Tab
-          icon={<MapIcon />}
-          sx={{
-            color: "rgb(115, 115, 115",
-            marginRight: "60px",
-            "&.Mui-selected": {
-              color: "black",
-            },
-          }}
-          iconPosition="start"
-          label="MAP"
-          value="map"
-        />
-        <Tab
           icon={<BookmarkIcon />}
           sx={{
             color: "rgb(115, 115, 115",

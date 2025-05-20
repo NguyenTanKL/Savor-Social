@@ -62,14 +62,13 @@ const getNormalUsers = async (req, res) => {
 // };
 const updateUser = async (req, res) => {
   try {
-    const updates = req.body;
-    const userId = req.user.id; // Từ middleware auth
+    const updates = req.body; // Với FormData, req.body có thể là object chứa các trường
+    const userId = req.user.id;
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    // Xử lý avatar nếu có file upload
     let imageUrl = user.avatar;
     if (req.file) {
       if (!["image/jpeg", "image/png", "image/gif"].includes(req.file.mimetype)) {
@@ -78,23 +77,32 @@ const updateUser = async (req, res) => {
       imageUrl = req.file.path;
     }
 
-    // Tạo đối tượng chứa các trường sẽ cập nhật
     const updateFields = {};
 
-    // Xử lý các trường trong updates
-    for (const field of Object.keys(updates)) {
+    console.log("Dữ liệu nhận được từ client:", req.body); // Log để debug
+
+    // Xử lý FormData
+    const fields = Object.keys(req.body).reduce((acc, key) => {
+      if (key.startsWith('preferences[') && key.endsWith(']')) {
+        acc.preferences = acc.preferences || [];
+        acc.preferences.push(req.body[key]);
+      } else if (key.startsWith('foodTypes[') && key.endsWith(']')) {
+        acc.foodTypes = acc.foodTypes || [];
+        acc.foodTypes.push(req.body[key]);
+      } else {
+        acc[key] = req.body[key];
+      }
+      return acc;
+    }, {});
+
+    for (const field of Object.keys(fields)) {
       if (field === "preferences" || field === "foodTypes") {
         let parsedValues;
-        const value = updates[field];
+        const value = fields[field];
         if (Array.isArray(value)) {
-          parsedValues = value
-            .map((item) => item?.toString().trim())
-            .filter((item) => item);
+          parsedValues = value.map((item) => item?.toString().trim()).filter((item) => item);
         } else if (typeof value === "string") {
-          parsedValues = value
-            .split(",")
-            .map((item) => item.trim())
-            .filter((item) => item);
+          parsedValues = value.split(",").map((item) => item.trim()).filter((item) => item);
         } else {
           throw new Error(`${field} phải là mảng hoặc chuỗi phân tách bằng dấu phẩy`);
         }
@@ -103,29 +111,29 @@ const updateUser = async (req, res) => {
         }
         updateFields[field] = parsedValues;
       } else if (field === "address") {
-        if (typeof updates[field] !== "string" || updates[field].trim().length === 0) {
+        if (typeof fields[field] !== "string" || fields[field].trim().length === 0) {
           throw new Error("Address phải là chuỗi không rỗng");
         }
-        updateFields[field] = updates[field].trim();
+        updateFields[field] = fields[field].trim();
       } else if (field === "username") {
-        if (typeof updates[field] !== "string" || updates[field].trim().length < 3) {
+        if (typeof fields[field] !== "string" || fields[field].trim().length < 3) {
           throw new Error("Username phải là chuỗi ít nhất 3 ký tự");
         }
-        updateFields[field] = updates[field].trim();
+        updateFields[field] = fields[field].trim();
       } else if (field === "bio") {
-        if (typeof updates[field] !== "string") {
+        if (typeof fields[field] !== "string") {
           throw new Error("Bio phải là chuỗi");
         }
-        updateFields[field] = updates[field].trim();
+        updateFields[field] = fields[field].trim();
       } else if (field !== "image") {
-        updateFields[field] = updates[field]; // Các trường khác
+        updateFields[field] = fields[field];
       }
     }
 
-    // Cập nhật avatar
     updateFields.avatar = imageUrl;
 
-    // Cập nhật user với findByIdAndUpdate
+    console.log(`Dữ liệu sẽ cập nhật: ${userId}`, updateFields);
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $set: updateFields },
@@ -136,7 +144,6 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    console.log(`User updated: ${userId}`, updateFields);
     res.json({ message: "Cập nhật người dùng thành công", user: updatedUser });
   } catch (error) {
     console.error(`Lỗi khi cập nhật người dùng ${req.user?.id}:`, error.message, { body: req.body, file: req.file });
@@ -328,7 +335,7 @@ const searchUser = async (req, res) => {
       const posts = await Post.find({
         tags: normalizedTag, // Tag đã chuẩn hóa
       })
-        .populate("userId", "username")
+        .populate("userId", "username avatar usertype")
         .limit(20);
       return res.json({ posts });
     }
@@ -342,7 +349,7 @@ const searchUser = async (req, res) => {
     const users = await User.find({
       username: { $regex: normalizedQuery.replace(/\s/g, ""), $options: "i" }, // Bỏ khoảng trắng trong username
     })
-      .select("username accountType")
+      .select("username avatar usertype")
       .limit(5);
 
     // Tìm kiếm tag liên quan và số lượng bài viết
@@ -376,7 +383,7 @@ const searchUser = async (req, res) => {
         { tags: { $in: [new RegExp(normalizedQuery.replace(/\s/g, ""), "i")] } }, // Bỏ khoảng trắng trong tag
       ],
     })
-      .populate("userId", "username")
+      // .populate("userId", "username avatar usertype")
       .limit(5);
 
     res.json({
@@ -389,6 +396,105 @@ const searchUser = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+// const searchUser = async (req, res) => {
+//   try {
+//     const { query, tag } = req.body;
+//     const response = {};
+
+//     const normalizedQuery = query
+//       ? query
+//           .trim()
+//           .replace(/\s+/g, " ")
+//           .toLowerCase()
+//       : "";
+//     const normalizedTag = tag
+//       ? tag
+//           .trim()
+//           .replace(/\s+/g, " ")
+//           .toLowerCase()
+//       : "";
+
+//     if (normalizedTag) {
+//       // Sử dụng aggregation để loại bỏ trùng lặp và lấy tất cả bài post
+//       const posts = await Post.aggregate([
+//         { $match: { tags: normalizedTag } }, // Tìm bài post có tag
+//         { $group: { _id: "$_id", doc: { $first: "$$ROOT" } } }, // Loại bỏ trùng lặp dựa trên _id
+//         { $replaceRoot: { newRoot: "$doc" } }, // Khôi phục cấu trúc document
+//         {
+//           $lookup: {
+//             from: "users", // Tên collection của User
+//             localField: "userId",
+//             foreignField: "_id",
+//             as: "userId",
+//           },
+//         },
+//         { $unwind: "$userId" }, // Giải nén mảng userId
+//         {
+//           $project: {
+//             _id: 1,
+//             content: 1,
+//             tags: 1,
+//             "userId._id": 1,
+//             "userId.username": 1,
+//             "userId.avatar": 1,
+//             "userId.usertype": 1,
+//           },
+//         },
+//       ]);
+//       return res.json({ posts });
+//     }
+
+//     if (!normalizedQuery) {
+//       return res.json({ users: [], tags: [], posts: [] });
+//     }
+
+//     const users = await User.find({
+//       username: { $regex: normalizedQuery.replace(/\s/g, ""), $options: "i" },
+//     })
+//       .select("username avatar usertype")
+//       .limit(5);
+
+//     const tagQuery = normalizedQuery.startsWith("#")
+//       ? normalizedQuery.slice(1)
+//       : normalizedQuery;
+//     const postsWithTags = await Post.find({
+//       tags: { $in: [new RegExp(tagQuery.replace(/\s/g, ""), "i")] },
+//     });
+
+//     const tagCounts = {};
+//     postsWithTags.forEach((post) => {
+//       post.tags.forEach((t) => {
+//         const normalizedTag = t.toLowerCase();
+//         if (normalizedTag.includes(tagQuery.replace(/\s/g, ""))) {
+//           tagCounts[normalizedTag] = (tagCounts[normalizedTag] || 0) + 1;
+//         }
+//       });
+//     });
+
+//     const tags = Object.entries(tagCounts)
+//       .map(([tag, count]) => ({ tag: `#${tag}`, postCount: count }))
+//       .sort((a, b) => b.postCount - a.postCount)
+//       .slice(0, 5);
+
+//     const posts = await Post.find({
+//       $or: [
+//         { content: { $regex: normalizedQuery.replace(/\s/g, ""), $options: "i" } },
+//         { tags: { $in: [new RegExp(normalizedQuery.replace(/\s/g, ""), "i")] } },
+//       ],
+//     })
+//       .populate("userId", "username avatar usertype")
+//       .limit(5);
+
+//     res.json({
+//       users,
+//       tags,
+//       posts,
+//     });
+//   } catch (error) {
+//     console.error("Error searching:", error);
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
 const getUserById = async(req,res) => {
   try{
     const user= await User.findById(req.params.userId)
@@ -534,8 +640,8 @@ const getFriends = async (req, res) => {
     const userId = req.user.id; // Giả sử bạn có middleware để lấy userId từ token
     const user = await User.findById(userId)
       .select("following followers")
-      .populate("following", "username _id usertype profileUrl")
-      .populate("followers", "username _id usertype profileUrl");
+      .populate("following", "username _id usertype avatar")
+      .populate("followers", "username _id usertype avatar");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

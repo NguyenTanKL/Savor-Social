@@ -9,15 +9,21 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createReplyAsync, likeCommentAsync, unlikeCommentAsync } from "../redux/Reducer/postSlice";
 import moment from 'moment/moment';
-
+import {  useNavigate } from "react-router-dom";
 function Reply({ reply, commentId }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
   const isLiked = reply.likes?.includes(currentUserId) || false;
-
+  const userId = reply.userId._id;
+  const handleUsernameClick = () => {
+    if (userId) {
+      navigate(`/profile/${userId}`);
+    }
+  };
   const handleCreateReply = () => {
     if (!replyText.trim()) return;
 
@@ -49,12 +55,13 @@ function Reply({ reply, commentId }) {
       <Stack direction="row" sx={{ gap: 1, alignItems: "flex-start" }}>
         <Avatar
           alt={reply.from}
-          src={reply.userId?.profileUrl || ""}
-          sx={{ width: 24, height: 24 }}
+          src={reply.userId?.avatar || ""}
+          sx={{ width: 24, height: 24, cursor: "pointer" }}
+          onClick={handleUsernameClick}
         />
         <Stack direction="column" sx={{ flex: 1 }}>
           <Stack direction="row" sx={{ alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
-            <Typography fontWeight="bold" fontSize={13}>
+            <Typography fontWeight="bold" fontSize={13}  sx={{cursor: "pointer" }}  onClick={handleUsernameClick} >
               {reply.from}
             </Typography>
             <Typography fontSize={13} sx={{ color: "#8e8e8e" }}>
@@ -101,7 +108,7 @@ function Reply({ reply, commentId }) {
         <Stack direction="row" sx={{ gap: 1, alignItems: "center", ml: 4, mt: 0.5 }}>
           <Avatar
             alt={currentUser.username}
-            src={currentUser.profileUrl}
+            src={currentUser.avatar}
             sx={{ width: 24, height: 24 }}
           />
           <TextField
@@ -133,14 +140,17 @@ function Reply({ reply, commentId }) {
 }
 
 function Comment({ commentInfo }) {
-  const { _id: commentId, createdAt, from, userId, comment, replies = [], likes = [] } = commentInfo;
+  const { _id: commentId, createdAt ,from, comment, replies = [], likes = [] } = commentInfo;
+  const user = commentInfo.userId;
+  const userId = commentInfo.userId._id;
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const currentUser = useSelector((state) => state.user.user);
   const currentUserId = currentUser?._id;
   const isLiked = likes.includes(currentUserId);
-
+console.log("userId:",userId);
   const handleCreateReply = () => {
     if (!replyText.trim()) return;
 
@@ -166,14 +176,18 @@ function Comment({ commentInfo }) {
       dispatch(likeCommentAsync(actionData));
     }
   };
-
+  const handleUsernameClick = () => {
+    if (userId) {
+      navigate(`/profile/${userId}`);
+    }
+  };
   return (
     <Stack direction="column" sx={{ gap: 0.5, mb: 1 }}>
       <Stack direction="row" sx={{ gap: 1, alignItems: "flex-start" }}>
-        <Avatar alt={from} src={userId?.profileUrl || ""} sx={{ width: 32, height: 32 }} />
+        <Avatar alt={from} src={user?.avatar || ""} sx={{ width: 32, height: 32, cursor:"pointer" }} onClick={handleUsernameClick} />
         <Stack direction="column" sx={{ flex: 1 }}>
           <Stack direction="row" sx={{ alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
-            <Typography fontWeight="bold" fontSize={13}>
+            <Typography fontWeight="bold" fontSize={13} onClick={handleUsernameClick} sx = {{cursor:"pointer"}}>
               {from}
             </Typography>
             <Typography fontSize={13} sx={{ color: "#8e8e8e" }}>
@@ -213,7 +227,7 @@ function Comment({ commentInfo }) {
         <Stack direction="row" sx={{ gap: 1, alignItems: "center", ml: 4, mt: 0.5 }}>
           <Avatar
             alt={currentUser.username}
-            src={currentUser.profileUrl}
+            src={currentUser.avatar}
             sx={{ width: 24, height: 24 }}
           />
           <TextField

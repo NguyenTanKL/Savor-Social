@@ -3,7 +3,7 @@ import "./AccountUser.css";
 import { Avatar } from "@mui/material";
 import { Link } from 'react-router-dom';
 import { FRONTENDURL } from "../utils/const";
-function AccountUser({ username, avatar, userId, onFollow, isFollowed }) {
+function AccountUser({ username, usertype,avatar, userId, onFollow, isFollowed }) {
     const [isFollowing, setIsFollowing] = useState(isFollowed);
 
     useEffect(() => {
@@ -26,6 +26,7 @@ function AccountUser({ username, avatar, userId, onFollow, isFollowed }) {
                 </span>
                 <div className="username__info">
                     <span className="username">{username}</span>
+                    <span className="usertype">{usertype}</span>
                 </div>
             </div>
 

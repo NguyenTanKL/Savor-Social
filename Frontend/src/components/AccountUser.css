@@ -38,3 +38,8 @@
     color: grey;
     font-size: 12px;
 }
+.usertype {
+    font-size: 12px; /* Kích thước chữ nhỏ hơn */
+    opacity: 0.6; /* Mờ hơn (60% độ trong suốt) */
+    color: #666; /* Màu xám nhạt để tăng độ mờ */
+}
