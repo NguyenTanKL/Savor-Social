@@ -14,6 +14,9 @@ import Typography from '@mui/material/Typography';
 import Grid2 from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Item from "@mui/material/ListItem";
+import EditIcon from "@mui/icons-material/Edit";
+import InfoIcon from "@mui/icons-material/Info";
+import { Tooltip } from "@mui/material";
 import HeaderProfile from "../../components/HeaderProfile";
 import { styled } from '@mui/material/styles';
 import "./VouchersPage.css";
@@ -24,6 +27,7 @@ const VOUCHER_API_URL = `${BACKENDURL}/api/vouchers`;
 const POST_API_URL = `${BACKENDURL}/api/posts`;
 
 function VouchersPage( {restaurantId}) {
+    const navigate = useNavigate();
     const userStorage = useSelector(state => state.user.user);
     const [selectedVoucherType, setSelectedVoucherType] = useState(null);
     const [voucherId, setVoucherId] = useState(null);
@@ -160,169 +164,369 @@ function VouchersPage( {restaurantId}) {
         }
     };    
 
+    const handleEdit = (voucher_id) => {
+        navigate(`/editVoucher/${voucher_id}`,
+            { state: { voucherId: voucher_id, restaurantId: restaurantId } }
+        );
+    };
+
     return (
         <div className="voucherpage">
             <HeaderProfile user={userStorage} userId = {userStorage._id} />
             <div style={{ marginBottom: "20px" }}>
-                {tabs.map((tab) => (
+            {tabs.map((tab) => (
                 <Button
-                    key={tab.value}
-                    size="small"
-                    style={{
-                    marginLeft: "30px",
+                key={tab.value}
+                size="small"
+                style={{
+                    marginLeft: "10px",
                     padding: "10px 20px",
                     background: type === tab.value ? "#333" : "#f0f0f0",
                     color: type === tab.value ? "#fff" : "#000",
                     border: "1px solid #ccc",
-                    size: "small",
                     cursor: "pointer",
-                    }}
-                    onClick={() => setType(tab.value)}
+                }}
+                onClick={() => setType(tab.value)}
                 >
-                    {tab.label}
+                {tab.label}
                 </Button>
-                ))}
+            ))}
             </div>
         <div>
         {type === "lst_voucher" ? (
+            // <div>
+            //     {!selectedVoucherType ? (
+            //         <div style={{marginLeft: "20px"}}>
+            //             <Grid2 container spacing={ 1 } columns={ 12 }>
+            //                 {[...voucher]
+            //                 .sort((a, b) => new Date(a.release_day) - new Date(b.release_day))
+            //                 .map((voucher) => (
+            //                 <Grid2 item xs={12} sm={6} md={6} key={voucher._id} sx={{ pr: 2 }}>
+            //                     <Card style={{backgroundColor: "#f5f5f5"}} sx={{ display: 'flex', width: "100%", height: "100%"}}>
+            //                         <Box sx={{ display: 'flex', flexDirection: 'column', height: "100%" }}>
+            //                             <CardContent sx={{ display: 'flex', flexDirection: 'column', height: "100%" }}>
+            //                                 <Typography component="div" variant="h6">
+            //                                     {voucher.name}
+            //                                 </Typography>
+            //                                 <Typography
+            //                                     variant="subtitle1"
+            //                                     component="div"
+            //                                     sx={{ color: 'text.secondary' }}
+            //                                 >
+            //                                     In stock: {voucher.in_stock}
+            //                                 </Typography>
+            //                                 <Typography
+            //                                     variant="subtitle1"
+            //                                     component="div"
+            //                                     sx={{ color: 'text.secondary' }}
+            //                                 >
+            //                                     Date start: {voucher.formattedDateStart}
+            //                                 </Typography>
+            //                                 <Typography
+            //                                     variant="subtitle1"
+            //                                     component="div"
+            //                                     sx={{ color: 'text.secondary' }}
+            //                                 >
+            //                                     Date end: {voucher.formattedDateEnd}
+            //                                 </Typography>
+            //                                 <Stack direction="row" spacing={0}>
+            //                                     <Item>
+            //                                         <Button 
+            //                                             variant="contained" 
+            //                                             color="primary" 
+            //                                             style={{width: "50px", marginTop: "10px"}}
+            //                                             onClick={() => (setSelectedVoucherType(voucher.name) ,setVoucherId(voucher._id))}>
+            //                                                 Details
+            //                                         </Button>
+            //                                     </Item>
+            //                                     <Item>
+            //                                         <Button 
+            //                                             variant="contained" 
+            //                                             color="error" 
+            //                                             style={{width: "40px", marginTop: "10px"}}
+            //                                             onClick={() => handleDeleteVoucher(voucher._id)}>
+            //                                                 Delete
+            //                                         </Button> 
+            //                                     </Item>
+            //                                     <Item>
+            //                                         <Button 
+            //                                             variant="contained" 
+            //                                             color="warning" 
+            //                                             style={{width: "40px", marginTop: "10px"}}
+            //                                             onClick={() => handleEdit(voucher._id)}>
+            //                                                 Update
+            //                                         </Button> 
+            //                                     </Item>
+            //                                 </Stack>
+            //                             </CardContent>
+            //                         </Box>
+            //                         <CardMedia
+            //                             component="img"
+            //                             sx={{ objectFit: "cover", right: "0" }}
+            //                             src={voucher.image}
+            //                             alt={voucher._id}
+            //                         />
+            //                     </Card>
+            //                 </Grid2>
+            //                 ))}
+            //             </Grid2>
+            //         </div>
+            //     ) : (
+            //         <VouchersPageDetail onBack={() => setSelectedVoucherType(null)} voucherType={selectedVoucherType} voucherId={voucherId}/>
+            //     )}
+            // </div>
             <div>
-                {!selectedVoucherType ? (
-                    <div style={{marginLeft: "20px"}}>
-                        <Grid2 container spacing={ 1 } columns={ 12 }>
-                            {voucher.map((voucher) => (
-                            <Grid2 item xs={12} sm={6} md={4} key={voucher._id} sx={{ pr: 2 }}>
-                                <Card style={{backgroundColor: "#f5f5f5"}} sx={{ display: 'flex', width: "100%"}}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
-                                            <Typography component="div" variant="h6">
-                                                {voucher.name}
-                                            </Typography>
-                                            <Typography
-                                                variant="subtitle1"
-                                                component="div"
-                                                sx={{ color: 'text.secondary' }}
-                                            >
-                                                Number of vouchers: {voucher.quantity}
-                                            </Typography>
-                                            <Typography
-                                                variant="subtitle1"
-                                                component="div"
-                                                sx={{ color: 'text.secondary' }}
-                                            >
-                                                Date start: {voucher.formattedDateStart}
-                                            </Typography>
-                                            <Typography
-                                                variant="subtitle1"
-                                                component="div"
-                                                sx={{ color: 'text.secondary' }}
-                                            >
-                                                Date end: {voucher.formattedDateEnd}
-                                            </Typography>
-                                            <Stack direction="row" spacing={0}>
-                                                <Item>
-                                                    <Button 
-                                                        variant="contained" 
-                                                        color="primary" 
-                                                        style={{width: "50px", marginTop: "10px"}}
-                                                        onClick={() => (setSelectedVoucherType(voucher.name) ,setVoucherId(voucher._id))}>
-                                                            Details
-                                                    </Button>
-                                                </Item>
-                                                <Item>
-                                                    <Button 
-                                                        variant="contained" 
-                                                        color="error" 
-                                                        style={{width: "40px", marginTop: "10px"}}
-                                                        onClick={() => handleDeleteVoucher(voucher._id)}>
-                                                            Delete
-                                                    </Button> 
-                                                </Item>
-                                            </Stack>
-                                        </CardContent>
-                                    </Box>
-                                    <CardMedia
-                                        component="img"
-                                        sx={{ width: "170px", height: "200px", objectFit: "cover", right: "0" }}
-                                        src={voucher.image}
-                                        alt={voucher._id}
-                                    />
-                                </Card>
-                            </Grid2>
-                            ))}
+            {!selectedVoucherType ? (
+                <div style={{ padding: "10px" }}>
+                <Grid2 container spacing={2}>
+                    {[...voucher]
+                    .sort((a, b) => new Date(a.release_day) - new Date(b.release_day))
+                    .map((voucher) => (
+                        <Grid2 item xs={12} sm={6} md={4} key={voucher._id}>
+                        <Card
+                            sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                            height: "100%",
+                            backgroundColor: "#f5f5f5",
+                            }}
+                        >
+                            <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                flex: 1,
+                                p: 2,
+                            }}
+                            >
+                            <CardContent sx={{ flex: "1 0 auto" }}>
+                                <Typography variant="h6">{voucher.name}</Typography>
+                                <Typography variant="subtitle1" color="text.secondary">
+                                In stock: {voucher.in_stock}
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary">
+                                Date start: {voucher.formattedDateStart}
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary">
+                                Date end: {voucher.formattedDateEnd}
+                                </Typography>
+                                <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={1}
+                                mt={2}
+                                alignItems="flex-start"
+                                >
+                                <Tooltip title="View Details">
+                                    <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<InfoIcon />}
+                                    onClick={() => {
+                                        setSelectedVoucherType(voucher.name);
+                                        setVoucherId(voucher._id);
+                                    }}
+                                    >
+                                    Details
+                                    </Button>
+                                </Tooltip>
+
+                                <Tooltip title="Delete Voucher">
+                                    <Button
+                                    variant="contained"
+                                    color="error"
+                                    size="small"
+                                    startIcon={<DeleteIcon />}
+                                    onClick={() => handleDeleteVoucher(voucher._id)}
+                                    >
+                                    Delete
+                                    </Button>
+                                </Tooltip>
+                                </Stack>
+                                <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={1}
+                                mt={2}
+                                alignItems="flex-start"
+                                >
+                                    <Tooltip title="Edit Voucher">
+                                        <Button
+                                        variant="contained"
+                                        color="warning"
+                                        size="small"
+                                        startIcon={<EditIcon />}
+                                        onClick={() => handleEdit(voucher._id)}
+                                        >
+                                        Edit
+                                        </Button>
+                                    </Tooltip>
+                                </Stack>
+                            </CardContent>
+                            </Box>
+                            <CardMedia
+                            component="img"
+                            image={voucher.image}
+                            alt={voucher._id}
+                            sx={{
+                                width: { xs: '100%', sm: 200 },
+                                height: { xs: 200, sm: 'auto' },
+                                objectFit: "cover",
+                                borderTopLeftRadius: "4px",
+                                borderTopRightRadius: { xs: "4px", sm: 0 },
+                                borderBottomLeftRadius: { xs: 0, sm: "4px" },
+                            }}
+                            />
+                        </Card>
                         </Grid2>
-                    </div>
-                ) : (
-                    <VouchersPageDetail onBack={() => setSelectedVoucherType(null)} voucherType={selectedVoucherType} voucherId={voucherId}/>
-                )}
+                    ))}
+                </Grid2>
+                </div>
+            ) : (
+                <VouchersPageDetail
+                onBack={() => setSelectedVoucherType(null)}
+                voucherType={selectedVoucherType}
+                voucherId={voucherId}
+                />
+            )}
             </div>
         ) : (
-        <div className="postVoucher" style={{ textAlign: "left", borderRadius: "25px", padding: "10px", margin: "0 20px 10px 20px", backgroundColor: "#EEEEEE"}}>
-            <div style={{marginRight: "20px", bottom: "0", height: "100%", width: "100%", textAlign: "center"}}>
-                <h3>Upload Image</h3>
-                {selectedImage && (
-                    <div>
-                        <img
-                            alt="not found"
-                            multiple
-                            width={"500px"}
-                            height={"250px"}
-                            src={URL.createObjectURL(selectedImage)}
-                        />
-                        <br /> <br />
-                        <Button onClick={() => setSelectedImage(null)} variant="contained" color="error" startIcon={<DeleteIcon />}>Remove</Button>
-                    </div>
-                )}
+        <div
+        className="postVoucher"
+        style={{
+            borderRadius: "25px",
+            padding: "20px",
+            margin: "10px 20px",
+            backgroundColor: "#EEEEEE",
+        }}
+        >
+        <div
+            style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            gap: "20px",
+            }}
+        >
+            {/* Upload Image Section */}
+            <div style={{ flex: "1 1 300px", minWidth: "280px", textAlign: "center" }}>
+            <h3>Upload Image</h3>
+            {selectedImage && (
+                <div>
+                <img
+                    alt="not found"
+                    width={"100%"}
+                    height={"auto"}
+                    src={URL.createObjectURL(selectedImage)}
+                    style={{ maxWidth: "500px", maxHeight: "250px", objectFit: "cover" }}
+                />
+                <br />
                 <br />
                 <Button
+                    onClick={() => setSelectedImage(null)}
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                >
+                    Remove
+                </Button>
+                </div>
+            )}
+            <br />
+            <Button
                 component="label"
                 role={undefined}
                 variant="contained"
                 tabIndex={-1}
                 startIcon={<CloudUploadIcon />}
-                >
-                    Upload image
-                    <VisuallyHiddenInput
-                        type="file"
-                        onChange={(event) => {
-                            if (event.target.files.length > 0) {
-                                setSelectedImage(event.target.files[0]);
-                            }
-                        }}
-                        multiple
-                    />
-                </Button>
-            </div>
-            <div style={{marginRight: "50px"}}>
-            <form onSubmit={handleSubmit}>
-                <div required id="restaurantId" name="restaurantId"></div>
-                <TextField style={{width: "300px", marginBottom: "15px"}} required id="name" label="Name of voucher" name="name" value={voucherData.name} onChange={handleChange} />
-                <br></br>
-                <TextField 
-                    style={{width: "300px", marginBottom: "15px"}} 
-                    required id="quantity" 
-                    label="Number of vouchers" 
-                    name="quantity" type="number" 
-                    value={voucherData.quantity} 
-                    onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (value >= 0 || e.target.value === "") {
-                            setVoucherData({ ...voucherData, quantity: e.target.value });
-                        }
-                    }}
-                    onBlur={() => setVoucherData({ ...voucherData, quantity: Math.max(0, voucherData.quantity || 0) })}
-                    inputProps={{ min: 0 }}
+            >
+                Upload image
+                <VisuallyHiddenInput
+                type="file"
+                onChange={(event) => {
+                    if (event.target.files.length > 0) {
+                    setSelectedImage(event.target.files[0]);
+                    }
+                }}
+                multiple
                 />
-                <br></br>
-                <TextField style={{width: "300px", marginBottom: "15px"}} required id="release_day" label="Release day" name="release_day" type="date" InputLabelProps={{ shrink: true }} value={voucherData.release_day} onChange={handleChange} />
-                <br></br>
-                <TextField style={{width: "300px", marginBottom: "15px"}} required id="expire_day" label="Expiration day" name="expire_day" type="date" InputLabelProps={{ shrink: true }} value={voucherData.expire_day} onChange={handleChange} />
-                <br></br>
-                <TextField style={{width: "300px", marginBottom: "15px"}} required id="description" label="Description" name="description" multiline maxRows={10} value={voucherData.description} onChange={handleChange} />
-                <br></br>
-                <Button type="submit" variant="contained">Post Voucher</Button>
+            </Button>
+            </div>
+
+            {/* Form Section */}
+            <div style={{ flex: "1 1 300px", minWidth: "280px" }}>
+            <form onSubmit={handleSubmit}>
+                <TextField
+                fullWidth
+                required
+                label="Name of voucher"
+                name="name"
+                value={voucherData.name}
+                onChange={handleChange}
+                style={{ marginBottom: "15px" }}
+                />
+                <TextField
+                fullWidth
+                required
+                label="Number of vouchers"
+                name="quantity"
+                type="number"
+                value={voucherData.quantity}
+                onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (value >= 0 || e.target.value === "") {
+                    setVoucherData({ ...voucherData, quantity: e.target.value });
+                    }
+                }}
+                onBlur={() =>
+                    setVoucherData({
+                    ...voucherData,
+                    quantity: Math.max(0, voucherData.quantity || 0),
+                    })
+                }
+                inputProps={{ min: 0 }}
+                style={{ marginBottom: "15px" }}
+                />
+                <TextField
+                fullWidth
+                required
+                label="Release day"
+                name="release_day"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={voucherData.release_day}
+                onChange={handleChange}
+                style={{ marginBottom: "15px" }}
+                />
+                <TextField
+                fullWidth
+                required
+                label="Expiration day"
+                name="expire_day"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={voucherData.expire_day}
+                onChange={handleChange}
+                style={{ marginBottom: "15px" }}
+                />
+                <TextField
+                fullWidth
+                required
+                label="Description"
+                name="description"
+                multiline
+                maxRows={10}
+                value={voucherData.description}
+                onChange={handleChange}
+                style={{ marginBottom: "15px" }}
+                />
+                <Button type="submit" variant="contained" fullWidth>
+                Post Voucher
+                </Button>
             </form>
             </div>
         </div>
+        </div>
+
         )}
         </div>
 

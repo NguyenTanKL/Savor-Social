@@ -20,7 +20,7 @@ const FriendCard = ({ friendInfo, onUserClick }) => {
           alt="Avatar"
           className="friend-avatar"
         >
-          {friendInfo.username?.charAt(0).toUpperCase()}
+          {/* {friendInfo.username?.charAt(0).toUpperCase()} */}
         </Avatar>
 
         <div className="friend-info">

@@ -215,7 +215,17 @@ function Post({
       }
     } catch (error) {
       console.error("Error collected voucher:", error.response?.data || error.message);
-      alert("Failed to collect voucher");
+      if (error.response?.status === 401) {
+        alert("Voucher is out of stock");
+      } else if (error.response?.status === 402) {
+        alert("Voucher has been expired");
+      } else if (error.response?.status === 403) {
+        alert("You are a restaurant account, cannot collect voucher");
+      } else if (error.response?.status === 405) {
+        alert("Voucher has already been collected");
+      } else {
+        alert("Failed to collect voucher");
+      }
     }
   };
 

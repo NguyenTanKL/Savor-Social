@@ -46,17 +46,34 @@ function SharePost() {
                     </div>
                     <div className="timeline__posts">
                             <Post
+                                // user={post.userId}
+                                // postID={post._id}
+                                // images={post.images}
+                                // likes={post.likes}
+                                // caption={post.caption}
+                                // address={post.location?.address}
+                                // timestamp={post.timestamp}
+                                // is_voucher={post.is_voucher}
+                                // is_ad={post.is_ad}
+                                // isSelected={selectedPostId === post._id} // Chỉ bài post đang chọn có `isSelected = true`
+                                // onSelect={() => setSelectedPostId(post._id)}
+                                // ad_id={post.ad_id}
+                                // voucher_id={post.voucher_id}
                                 user={post.userId}
                                 postID={post._id}
-                                images={post.images}
+                                postComment={post.comments}
+                                images={post.images || []}
                                 likes={post.likes}
-                                caption={post.caption}
-                                address={post.address}
-                                timestamp={post.timestamp}
+                                content={post.content}
+                                tags={post.tags}
+                                taggedUsers={post.taggedUsers}
+                                rating={post.rating}
+                                address={post.location?.address}
+                                timestamp={post.createdAt}
                                 is_voucher={post.is_voucher}
                                 is_ad={post.is_ad}
-                                isSelected={selectedPostId === post._id} // Chỉ bài post đang chọn có `isSelected = true`
-                                onSelect={() => setSelectedPostId(post._id)}
+                                isSelected={selectedPostId === post._id}
+                                // onSelect={handlePostSelect}
                                 ad_id={post.ad_id}
                                 voucher_id={post.voucher_id}
                             />

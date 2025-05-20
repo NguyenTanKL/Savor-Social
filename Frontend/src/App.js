@@ -8,6 +8,7 @@ import SearchPage from './pages/SearchPage';
 import FavouriteMapPage from './pages/FavouriteMapPage';
 import SavedPostsPage from './pages/SavedPostsPage';
 import VouchersPage from './pages/restaurantVoucher/VouchersPage';
+import VoucherEditPage from './pages/restaurantVoucher/VoucherEditPage';
 import UserVouchersPage from './pages/VouchersPage';
 import MessagesPage from './pages/MessagesPage';
 import NotificationDrawer from './pages/NotificationDrawer';
@@ -94,6 +95,7 @@ function App() {
                 <Route path="/post/:postId" element={<PostDetail />} />
                 <Route path="/sharepost/:postId" element={<SharePost />} />
                 <Route path="/vouchers" element={<VouchersPage restaurantId={userStorage._id} />} />
+                <Route path="/editVoucher/:voucherId" element={<VoucherEditPage/>} />
                 <Route path="/messages" element={<MessagesPage sender={userStorage._id} />} />
                 <Route path="/create" element={<CreatePost />} />
                 <Route path="/explore/:tagName" element={<TagPage />} />

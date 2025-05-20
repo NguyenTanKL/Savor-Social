@@ -342,7 +342,7 @@ const searchUser = async (req, res) => {
     const users = await User.find({
       username: { $regex: normalizedQuery.replace(/\s/g, ""), $options: "i" }, // Bỏ khoảng trắng trong username
     })
-      .select("username accountType")
+      .select("username accountType avatar")
       .limit(5);
 
     // Tìm kiếm tag liên quan và số lượng bài viết

@@ -31,7 +31,7 @@ const ShareModal = ({ open, onClose, postId }) => {
 
   const handleSendMessage = async (sender, receiver) => {
       if (!window.confirm("Are you sure you want to share this post?")) return;
-      setNewMessage(`${FRONTENDURL}/sharepost/` + postId);
+      setNewMessage(`${FRONTENDURL}/post/` + postId);
       if (!newMessage.trim()) return;
 
       try {
