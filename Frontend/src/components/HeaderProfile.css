@@ -51,3 +51,12 @@
 .header3__job{
     color: grey;
 }
+.header__food-types {
+    margin-top: 10px;
+  }
+  
+  .food-types-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }

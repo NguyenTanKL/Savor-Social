@@ -67,6 +67,8 @@ function Post({
   const [anchorEl, setAnchorEl] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isUserSelected, setIsUserSelected] = useState(false);
+  const [recentComment, setRecentComment] = useState(null); // State để lưu comment vừa gửi
+  const [commentCount, setCommentCount] = useState(postComment?.length || 0);
   const {
     liked,
     likeCount,
@@ -221,7 +223,7 @@ function Post({
 
   const handleCommentKeyDown = (e) => {
     if (e.key === "Enter" && commentText.trim() && !loading) {
-      handleCreateComment(username);
+      handleCommentSubmit(username);
       setCommentText("");
     }
   };
@@ -284,6 +286,21 @@ function Post({
       onSelect({ action: "showDirections", coordinates: { lat, lng }, postId: postID });
     }
   };
+  const handleCommentSubmit = async (username) => {
+    try {
+      await handleCreateComment(username); // Gọi API để tạo comment
+      // Lưu comment vừa gửi vào state tạm thời
+      setRecentComment({
+        username: username,
+        content: commentText,
+        createdAt: new Date().toISOString(),
+      });
+      // Cập nhật số lượng comment
+      setCommentCount((prev) => prev + 1);
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+    }
+  };
 
   // Common footer component for all posts (including comments, tags, and post detail)
   const renderPostFooter = () => (
@@ -342,8 +359,18 @@ function Post({
       </div>
       <div className="post__comment">
         <span onClick={handleOpenPostDetail} style={{ cursor: "pointer" }}>
-          View all {postComment?.length || 0} comments
+          View all {commentCount || 0} comments
         </span>
+        {recentComment && (
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="body2">
+              <span style={{ fontWeight: "bold", cursor: "pointer" }} onClick={handleUsernameClick}>
+                {recentComment.username}
+              </span>{" "}
+              {recentComment.content}
+            </Typography>
+          </Box>
+        )}
         <Stack direction="row" sx={{ alignItems: "center", gap: 1, width: "100%" }}>
           <TextField
             inputRef={commentInputRef}
@@ -364,7 +391,7 @@ function Post({
           {commentText.trim() && (
             <IconButton
               onClick={() => {
-                handleCreateComment(username);
+                handleCommentSubmit(username);
                 setCommentText("");
               }}
               disabled={loading}
