@@ -63,14 +63,14 @@ class ChatController{
         try {
             const userId = req.params.userId;
 
-            const user = await User.findById(userId).populate("followers", "_id username avatar");
+            const user = await User.findById(userId).populate("following", "_id username avatar");
 
             if (!user) {
             return res.status(404).json({ message: "Không tìm thấy người dùng" });
             }
 
             const followedWithUnread = await Promise.all(
-            user.followers.map(async (followedUser) => {
+            user.following.map(async (followedUser) => {
                 const unreadCount = await Chat.countDocuments({
                 sender: followedUser._id,
                 receiver: userId,

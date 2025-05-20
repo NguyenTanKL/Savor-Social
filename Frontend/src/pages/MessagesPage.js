@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef} from "react";
+import {  useNavigate,useParams } from "react-router-dom";
 import { styled } from '@mui/material/styles';
 import EmojiPicker from 'emoji-picker-react';
 import {
@@ -84,6 +85,7 @@ const Actions = [
 ]
 
 function MessagePage({ sender }) {
+  const navigate = useNavigate();
   const [type, setType] = useState();
   const [selectedReceiver, setSelectedReceiver] = useState(null);
 
@@ -238,7 +240,7 @@ function MessagePage({ sender }) {
             return;
           }
     
-          const { data } = await axios.get(`${USER_API_URL}/follower/${sender}`, {
+          const { data } = await axios.get(`${USER_API_URL}/following/${sender}`, {
             headers: {
               Authorization: `Bearer ${token}`, // Attach token
               "Content-Type": "application/json",
@@ -321,6 +323,10 @@ function MessagePage({ sender }) {
     }
 }, [selectedReceiver]);
 
+    const handleProfile = (user_id) => {
+        navigate(`/profile/${user_id}`);
+    };
+
   return (
     <Box style={{width: "100%", height: "100%", border: "none", borderLeft: "2px solid #ebedf0"}}>
         <Grid container >
@@ -344,17 +350,20 @@ function MessagePage({ sender }) {
                         <Typography >
                             Friends
                         </Typography>
-                        <Stack spacing={3} direction="row">
-                        {unreadCount.map((item) => (
-                            <StyledBadge
-                                overlap="circular"
-                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                                variant="dot"
+                        <Box sx={{ overflowX: 'auto', maxWidth: 350 }}>
+                            <Stack spacing={1} direction="row" sx={{ minWidth: 'fit-content' }}>
+                                {unreadCount.map((item, index) => (
+                                <StyledBadge
+                                    key={index}
+                                    overlap="circular"
+                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                    variant="dot"
                                 >
-                                <Avatar alt={item.username} src={item.img} />
-                            </StyledBadge>
-                            ))}
-                        </Stack>
+                                    <Avatar alt={item.username} src={item.img} />
+                                </StyledBadge>
+                                ))}
+                            </Stack>
+                        </Box>
                         <br />
                         <Typography >
                             Messages
@@ -421,18 +430,15 @@ function MessagePage({ sender }) {
                                 )}
                             </Stack>
                         </Stack>
+                        {type && (
                         <Stack direction={"row"} spacing={2}>
-                            <IconButton>
-                                <VideocamIcon />
-                            </IconButton>
-                            <IconButton color="white">
-                                <CallIcon />
-                            </IconButton>
                             <Divider orientation="vertical" flexItem />
-                            <IconButton>
-                                <InfoIcon />
+                            <IconButton style={{marginRight: "10px"}}>
+                                <InfoIcon onClick={() => handleProfile(user._id)}/>
                             </IconButton>
                         </Stack>
+                        )}
+                        
                     </Stack>
                 </Box>
                 <Box style={{width: "100%", height: "550px"}}>
