@@ -6,7 +6,7 @@ import polyline from "@mapbox/polyline";
 import axios from "axios";
 import { BACKENDURL } from "../utils/const";
 import { TextField, Autocomplete, Box } from "@mui/material";
-
+import { useNavigate } from "react-router-dom";
 const GOONG_MAPS_API_KEY = "oyPuAhIOG5pbK18KxlnjmLtHFTBkUB5gRluI8ieP";
 const GOONG_PLACES_API_KEY = "bI22G8oebQwHbOmJ6CGZLpBqhFWTow7pXwpyrOXT";
 
@@ -24,7 +24,7 @@ function FavouriteMapPage() {
   const [filteredSavedLocations, setFilteredSavedLocations] = useState([]); // Danh sách đã lọc
   const [searchResults, setSearchResults] = useState([]); // Từ khóa tìm kiếm trên bản đồ
   const [searchMarker, setSearchMarker] = useState(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchSavedLocations = async () => {
       try {
@@ -329,7 +329,9 @@ function FavouriteMapPage() {
     map.on("click", handleMapClick);
     return () => map.off("click", handleMapClick);
   }, [map]);
-
+  const handleDetailPost = () => {
+    navigate(`/post/${savedLocations.postId}`);
+  }
   return (
     <div className="map-container">
       <div className="hh2">
@@ -393,13 +395,16 @@ function FavouriteMapPage() {
         {selectedLocation && (
           <div className="location-details">
             <h3>{selectedLocation.name}</h3>
-            <p>Địa chỉ: {selectedLocation.address}</p>
-            <p>Tọa độ: {selectedLocation.lat}, {selectedLocation.lng}</p>
             {placeDetails && (
               <>
                 <p>Mô tả: {placeDetails.description}</p>
                 <p>Đánh giá: {placeDetails.rating}</p>
               </>
+            )}
+            {selectedLocation.postId && (
+              <p>
+                Bài post: <a href={`/post/${selectedLocation.postId}`} onClick={(e) => { e.preventDefault(); navigate(`/post/${selectedLocation.postId}`); }}>Xem bài post</a>
+              </p>
             )}
             <button onClick={handleClose}>Đóng</button>
           </div>

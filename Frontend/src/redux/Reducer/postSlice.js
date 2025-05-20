@@ -40,9 +40,9 @@ export const createPostAsync = createAsyncThunk('posts/createPost', async (formD
     return rejectWithValue(error.response?.data || { message: 'Failed to create post' });
   }
 });
-export const updatePostAsync = createAsyncThunk('posts/updatePost', async ({ postId, content }, { rejectWithValue }) => {
+export const updatePostAsync = createAsyncThunk('posts/updatePost', async ({ postId, content, visibility }, { rejectWithValue }) => {
   try {
-    const res = await updatePostApi(postId, { content });
+    const res = await updatePostApi(postId, { content, visibility });
     return res.data;
   } catch (error) {
     return rejectWithValue(error.response?.data || { message: 'Failed to update post' });

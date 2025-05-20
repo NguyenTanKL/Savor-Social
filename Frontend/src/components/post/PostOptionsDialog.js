@@ -7,15 +7,24 @@ import Typography from "@mui/joy/Typography";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import { useDispatch } from "react-redux";
-import { deletePostAsync } from "../../redux/Reducer/postSlice";
-import parseContent from "./ParsedContent";
+import { deletePostAsync, updatePostAsync } from "../../redux/Reducer/postSlice";
 import { toggleFollow } from "../../api";
 import { updateUser } from "../../redux/Reducer/userSlice";
+import { useState } from "react";
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
+
 const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, isFollowing }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const userId = useSelector((state) => state.user.user._id);
-  console.log("PostInfo:0",postInfo);
+
+  // State để quản lý chế độ chỉnh sửa visibility
+  const [isEditingVisibility, setIsEditingVisibility] = useState(false);
+  const [newVisibility, setNewVisibility] = useState(postInfo?.visibility || 'public');
+
   const handlePostDelete = async () => {
     try {
       if (!userId) {
@@ -26,11 +35,8 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
         throw new Error("Không tìm thấy postId.");
       }
 
-      // Dispatch action deletePostAsync để xóa bài viết
       const result = await dispatch(deletePostAsync({ postId: postInfo._id, userId })).unwrap();
-      // Đóng dialog sau khi xóa thành công
       onClose();
-      // Điều hướng về trang profile của người dùng
       navigate(`/profile/${user._id}`);
     } catch (error) {
       console.error("Lỗi khi xóa bài viết:", error);
@@ -38,12 +44,11 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
   };
 
   const handleEdit = () => {
-    onEdit(); // Gọi callback để mở chế độ chỉnh sửa từ component cha
-    onClose(); // Đóng dialog sau khi chọn "Edit"
+    onEdit();
+    onClose();
   };
 
   const handleShare = () => {
-    // Logic chia sẻ bài viết (có thể tích hợp với ShareModal nếu cần)
     onClose();
   };
 
@@ -54,17 +59,48 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
     });
     onClose();
   };
+
   const handleUnfollow = async () => {
     try {
-      const newStatus = await toggleFollow(user, true); // Gọi toggleFollow để unfollow
-      dispatch(updateUser(newStatus.user)); // Cập nhật Redux state
-      onClose(); // Đóng modal
+      const newStatus = await toggleFollow(user, true);
+      dispatch(updateUser(newStatus.user));
+      onClose();
     } catch (error) {
       console.error("Error unfollowing user:", error);
       alert("Failed to unfollow user. Please try again.");
     }
   };
-  console.log("unfollow:",userId,user,isFollowing );
+
+  // Xử lý khi chọn "Chỉnh sửa đối tượng"
+  const handleEditVisibility = () => {
+    setIsEditingVisibility(true);
+    setNewVisibility(postInfo?.visibility || 'public');
+  };
+
+  // Xử lý khi nhấn "Xong" để lưu visibility
+  const handleSaveVisibility = async () => {
+    try {
+      const updatedData = { postId: postInfo._id, visibility: newVisibility };
+      const result = await dispatch(updatePostAsync(updatedData)).unwrap();
+      // Cập nhật postInfo trong Redux
+      dispatch({
+        type: "posts/updatePost/fulfilled",
+        payload: { ...postInfo, visibility: newVisibility },
+      });
+      setIsEditingVisibility(false);
+      onClose();
+    } catch (error) {
+      console.error("Error updating visibility:", error);
+      alert("Failed to update visibility. Please try again.");
+    }
+  };
+
+  // Xử lý hủy chỉnh sửa visibility
+  const handleCancelEditVisibility = () => {
+    setIsEditingVisibility(false);
+    setNewVisibility(postInfo?.visibility || 'public');
+  };
+
   return (
     <Dialog
       open={open}
@@ -78,67 +114,122 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
       }}
     >
       <DialogContent>
-        {/* Chỉ hiển thị "Delete" nếu người dùng hiện tại là chủ bài viết */}
-        {userId !== user && isFollowing && (
+        {isEditingVisibility ? (
           <>
-        
-            <Typography
-              sx={{
-                color: "red",
-                fontWeight: "bold",
-                padding: "10px 0",
-                cursor: "pointer",
-              }}
-              onClick={handleUnfollow}
-            >
-              Unfollow
+            <Typography sx={{ fontWeight: "bold", padding: "10px 0" }}>
+              Chọn đối tượng
             </Typography>
             <Divider />
-          </>
-        )}
-        {userId === postInfo?.userId && (
-          <>
-            <Typography
-              sx={{
-                color: "red",
-                fontWeight: "bold",
-                padding: "10px 0",
-                cursor: "pointer",
-              }}
-              onClick={handlePostDelete}
-            >
-              Delete
-            </Typography>
+            <FormControl component="fieldset" sx={{ width: "100%", mt: 2 }}>
+              <RadioGroup
+                value={newVisibility}
+                onChange={(e) => setNewVisibility(e.target.value)}
+              >
+                <FormControlLabel
+                  value="public"
+                  control={<Radio />}
+                  label="Công khai"
+                  sx={{ padding: "10px 0", justifyContent: "center" }}
+                />
+                <FormControlLabel
+                  value="private"
+                  control={<Radio />}
+                  label="Chỉ mình tôi"
+                  sx={{ padding: "10px 0", justifyContent: "center" }}
+                />
+              </RadioGroup>
+            </FormControl>
             <Divider />
           </>
-        )}
+        ) : (
+          <>
+            {/* Chỉ hiển thị "Unfollow" nếu người dùng hiện tại không phải là chủ bài viết và đang follow */}
+            {userId !== user?._id && isFollowing && (
+              <>
+                <Typography
+                  sx={{
+                    color: "red",
+                    fontWeight: "bold",
+                    padding: "10px 0",
+                    cursor: "pointer",
+                  }}
+                  onClick={handleUnfollow}
+                >
+                  Unfollow
+                </Typography>
+                <Divider />
+              </>
+            )}
 
-        {/* Chỉ hiển thị "Edit" nếu người dùng hiện tại là chủ bài viết */}
-        {userId === postInfo?.userId && (
-          <>
+            {/* Chỉ hiển thị "Delete" nếu người dùng hiện tại là chủ bài viết */}
+            {userId === postInfo?.userId && (
+              <>
+                <Typography
+                  sx={{
+                    color: "red",
+                    fontWeight: "bold",
+                    padding: "10px 0",
+                    cursor: "pointer",
+                  }}
+                  onClick={handlePostDelete}
+                >
+                  Delete
+                </Typography>
+                <Divider />
+              </>
+            )}
+
+            {/* Chỉ hiển thị "Edit" nếu người dùng hiện tại là chủ bài viết */}
+            {userId === postInfo?.userId && (
+              <>
+                <Typography
+                  sx={{ padding: "10px 0", cursor: "pointer" }}
+                  onClick={handleEdit}
+                >
+                  Edit
+                </Typography>
+                <Divider />
+              </>
+            )}
+
+            {/* Chỉ hiển thị "Chỉnh sửa đối tượng" nếu người dùng hiện tại là chủ bài viết */}
+            {userId === postInfo?.userId && (
+              <>
+                <Typography
+                  sx={{ padding: "10px 0", cursor: "pointer" }}
+                  onClick={handleEditVisibility}
+                >
+                  Chỉnh sửa đối tượng
+                </Typography>
+                <Divider />
+              </>
+            )}
+
             <Typography
               sx={{ padding: "10px 0", cursor: "pointer" }}
-              onClick={handleEdit}
+              onClick={handleCopyLink}
             >
-              Edit
+              Copy link
             </Typography>
             <Divider />
           </>
         )}
-        <Divider />
-
-        <Typography
-          sx={{ padding: "10px 0", cursor: "pointer" }}
-          onClick={handleCopyLink}
-        >
-          Copy link
-        </Typography>
-        <Divider />
       </DialogContent>
       <DialogActions sx={{ justifyContent: "center" }}>
-        <Button onClick={onClose} sx={{ width: "100%" }}>
-          Cancel
-        </Button>
+        {isEditingVisibility ? (
+          <>
+            <Button onClick={handleCancelEditVisibility} sx={{ width: "50%" }}>
+              Hủy
+            </Button>
+            <Button onClick={handleSaveVisibility} sx={{ width: "50%" }}>
+              Xong
+            </Button>
+          </>
+        ) : (
+          <Button onClick={onClose} sx={{ width: "100%" }}>
+            Cancel
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

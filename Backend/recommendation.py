@@ -42,12 +42,19 @@ def main():
 
     # Làm sạch dữ liệu
     post_data = []
+    filtered_posts = []
     for post in posts:
-        content = clean_text(post.get("content", ""))
-        tags = clean_text(" ".join(post.get("tags", [])))
-        combined = f"{content} {tags}".strip()
-        if combined:
-            post_data.append(combined)
+        
+        visibility = post.get("visibility", "public")
+        post_user_id = post.get("userId", "")
+        if visibility == "public" :
+        # or (visibility == "private" and post_user_id == current_user_id):
+            content = clean_text(post.get("content", ""))
+            tags = clean_text(" ".join(post.get("tags", [])))
+            combined = f"{content} {tags}".strip()
+            if combined:
+                post_data.append(combined)
+                filtered_posts.append(post)
     
     user_data = clean_text(user_document)
     print(f"User data after preprocessing: {user_data[:100]}...", file=sys.stderr)
@@ -86,7 +93,7 @@ def main():
     
     # Tạo recommendations
     recommendations = []
-    for post, sim in zip(posts, similarities):
+    for post, sim in zip(filtered_posts, similarities):
         # Kiểm tra nếu bài viết từ người đang follow
         is_followed = post.get("userId", "") in following
         # Tăng similarity cho người follow

@@ -9,14 +9,14 @@ const cloudinary = require("../config/cloudinary/cloudinaryConfig").cloudinary;
 const { spawn } = require('child_process');
 const createPost = async (req, res) => {
   try {
-    const { userId, content, rating, is_ad, location } = req.body;
+    const { userId, content, rating, is_ad, location, visibility } = req.body;
     let images = [];
 
     // Nếu có nhiều file ảnh được gửi lên, lấy URL từ req.files
     if (req.files && req.files.length > 0) {
       images = req.files.map((file) => file.path); // Lấy secure_url từ Cloudinary
     }
-
+    const validVisibility = ['public', 'private'].includes(visibility) ? visibility : 'public';
     // Thay thế #[hashtag](id) thành #hashtag trong content
     let modifiedContent = content;
     const hashtagFormatRegex = /#\[([^\]]+)\]\(([^)]+)\)/g;
@@ -68,6 +68,7 @@ const createPost = async (req, res) => {
       userId,
       content: modifiedContent,
       images,
+      visibility: validVisibility,
       restaurantId: restaurant?.[0]?._id,
       is_ad: is_ad,
       tags: hashtags,
@@ -130,11 +131,11 @@ const createPost = async (req, res) => {
     const posts = await Post.find()
       .populate({
         path: "userId",
-        select: "username profileUrl -password",
+        select: "username avatar -password",
       })
       .populate({
         path: "taggedUsers",
-        select: "username profileUrl -password",
+        select: "username avatar -password",
       })
       .sort({ createdAt: -1 });
     res.status(200).json(posts);
@@ -147,7 +148,7 @@ const createPost = async (req, res) => {
 const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { content } = req.body; // Chỉ lấy nội dung để chỉnh sửa
+    const { content, visibility } = req.body; // Chỉ lấy nội dung để chỉnh sửa
     const userId = req.user.id; // Giả sử bạn có middleware để lấy user từ token
 
     // Tìm bài viết và kiểm tra quyền chỉnh sửa
@@ -161,7 +162,13 @@ const updatePost = async (req, res) => {
     }
 
     // Cập nhật nội dung và giữ nguyên các trường khác
-    post.content = content;
+    if (content) {
+      post.content = content;
+    }
+    if (visibility) {
+      const validVisibility = ['public', 'private'].includes(visibility) ? visibility : 'public';
+      post.visibility = validVisibility;
+    }
 
     // Phân tích lại hashtag và mention nếu cần
     const hashtagRegex = /#[^\s#]+/g;
@@ -205,11 +212,11 @@ const updatePost = async (req, res) => {
     const updatedPost = await Post.findById(postId)
       .populate({
         path: "userId",
-        select: "username profileUrl -password",
+        select: "username avatar -password",
       })
       .populate({
         path: "taggedUsers",
-        select: "username profileUrl -password",
+        select: "username avatar -password",
       });
 
     res.status(200).json(updatedPost);
@@ -239,7 +246,7 @@ const createPostWithVoucher = async (req, res) => {
       const posts = await Post.find()
           .populate({
               path: "userId",
-              select: "username profileUrl -password",
+              select: "username avatar -password",
           })
           .sort({ createdAt: -1 });
 
@@ -435,7 +442,7 @@ const createComment = async (req, res) => {
       // Populate thông tin user cho comment
       const populatedComment = await Comment.findById(newComment._id).populate({
         path: "userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       });
       if (post.userId.toString() !== userId) {
         const sender = await User.findById(userId);
@@ -510,11 +517,11 @@ const createReply = async (req, res) => {
     const updatedComment = await Comment.findById(commentId)
       .populate({
         path: "userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       })
       .populate({
         path: "replies.userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       });
 
     res.status(200).json(updatedComment);
@@ -530,11 +537,11 @@ const getComments = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate({
         path: "userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       })
       .populate({
         path: "replies.userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       });
 
     res.status(200).json(comments);
@@ -599,11 +606,11 @@ const likeComment = async (req, res) => {
     const updatedComment = await Comment.findById(comment._id)
       .populate({
         path: "userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       })
       .populate({
         path: "replies.userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       });
 
     res.status(200).json(updatedComment);
@@ -641,11 +648,11 @@ const unlikeComment = async (req, res) => {
     const updatedComment = await Comment.findById(comment._id)
       .populate({
         path: "userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       })
       .populate({
         path: "replies.userId",
-        select: "profileUrl username -password",
+        select: "avatar username -password",
       });
 
     res.status(200).json(updatedComment);

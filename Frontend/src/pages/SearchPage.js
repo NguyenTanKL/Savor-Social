@@ -5,6 +5,7 @@ import "./SearchPage.css";
 import SearchIcon from "@mui/icons-material/Search";
 import CancelIcon from "@mui/icons-material/Cancel";
 import FriendCard from "../components/friend/FriendCard";
+import debounce from "lodash/debounce";
 import { useNavigate } from "react-router-dom";
 import {
   Typography,
@@ -24,7 +25,7 @@ function SearchPage({ open, onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef(null);
 
-  // Chặn cuộn trang chính khi Drawer mở
+ // Chặn cuộn trang chính khi Drawer mở
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -100,7 +101,15 @@ function SearchPage({ open, onClose }) {
     onClose(); // Đóng Drawer trước
     navigate(`/profile/${userId}`);
   };
-
+const handleKeyDown = (e) => {
+    if (e.key === "Enter" && searchTerm.trim().startsWith("#")) {
+      const cleanTag = searchTerm.trim().slice(1); // Loại bỏ ký tự # đầu tiên
+      const normalizedTag = cleanTag.toLowerCase().replace(/\s/g, "");
+      console.log("Navigating to explore with tag:", normalizedTag);
+      onClose();
+      navigate(`/explore/${normalizedTag}`);
+    }
+  };
   const formatPostCount = (count) => {
     if (count >= 1000000) {
       return `${(count / 1000000).toFixed(1)}M`;

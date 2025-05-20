@@ -260,8 +260,9 @@ function EditProfilePage({ userId }) {
 
       // Append preferences or foodTypes based on usertype
       if (formData.usertype === "normal") {
-        data.append('preferences', JSON.stringify(formData.preferences));
-        // Thêm các tag mới vào database
+        formData.preferences.forEach((tag, index) => {
+          data.append(`preferences[${index}]`, tag); // Send as array
+        });
         const newTags = formData.preferences.filter(tag => !availableTags.includes(tag));
         for (const tag of newTags) {
           await axios.post(`${BACKENDURL}/api/tags`, { name: tag }, {
@@ -269,8 +270,9 @@ function EditProfilePage({ userId }) {
           });
         }
       } else if (formData.usertype === "restaurant") {
-        data.append('foodTypes', JSON.stringify(formData.foodTypes));
-        // Thêm các tag mới vào database
+        formData.foodTypes.forEach((tag, index) => {
+          data.append(`foodTypes[${index}]`, tag); // Send as array
+        });
         const newTags = formData.foodTypes.filter(tag => !availableTags.includes(tag));
         for (const tag of newTags) {
           await axios.post(`${BACKENDURL}/api/tags`, { name: tag }, {

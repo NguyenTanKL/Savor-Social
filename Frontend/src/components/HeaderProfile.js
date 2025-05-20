@@ -9,6 +9,7 @@ import {
   ListItem,
   ListItemText,
   Button,
+  Chip
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -21,6 +22,7 @@ import { styled } from "@mui/material/styles";
 import { toggleFollow, removeFollower } from "../api/userApi";
 import { updateUser } from "../redux/Reducer/userSlice";
 import { BACKENDURL } from "../utils/const";
+
 function HeaderProfile({ user, userId,  onUserUpdate }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -218,7 +220,14 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
 
     fetchFollowStatus();
   }, [userId, user._id]);
-
+  const handleNavigateToProfile = (userId, isFollowingDialog) => {
+    if (isFollowingDialog) {
+      setOpenFollowing(false);
+    } else {
+      setOpenFollower(false);
+    }
+    navigate(`/profile/${userId}`);
+  };
   // Xác định xem đây có phải là profile của user đang đăng nhập không
   const isOwnProfile = userId === userStorage._id;
   const isRestaurant =  user.usertype === "restaurant";
@@ -265,6 +274,25 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
           </div>
           
         </div>
+        {isRestaurant && user.foodTypes && user.foodTypes.length > 0 && (
+          <div className="header__food-types">
+            <h4 style={{ margin: "10px 0 5px" }}>Main Dishes:</h4>
+            <div className="food-types-chips">
+              {user.foodTypes.map((foodType, index) => (
+                <Chip
+                  key={index}
+                  label={foodType}
+                  sx={{
+                    margin: "0 5px 5px 0",
+                    backgroundColor: "#e0e0e0",
+                    color: "#333",
+                    "&:hover": { backgroundColor: "#d0d0d0" },
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
         <div className="header__3">
           <div className="header2__content">
             <span>{user.name}</span>
@@ -306,8 +334,16 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <Avatar src={followedUser.avatar} sx={{ width: 40, height: 40, marginRight: 1 }} />
-                    <ListItemText primary={followedUser.username} />
+                    <Avatar 
+                      src={followedUser.avatar} 
+                      sx={{ width: 40, height: 40, marginRight: 1, cursor:"pointer" }}
+                      onClick={() => handleNavigateToProfile(followedUser._id, true)}
+                       />
+                    <ListItemText 
+                    primary={followedUser.username}
+                    sx = {{cursor:"pointer"}}
+                    onClick={() => handleNavigateToProfile(followedUser._id, true)}
+                    />
                   </div>
                   {isOwnProfile ? (
                     <Button
@@ -380,8 +416,15 @@ function HeaderProfile({ user, userId,  onUserUpdate }) {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <Avatar src={followerUser.avatar} sx={{ width: 40, height: 40, marginRight: 1 }} />
-                    <ListItemText primary={followerUser.username} />
+                    <Avatar 
+                      src={followerUser.avatar} 
+                      sx={{ width: 40, height: 40, marginRight: 1, cursor:"pointer" }}
+                      onClick={() => handleNavigateToProfile(followerUser._id, false)}
+                     />
+                    <ListItemText 
+                    primary={followerUser.username}
+                    onClick={() => handleNavigateToProfile(followerUser._id, false)}
+                    sx={{cursor:"pointer"}} />
                   </div>
                   {isOwnProfile ? (
                     <Button

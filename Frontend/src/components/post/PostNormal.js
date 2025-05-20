@@ -134,7 +134,7 @@ function PostNormal({
           {showComments && comments.commentList.length > 0 ? (
             comments.commentList.map((comment) => (
               <div key={comment._id} className="comment-item">
-                <Avatar src={comment.from?.profileUrl || ""} sx={{ width: 24, height: 24 }} />
+                <Avatar src={comment.from?.avatar || ""} sx={{ width: 24, height: 24 }} />
                 <span>
                   <strong>{comment.from}</strong> {comment.comment}
                 </span>

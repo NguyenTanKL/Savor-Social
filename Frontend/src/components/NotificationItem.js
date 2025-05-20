@@ -97,7 +97,7 @@ function NotificationItem({
     <ListItem
       className={`notification-item ${isRead ? "read" : "unread"} ${hasPost ? "clickable" : ""}`}
       onClick={handleItemClick}
-      sx={{ padding: "10px", borderRadius: "8px" }}
+      sx={{ padding: "10px", borderRadius: "8px", cursor:"pointer" }}
     >
       <ListItemAvatar>
         <Avatar
