@@ -699,251 +699,255 @@ const getByTag = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
-// const getRecommendedPosts = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = 20;
-//     const skip = (page - 1) * limit;
-
-//     const user = await User.findById(userId).lean();
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     const preferences = user.preferences || [];
-//     const followingIds = user.following || [];
-
-//     // Lấy 100 bài post mới nhất từ tất cả bài post
-//     const allPosts = await Post.find()
-//       .populate({
-//         path: "userId",
-//         select: "username profileUrl -password",
-//       })
-//       .populate({
-//         path: "taggedUsers",
-//         select: "username profileUrl -password",
-//       })
-//       .sort({ createdAt: -1 })
-//       .limit(100)
-//       .lean();
-
-//     // Tính điểm cho mỗi bài viết
-//     const scoredPosts = allPosts.map(post => {
-//       let score = 0;
-//       const matchedTags = (post.tags || []).filter(tag => preferences.includes(tag));
-//       score += matchedTags.length * 3;
-//       if ((followingIds || []).map(id => id.toString()).includes(post.userId?._id.toString())) {
-//         score += 2;
-//       }
-//       score += Math.min((post.likes || []).length, 5);
-//       const hoursAgo = (Date.now() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
-//       if (hoursAgo <= 24) {
-//         score += 1;
-//       }
-//       return { ...post, score };
-//     });
-
-//     // Sắp xếp theo điểm giảm dần
-//     scoredPosts.sort((a, b) => b.score - a.score);
-
-//     // Áp dụng phân trang
-//     const paginatedPosts = scoredPosts.slice(skip, skip + limit);
-
-//     res.status(200).json(paginatedPosts);
-//   } catch (error) {
-//     console.error("Error fetching recommended posts:", error);
-//     res.status(500).json({ message: "Get Recommended Posts Failed", error: error.message });
-//   }
-// };
-
-// Lấy bài viết đề xuất
 const getRecommendedPosts = async (req, res) => {
   try {
-    console.log("Starting getRecommendedPosts, user:", req.user.id);
     const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;
-    const limit = 50;
+    const limit = 20;
+    const skip = (page - 1) * limit;
 
-    // Lấy bài viết trong 7 ngày qua
-    const posts = await Post.find({
-      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-    })
-      .sort({ createdAt: -1 })
-      .limit(500)
-      .lean();
-
-    console.log(`Posts found: ${posts.length}`);
-    if (!posts.length) {
-      return res.status(200).json({ posts: [], page, hasMore: false });
-    }
-
-    // Lấy thông tin người dùng
     const user = await User.findById(userId).lean();
-    const userType = user?.usertype || "normal";
-    const likedPosts = user?.likedPosts || [];
-    const savedPosts = user?.savedPosts || [];
-    const preferences = userType === "normal" ? user?.preferences || [] : [];
-    const foodTypes = userType === "restaurant" ? user?.foodTypes || [] : [];
-    const following = user?.following || [];
-    // Lấy bài viết do người dùng viết
-    const userPosts = await Post.find({ userId: userId })
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const preferences = user.preferences || [];
+    const followingIds = user.following || [];
+
+    const allPosts = await Post.find()
+      // .populate({
+      //   path: "userId",
+      //   select: "username profileUrl -password",
+      // })
+      // .populate({
+      //   path: "taggedUsers",
+      //   select: "username profileUrl -password",
+      // })
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(100)
       .lean();
-    console.log(`User posts found: ${userPosts.length}`);
 
-    // Hàm xử lý mentions, tags và xóa ID
-    const parseContent = (text) => {
-      if (!text || typeof text !== "string") return "";
-      let result = text;
-      // Xóa chuỗi ID (24 ký tự hex)
-      result = result.replace(/\b[a-f0-9]{24}\b/g, "");
-      // Xử lý tags: [tag][tag] -> tag
-      result = result.replace(/\[([^\]\[]+)\]\[\1\]/g, "$1");
-      // Loại bỏ các cặp dấu ngoặc không hợp lệ
-      result = result.replace(/\[([^\]\[]+)\]\[([^\]\[]+)\]/g, "$1 $2");
-      return result.trim();
-    };
+    console.log("All posts fetched:", allPosts.length);
+    console.log("User preferences:", preferences);
+    console.log("Following IDs:", followingIds);
 
-    // Làm sạch văn bản
-    const cleanText = (text) => {
-      if (!text) return "";
-      const parsedText = parseContent(text);
-      return Buffer.from(parsedText, 'utf8')
-        .toString('utf8')
-        .normalize("NFC")
-        .replace(/[^\w\s]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    };
-
-    // Tạo user_document từ likedPosts, savedPosts và userPosts
-    const processedPostIds = new Set();
-    let user_document_parts = [];
-
-    // Xử lý likedPosts và savedPosts
-    [...likedPosts, ...savedPosts].forEach((postId) => {
-      if (processedPostIds.has(postId)) return;
-      const post = posts.find((p) => p._id.toString() === postId.toString());
-      if (!post) return;
-      const content = cleanText(post.content);
-      const tags = cleanText(post.tags?.join(" ") || "");
-      user_document_parts.push(`${content} ${tags}`.trim());
-      processedPostIds.add(postId);
-    });
-
-    // Xử lý userPosts
-    userPosts.forEach((post) => {
-      if (processedPostIds.has(post._id.toString())) return;
-      const content = cleanText(post.content);
-      const tags = cleanText(post.tags?.join(" ") || "");
-      user_document_parts.push(`${content} ${tags} `.repeat(2).trim());
-      processedPostIds.add(post._id.toString());
-    });
-
-    // Thêm preferences (user normal) hoặc foodTypes (restaurant)
-    const userTags = userType === "normal" ? preferences : foodTypes;
-    if (userTags.length > 0) {
-      const cleanedUserTags = cleanText(userTags.join(" "));
-      user_document_parts.push(cleanedUserTags.repeat(4));
-    }
-
-    // Kết hợp thành user_document
-    let user_document = user_document_parts.join(" ");
-
-    // Nếu user_document rỗng, dùng top tags
-    if (!user_document) {
-      const allTags = posts.flatMap((post) => post.tags || []);
-      const tagCounts = allTags.reduce((acc, tag) => {
-        acc[tag] = (acc[tag] || 0) + 1;
-        return acc;
-      }, {});
-      const topTags = Object.entries(tagCounts)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([tag]) => cleanText(tag));
-      user_document = topTags.join(" ");
-      console.log("Using default user_document from top tags:", user_document);
-    }
-
-    console.log(`User document: ${user_document.substring(0, 100)}...`);
-
-    // Chuẩn bị dữ liệu cho recommendation.py
-    const inputData = JSON.stringify({ posts, user_document, following }, (key, value) => {
-      if (key === "content" || key === "user_document" || key === "tags") {
-        return cleanText(Array.isArray(value) ? value.join(" ") : value);
+    const scoredPosts = allPosts.map(post => {
+      let score = 0;
+      const matchedTags = (post.tags || []).filter(tag => preferences.includes(tag));
+      score += matchedTags.length * 3;
+      if ((followingIds || []).map(id => id.toString()).includes(post.userId?._id.toString())) {
+        score += 2;
       }
-      return value;
-    });
-
-    // Gọi recommendation.py
-    const pythonProcess = spawn("python", ["recommendation.py"], {
-      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    let pythonOutput = "";
-    let pythonError = "";
-
-    pythonProcess.stdin.write(Buffer.from(inputData, 'utf8'));
-    pythonProcess.stdin.end();
-
-    pythonProcess.stdout.on("data", (data) => {
-      pythonOutput += data.toString('utf8');
-    });
-
-    pythonProcess.stderr.on("data", (data) => {
-      pythonError += data.toString('utf8');
-    });
-
-    pythonProcess.on("close", (code) => {
-      console.log(`Python process exited with code ${code}`);
-      console.log("Python stdout:", pythonOutput);
-      if (pythonError) {
-        console.error("Python stderr:", pythonError);
+      score += Math.min((post.likes || []).length, 5);
+      const hoursAgo = (Date.now() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+      if (hoursAgo <= 24) {
+        score += 1;
       }
-
-      if (code !== 0) {
-        return res.status(500).json({ message: "Error running recommendation script" });
-      }
-
-      try {
-        // Lọc pythonOutput để chỉ lấy JSON
-        const jsonMatch = pythonOutput.match(/\[.*\]/s);
-        if (!jsonMatch) {
-          throw new Error("No valid JSON found in Python output");
-        }
-        const recommendations = JSON.parse(jsonMatch[0]);
-        console.log("Parsed recommendations:", recommendations);
-
-        const recommendedPosts = recommendations
-          .map((rec) => {
-            const post = posts.find((p) => p._id.toString() === rec.postId);
-            return post ? { ...post, similarity: rec.similarity } : null;
-          })
-          .filter(Boolean);
-
-        // Phân trang
-        const startIndex = (page - 1) * limit;
-        const paginatedPosts = recommendedPosts.slice(startIndex, startIndex + limit);
-        const hasMore = recommendedPosts.length > startIndex + limit;
-
-        return res.status(200).json({
-          posts: paginatedPosts,
-          page,
-          hasMore,
-        });
-      } catch (error) {
-        console.error("Error parsing Python output:", error.message);
-        return res.status(500).json({ message: "Error parsing recommendation results", error: error.message });
-      }
+      return { ...post, score };
     });
+
+    console.log("Scored posts:", scoredPosts.map(post => ({ id: post._id, score: post.score })));
+    scoredPosts.sort((a, b) => b.score - a.score);
+
+    const paginatedPosts = scoredPosts.slice(skip, skip + limit);
+    console.log("Paginated posts:", paginatedPosts.length);
+    console.log("Skip:", skip, "Limit:", limit);
+
+    const hasMore = scoredPosts.length > skip + limit;
+    res.status(200).json({ posts: paginatedPosts, hasMore });
   } catch (error) {
-    console.error("Error in getRecommendedPosts:", error);
-    return res.status(500).json({ message: "Lỗi xử lý đề xuất", error: error.message });
+    console.error("Error fetching recommended posts:", error);
+    res.status(500).json({ message: "Get Recommended Posts Failed", error: error.message });
   }
 };
+
+// Lấy bài viết đề xuất
+// const getRecommendedPosts = async (req, res) => {
+//   try {
+//     console.log("Starting getRecommendedPosts, user:", req.user.id);
+//     const userId = req.user.id;
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = 50;
+
+//     // Lấy bài viết trong 7 ngày qua
+//     const posts = await Post.find({
+//       createdAt: { $gte: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
+//     })
+//       .sort({ createdAt: -1 })
+//       .limit(500)
+//       .lean();
+
+//     console.log(`Posts found: ${posts.length}`);
+//     if (!posts.length) {
+//       return res.status(200).json({ posts: [], page, hasMore: false });
+//     }
+
+//     // Lấy thông tin người dùng
+//     const user = await User.findById(userId).lean();
+//     const userType = user?.usertype || "normal";
+//     const likedPosts = user?.likedPosts || [];
+//     const savedPosts = user?.savedPosts || [];
+//     const preferences = userType === "normal" ? user?.preferences || [] : [];
+//     const foodTypes = userType === "restaurant" ? user?.foodTypes || [] : [];
+//     const following = user?.following || [];
+//     // Lấy bài viết do người dùng viết
+//     const userPosts = await Post.find({ userId: userId })
+//       .sort({ createdAt: -1 })
+//       .limit(50)
+//       .lean();
+//     console.log(`User posts found: ${userPosts.length}`);
+
+//     // Hàm xử lý mentions, tags và xóa ID
+//     const parseContent = (text) => {
+//       if (!text || typeof text !== "string") return "";
+//       let result = text;
+//       // Xóa chuỗi ID (24 ký tự hex)
+//       result = result.replace(/\b[a-f0-9]{24}\b/g, "");
+//       // Xử lý tags: [tag][tag] -> tag
+//       result = result.replace(/\[([^\]\[]+)\]\[\1\]/g, "$1");
+//       // Loại bỏ các cặp dấu ngoặc không hợp lệ
+//       result = result.replace(/\[([^\]\[]+)\]\[([^\]\[]+)\]/g, "$1 $2");
+//       return result.trim();
+//     };
+
+//     // Làm sạch văn bản
+//     const cleanText = (text) => {
+//       if (!text) return "";
+//       const parsedText = parseContent(text);
+//       return Buffer.from(parsedText, 'utf8')
+//         .toString('utf8')
+//         .normalize("NFC")
+//         .replace(/[^\w\s]/g, " ")
+//         .replace(/\s+/g, " ")
+//         .trim();
+//     };
+
+//     // Tạo user_document từ likedPosts, savedPosts và userPosts
+//     const processedPostIds = new Set();
+//     let user_document_parts = [];
+
+//     // Xử lý likedPosts và savedPosts
+//     [...likedPosts, ...savedPosts].forEach((postId) => {
+//       if (processedPostIds.has(postId)) return;
+//       const post = posts.find((p) => p._id.toString() === postId.toString());
+//       if (!post) return;
+//       const content = cleanText(post.content);
+//       const tags = cleanText(post.tags?.join(" ") || "");
+//       user_document_parts.push(`${content} ${tags}`.trim());
+//       processedPostIds.add(postId);
+//     });
+
+//     // Xử lý userPosts
+//     userPosts.forEach((post) => {
+//       if (processedPostIds.has(post._id.toString())) return;
+//       const content = cleanText(post.content);
+//       const tags = cleanText(post.tags?.join(" ") || "");
+//       user_document_parts.push(`${content} ${tags} `.repeat(2).trim());
+//       processedPostIds.add(post._id.toString());
+//     });
+
+//     // Thêm preferences (user normal) hoặc foodTypes (restaurant)
+//     const userTags = userType === "normal" ? preferences : foodTypes;
+//     if (userTags.length > 0) {
+//       const cleanedUserTags = cleanText(userTags.join(" "));
+//       user_document_parts.push(cleanedUserTags.repeat(4));
+//     }
+
+//     // Kết hợp thành user_document
+//     let user_document = user_document_parts.join(" ");
+
+//     // Nếu user_document rỗng, dùng top tags
+//     if (!user_document) {
+//       const allTags = posts.flatMap((post) => post.tags || []);
+//       const tagCounts = allTags.reduce((acc, tag) => {
+//         acc[tag] = (acc[tag] || 0) + 1;
+//         return acc;
+//       }, {});
+//       const topTags = Object.entries(tagCounts)
+//         .sort(([, a], [, b]) => b - a)
+//         .slice(0, 5)
+//         .map(([tag]) => cleanText(tag));
+//       user_document = topTags.join(" ");
+//       console.log("Using default user_document from top tags:", user_document);
+//     }
+
+//     console.log(`User document: ${user_document.substring(0, 100)}...`);
+
+//     // Chuẩn bị dữ liệu cho recommendation.py
+//     const inputData = JSON.stringify({ posts, user_document, following }, (key, value) => {
+//       if (key === "content" || key === "user_document" || key === "tags") {
+//         return cleanText(Array.isArray(value) ? value.join(" ") : value);
+//       }
+//       return value;
+//     });
+
+//     // Gọi recommendation.py
+//     const pythonProcess = spawn("python", ["recommendation.py"], {
+//       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+//       stdio: ['pipe', 'pipe', 'pipe']
+//     });
+
+//     let pythonOutput = "";
+//     let pythonError = "";
+
+//     pythonProcess.stdin.write(Buffer.from(inputData, 'utf8'));
+//     pythonProcess.stdin.end();
+
+//     pythonProcess.stdout.on("data", (data) => {
+//       pythonOutput += data.toString('utf8');
+//     });
+
+//     pythonProcess.stderr.on("data", (data) => {
+//       pythonError += data.toString('utf8');
+//     });
+
+//     pythonProcess.on("close", (code) => {
+//       console.log(`Python process exited with code ${code}`);
+//       console.log("Python stdout:", pythonOutput);
+//       if (pythonError) {
+//         console.error("Python stderr:", pythonError);
+//       }
+
+//       if (code !== 0) {
+//         return res.status(500).json({ message: "Error running recommendation script" });
+//       }
+
+//       try {
+//         // Lọc pythonOutput để chỉ lấy JSON
+//         const jsonMatch = pythonOutput.match(/\[.*\]/s);
+//         if (!jsonMatch) {
+//           throw new Error("No valid JSON found in Python output");
+//         }
+//         const recommendations = JSON.parse(jsonMatch[0]);
+//         console.log("Parsed recommendations:", recommendations);
+
+//         const recommendedPosts = recommendations
+//           .map((rec) => {
+//             const post = posts.find((p) => p._id.toString() === rec.postId);
+//             return post ? { ...post, similarity: rec.similarity } : null;
+//           })
+//           .filter(Boolean);
+
+//         // Phân trang
+//         const startIndex = (page - 1) * limit;
+//         const paginatedPosts = recommendedPosts.slice(startIndex, startIndex + limit);
+//         const hasMore = recommendedPosts.length > startIndex + limit;
+
+//         return res.status(200).json({
+//           posts: paginatedPosts,
+//           page,
+//           hasMore,
+//         });
+//       } catch (error) {
+//         console.error("Error parsing Python output:", error.message);
+//         return res.status(500).json({ message: "Error parsing recommendation results", error: error.message });
+//       }
+//     });
+//   } catch (error) {
+//     console.error("Error in getRecommendedPosts:", error);
+//     return res.status(500).json({ message: "Lỗi xử lý đề xuất", error: error.message });
+//   }
+// };
 const getFavouriteLocations = async (req, res) =>{
   try {
     const userId = req.user.id;

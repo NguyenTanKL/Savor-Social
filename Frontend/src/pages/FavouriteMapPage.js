@@ -365,7 +365,7 @@ function FavouriteMapPage() {
 
       <div className="map-container-2">
         <div className="locations-list">
-          <h2>Địa điểm đã lưu</h2>
+          <h2>Saved Places</h2>
           <Box sx={{ mb: 2, px: 2 }}>
             <TextField
               label="Tìm kiếm địa điểm đã lưu"

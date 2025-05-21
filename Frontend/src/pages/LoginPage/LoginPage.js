@@ -90,7 +90,7 @@ function LoginPage () {
             fullWidth
             variant="outlined"
             margin="dense"
-            label="Email hoặc số điện thoại"
+            label="Email"
             name="email"
             value={loginData.email}
             onChange={handleChange}
@@ -102,7 +102,7 @@ function LoginPage () {
             variant="outlined"
             margin="dense"
             type="password"
-            label="Mật khẩu"
+            label="Password"
             name="password"
             value={loginData.password}
             onChange={handleChange}
@@ -121,19 +121,10 @@ function LoginPage () {
               "&:hover": { bgcolor: "#0077c0" },
             }}
           >
-            Đăng nhập
+            Log in
           </Button>
         </form>
 
-        <Typography sx={{ my: 2, color: "#8e8e8e" }}>HOẶC</Typography>
-
-        <Button sx={{ textTransform: "none", color: "#385185" }}>
-          Đăng nhập bằng Facebook
-        </Button>
-
-        <Typography sx={{ fontSize: "12px", color: "#00376b", mt: 1 }}>
-          Quên mật khẩu?
-        </Typography>
       </Box>
 
       <Box
@@ -146,12 +137,12 @@ function LoginPage () {
         }}
       >
         <Typography variant="body2">
-          Chưa có tài khoản?{" "}
+        Don't have an account?{" "}
           <span
             style={{ color: "#0095f6", fontWeight: "bold", cursor: "pointer" }}
             onClick={() => navigate("/register")}
           >
-            Đăng ký
+            Register
           </span>
         </Typography>
       </Box>

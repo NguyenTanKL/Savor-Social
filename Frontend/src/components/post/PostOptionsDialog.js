@@ -117,7 +117,7 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
         {isEditingVisibility ? (
           <>
             <Typography sx={{ fontWeight: "bold", padding: "10px 0" }}>
-              Chọn đối tượng
+            Choose visibility mode
             </Typography>
             <Divider />
             <FormControl component="fieldset" sx={{ width: "100%", mt: 2 }}>
@@ -128,13 +128,13 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
                 <FormControlLabel
                   value="public"
                   control={<Radio />}
-                  label="Công khai"
+                  label="Public"
                   sx={{ padding: "10px 0", justifyContent: "center" }}
                 />
                 <FormControlLabel
                   value="private"
                   control={<Radio />}
-                  label="Chỉ mình tôi"
+                  label="Private"
                   sx={{ padding: "10px 0", justifyContent: "center" }}
                 />
               </RadioGroup>
@@ -199,7 +199,7 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
                   sx={{ padding: "10px 0", cursor: "pointer" }}
                   onClick={handleEditVisibility}
                 >
-                  Chỉnh sửa đối tượng
+                  Visibility settings
                 </Typography>
                 <Divider />
               </>
@@ -219,10 +219,10 @@ const PostOptionsDialog = ({ user, open, onClose, onDelete, postInfo, onEdit, is
         {isEditingVisibility ? (
           <>
             <Button onClick={handleCancelEditVisibility} sx={{ width: "50%" }}>
-              Hủy
+              Cancel
             </Button>
             <Button onClick={handleSaveVisibility} sx={{ width: "50%" }}>
-              Xong
+              Done
             </Button>
           </>
         ) : (

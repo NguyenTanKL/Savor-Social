@@ -564,7 +564,7 @@ const handleSaveLocation = async () => {
             >
               <Box >
                 <Typography sx={{ fontWeight: "bold", mb: 2 }}>
-                  Chọn đối tượng
+                Choose visibility mode
                 </Typography>
                 <FormControl component="fieldset" sx={{ width: "100%" }}>
                   <RadioGroup
@@ -574,23 +574,23 @@ const handleSaveLocation = async () => {
                     <FormControlLabel
                       value="public"
                       control={<Radio />}
-                      label="Công khai"
+                      label="Public"
                       sx={{ padding: "5px 0", justifyContent: "center" }}
                     />
                     <FormControlLabel
                       value="private"
                       control={<Radio />}
-                      label="Chỉ mình tôi"
+                      label="Private"
                       sx={{ padding: "5px 0", justifyContent: "center" }}
                     />
                   </RadioGroup>
                 </FormControl>
                 <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
                   <Button onClick={handleCloseVisibilityPicker} sx={{ width: "48%" }}>
-                    Hủy
+                   Cancel
                   </Button>
                   <Button onClick={handleSaveVisibility} sx={{ width: "48%" }}>
-                    Xong
+                    Done
                   </Button>
                 </Box>
               </Box>

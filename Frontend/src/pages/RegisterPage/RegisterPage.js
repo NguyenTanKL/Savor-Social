@@ -115,7 +115,7 @@ const RegisterPage = () => {
         <TextField
           fullWidth
           type="password"
-          label="Mật khẩu"
+          label="Password"
           name="password"
           value={registerData.password}
           onChange={handleChange}
@@ -139,8 +139,8 @@ const RegisterPage = () => {
           sx={{ mb: 2, bgcolor: "#fafafa", borderRadius: "4px" }}
           variant="outlined"
         >
-          <MenuItem value="normal">Người dùng bình thường</MenuItem>
-          <MenuItem value="restaurant">Nhà hàng</MenuItem>
+          <MenuItem value="normal">User Normal</MenuItem>
+          <MenuItem value="restaurant">Restaurant</MenuItem>
         </Select>
 
         
@@ -159,7 +159,7 @@ const RegisterPage = () => {
           }}
           onClick={handleRegister}
         >
-          Đăng ký
+          Register
         </Button>
       </Box>
 
@@ -176,12 +176,12 @@ const RegisterPage = () => {
         }}
       >
         <Typography variant="body2">
-          Đã có tài khoản?{" "}
+        Already have an account?{" "}
           <span
             style={{ color: "#0095f6", fontWeight: "bold", cursor: "pointer" }}
             onClick={() => navigate("/LoginPage")}
           >
-            Đăng nhập
+            Log in
           </span>
         </Typography>
       </Box>

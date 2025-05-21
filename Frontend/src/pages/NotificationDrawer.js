@@ -159,7 +159,7 @@ function NotificationDrawer({ open, onClose }) {
             group.length > 0 && (
               <div key={label} className="notification-group">
                 <h4 className="group-label">
-                  {label === "Today" ? "Hôm nay" : label === "This Week" ? "Tuần này" : label === "This Month" ? "Tháng này" : "Cũ hơn"}
+                  {label === "Today" ? "Today" : label === "This Week" ? "This Week" : label === "This Month" ? "This Month" : "Earlier"}
                 </h4>
                 {group.map((notification, index) => {
                   const isPostRelated = ["like", "comment", "tag", "reply"].includes(notification.type);
@@ -202,7 +202,7 @@ function NotificationDrawer({ open, onClose }) {
           )}
           {hasMore && !loading && (
             <div className="load-more">
-              <Button onClick={loadMoreNotifications}>Xem thêm</Button>
+              <Button onClick={loadMoreNotifications}>See more</Button>
             </div>
           )}
         </div>

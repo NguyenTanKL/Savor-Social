@@ -254,19 +254,41 @@ const postSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
+      // .addCase(getRecommendedPostsAsync.fulfilled, (state, action) => {
+      //   state.recommendedPostsLoading = false;
+      //   const { data, page } = action.payload;
+      //   if (page === 1) {
+      //     state.recommendedPosts = data.posts || [];
+      //   } else {
+      //     state.recommendedPosts = [...state.recommendedPosts, ...(data.posts || [])];
+      //   }
+      //   state.hasMore = data.hasMore !== undefined ? data.hasMore : data.posts.length >= 50;
+      // })
+      // .addCase(getRecommendedPostsAsync.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error = action.payload;
+      // })
       .addCase(getRecommendedPostsAsync.fulfilled, (state, action) => {
         state.recommendedPostsLoading = false;
         const { data, page } = action.payload;
+      
+        // Đảm bảo data.posts là mảng rỗng nếu undefined
+        const posts = data.posts || [];
+      
         if (page === 1) {
-          state.recommendedPosts = data.posts || [];
+          state.recommendedPosts = posts;
         } else {
-          state.recommendedPosts = [...state.recommendedPosts, ...(data.posts || [])];
+          state.recommendedPosts = [...state.recommendedPosts, ...posts];
         }
-        state.hasMore = data.hasMore !== undefined ? data.hasMore : data.posts.length >= 50;
+        // Kiểm tra hasMore an toàn
+        state.hasMore = data.hasMore !== undefined ? data.hasMore : posts.length >= 50;
       })
       .addCase(getRecommendedPostsAsync.rejected, (state, action) => {
-        state.loading = false;
+        state.recommendedPostsLoading = false; // Đảm bảo loading được tắt
         state.error = action.payload;
+        state.hasMore = false; // Đặt hasMore về false khi có lỗi
+        // Không thay đổi state.recommendedPosts để giữ dữ liệu hiện tại hoặc đặt về mảng rỗng nếu cần
+        // state.recommendedPosts = []; // (Tùy chọn) Xóa danh sách khi có lỗi
       })
       // Lấy bài viết theo ID
       .addCase(getPostByIdAsync.pending, (state) => {
